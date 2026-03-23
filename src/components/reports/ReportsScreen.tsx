@@ -274,7 +274,7 @@ function AvariasTab({ avarias }: { avarias: Avaria[] }) {
   const handleExport = () => {
     if (!filtered.length) return;
     const headers = ['Data', 'Veículo', 'Motorista', 'Matrícula', 'Tipo', 'Valor Avaria', 'Valor Cobrado', 'Culpado', 'Globus', 'Mês Lançamento', 'Gerente'];
-    const rows = filtered.map(a => [a.data, a.veiculo, a.nomeMotorista, a.matriculaMotorista, a.tipoAvaria, a.valorAvaria, a.valorCobrado, a.motoristaCulpado, a.lancadoNoGlobus, a.mesLancamento, a.gerente]);
+    const rows = filtered.map(a => [a.data, a.veiculo, a.matriculaMotorista, a.matriculaMotorista, a.tipoAvaria, a.valorAvaria, a.valorCobrado, a.motoristaCulpado, a.lancadoNoGlobus, a.mesLancamento, a.gerente]);
     downloadCSV([headers, ...rows].map(r => r.join(';')).join('\n'), `avarias_${dataInicio}_${dataFim}.csv`);
   };
 

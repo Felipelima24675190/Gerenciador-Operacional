@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Veiculo, MultaANTT, Avaria, MultaTransito } from '../../types';
+import { Veiculo, MultaANTT, Avaria, MultaTransito, RegistroOciosidade, Motorista } from '../../types';
 import { Search, X, Truck, Info, AlertCircle } from 'lucide-react';
 
 interface ConsultVehiclesScreenProps {
@@ -7,12 +7,40 @@ interface ConsultVehiclesScreenProps {
   multasAntt: MultaANTT[];
   avarias: Avaria[];
   multasTransito?: MultaTransito[];
+  registrosOciosidade?: RegistroOciosidade[];
+  motoristas?: Motorista[];
 }
 
-const VehicleDetailModal = ({ vehicle, multas, avarias, multasTransito, onClose }: { vehicle: Veiculo; multas: MultaANTT[]; avarias: Avaria[]; multasTransito: MultaTransito[]; onClose: () => void }) => {
+const VehicleDetailModal = ({
+  vehicle,
+  multas,
+  avarias,
+  multasTransito,
+  registrosOciosidade,
+  motoristas,
+  onClose,
+}: {
+  vehicle: Veiculo;
+  multas: MultaANTT[];
+  avarias: Avaria[];
+  multasTransito: MultaTransito[];
+  registrosOciosidade: RegistroOciosidade[];
+  motoristas: Motorista[];
+  onClose: () => void;
+}) => {
   const multasDoVeiculo = multas.filter(m => m.placaVeiculo === vehicle.placa);
   const avariasDoVeiculo = avarias.filter(a => a.veiculo === vehicle.prefixo);
   const multasTransitoDoVeiculo = multasTransito.filter(m => m.veiculo === vehicle.prefixo);
+
+  const motoristasMap = new Map(motoristas.map(m => [m.matricula, m.nome]));
+
+  const registrosVeiculo = (registrosOciosidade || [])
+    .filter(r => r.prefixo === vehicle.prefixo)
+    .sort((a, b) => {
+      const [da, ma, ya] = a.data.split('/').map(Number);
+      const [db, mb, yb] = b.data.split('/').map(Number);
+      return new Date(yb, mb - 1, db).getTime() - new Date(ya, ma - 1, da).getTime();
+    });
 
   return (
     <div className="fixed inset-0 bg-black/60 z-50 flex justify-center items-center p-4" onClick={onClose}>
@@ -23,7 +51,7 @@ const VehicleDetailModal = ({ vehicle, multas, avarias, multasTransito, onClose 
           </h3>
           <button onClick={onClose} className="p-1 rounded-full hover:bg-slate-800 text-white/50 hover:text-white transition-colors"><X size={20} /></button>
         </div>
-        
+
         <div className="p-6 grid grid-cols-1 md:grid-cols-4 gap-6 max-h-[85vh] overflow-y-auto bg-slate-50">
           <div className="md:col-span-4 bg-white p-5 rounded-xl shadow-sm border border-slate-200 grid grid-cols-2 md:grid-cols-5 gap-4 text-center">
             <div><p className="text-[10px] font-bold text-slate-400 uppercase">Placa</p><p className="font-black text-slate-800">{vehicle.placa}</p></div>
@@ -32,7 +60,7 @@ const VehicleDetailModal = ({ vehicle, multas, avarias, multasTransito, onClose 
             <div><p className="text-[10px] font-bold text-slate-400 uppercase">Modelo</p><p className="font-black text-slate-800">{vehicle.modelo}</p></div>
             <div><p className="text-[10px] font-bold text-slate-400 uppercase">Tipo</p><span className="font-black text-blue-700 bg-blue-50 px-2 py-0.5 rounded text-xs">{vehicle.tipo}</span></div>
           </div>
-          
+
           <div className="md:col-span-2 space-y-6">
             <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
               <h4 className="font-black text-xs text-slate-500 border-b pb-2 mb-4 uppercase tracking-tighter">Histórico de Multas ANTT ({multasDoVeiculo.length})</h4>
@@ -65,10 +93,13 @@ const VehicleDetailModal = ({ vehicle, multas, avarias, multasTransito, onClose 
                   {avariasDoVeiculo.map(av => (
                     <div key={av.id} className="bg-orange-50/30 p-3 rounded-lg border border-orange-100/50">
                        <div className="flex justify-between items-center mb-1">
-                          <p className="font-black text-orange-700 text-[10px]">{av.tipoAvaria}</p>
+                          <p className="font-black text-orange-700 text-[10px]">{av.tipoAvaria || av.descricaoAvaria}</p>
                           <p className="font-mono text-slate-400 text-[9px]">{av.data}</p>
                        </div>
-                       <p className="text-[9px] text-slate-500 uppercase font-bold">Mot: {av.nomeMotorista}</p>
+                       {av.descricaoAvaria && av.tipoAvaria && (
+                         <p className="text-[9px] text-slate-500 italic mb-1">{av.descricaoAvaria}</p>
+                       )}
+                       <p className="text-[9px] text-slate-500 uppercase font-bold">Mot: {motoristasMap.get(av.matriculaMotorista) || av.matriculaMotorista}</p>
                        <div className="flex justify-between items-center mt-2 border-t border-orange-100/30 pt-1">
                           <span className="text-[9px] font-black text-red-600">R$ {av.valorAvaria.toFixed(2)}</span>
                           <span className={`text-[8px] font-black px-1.5 py-0.5 rounded ${av.lancadoNoGlobus === 'SIM' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
@@ -93,10 +124,14 @@ const VehicleDetailModal = ({ vehicle, multas, avarias, multasTransito, onClose 
                 <h4 className="font-black text-xs text-red-600 border-b border-red-100 pb-2 mb-4 uppercase tracking-tighter">Multas de Trânsito ({multasTransitoDoVeiculo.length})</h4>
                 <div className="space-y-2 max-h-[200px] overflow-y-auto">
                   {multasTransitoDoVeiculo.map(m => (
-                    <div key={m.id} className="grid grid-cols-4 gap-2 bg-red-50/40 p-2 rounded-lg border border-red-100/60 text-[10px]">
+                    <div key={m.id} className="grid grid-cols-6 gap-2 bg-red-50/40 p-2 rounded-lg border border-red-100/60 text-[10px]">
                       <div>
                         <p className="text-slate-400 uppercase font-bold">Data</p>
                         <p className="font-mono text-slate-700">{m.dataInfracao}</p>
+                      </div>
+                      <div>
+                        <p className="text-slate-400 uppercase font-bold">Veículo</p>
+                        <p className="font-black text-slate-700">{m.veiculo}</p>
                       </div>
                       <div>
                         <p className="text-slate-400 uppercase font-bold">Órgão</p>
@@ -106,8 +141,42 @@ const VehicleDetailModal = ({ vehicle, multas, avarias, multasTransito, onClose 
                         <p className="text-slate-400 uppercase font-bold">Descrição</p>
                         <p className="text-slate-600 italic leading-tight">{m.descricaoMulta}</p>
                       </div>
+                      <div>
+                        <p className="text-slate-400 uppercase font-bold">Valor Cobrado</p>
+                        <p className="font-black text-red-700">{m.valorCobrado ? `R$ ${Number(m.valorCobrado).toFixed(2)}` : '—'}</p>
+                      </div>
                     </div>
                   ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {registrosVeiculo.length > 0 && (
+            <div className="md:col-span-4">
+              <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+                <h4 className="font-black text-xs text-slate-500 border-b pb-2 mb-4 uppercase tracking-tighter">Quilometragem por Data ({registrosVeiculo.length} registros)</h4>
+                <div className="overflow-x-auto max-h-[250px] overflow-y-auto">
+                  <table className="w-full text-[10px] text-left">
+                    <thead className="bg-slate-800 text-white sticky top-0">
+                      <tr>
+                        <th className="px-3 py-2 font-bold uppercase">Data</th>
+                        <th className="px-3 py-2 font-bold uppercase text-right">KM Operacional</th>
+                        <th className="px-3 py-2 font-bold uppercase text-right">KM Ociosa</th>
+                        <th className="px-3 py-2 font-bold uppercase text-right">KM Total</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {registrosVeiculo.map((r, i) => (
+                        <tr key={i} className="border-b border-gray-100 hover:bg-slate-50">
+                          <td className="px-3 py-1.5 font-mono">{r.data}</td>
+                          <td className="px-3 py-1.5 text-right font-bold text-emerald-700">{r.operacionalKm.toFixed(1)}</td>
+                          <td className="px-3 py-1.5 text-right font-bold text-amber-700">{r.ociosaKm.toFixed(1)}</td>
+                          <td className="px-3 py-1.5 text-right font-bold text-slate-700">{r.totalKm.toFixed(1)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               </div>
             </div>
@@ -115,16 +184,16 @@ const VehicleDetailModal = ({ vehicle, multas, avarias, multasTransito, onClose 
         </div>
       </div>
     </div>
-  )
+  );
 };
 
-export default function ConsultVehiclesScreen({ veiculos, multasAntt, avarias, multasTransito = [] }: ConsultVehiclesScreenProps) {
+export default function ConsultVehiclesScreen({ veiculos, multasAntt, avarias, multasTransito = [], registrosOciosidade = [], motoristas = [] }: ConsultVehiclesScreenProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [empresaFilter, setEmpresaFilter] = useState('Todas');
   const [selectedVehicle, setSelectedVehicle] = useState<Veiculo | null>(null);
 
   const empresas = useMemo(() => ['Todas', ...Array.from(new Set(veiculos.map(v => v.empresa)))], [veiculos]);
-  
+
   const dashboardData = useMemo(() => {
     const totalAtivos = veiculos.filter(v => v.status === 'ATIVO').length;
     return {
@@ -136,7 +205,7 @@ export default function ConsultVehiclesScreen({ veiculos, multasAntt, avarias, m
   const filteredVehicles = useMemo(() => {
     return veiculos.filter(v => {
       const matchEmpresa = empresaFilter === 'Todas' || v.empresa === empresaFilter;
-      const matchSearch = searchTerm === '' || 
+      const matchSearch = searchTerm === '' ||
         v.prefixo.toLowerCase().includes(searchTerm.toLowerCase()) ||
         v.placa.toLowerCase().includes(searchTerm.toLowerCase()) ||
         v.modelo.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -161,7 +230,7 @@ export default function ConsultVehiclesScreen({ veiculos, multasAntt, avarias, m
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="relative md:col-span-2">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <input 
+            <input
               type="text"
               placeholder="Buscar por Prefixo, Placa, Modelo ou Chassi..."
               value={searchTerm}
@@ -237,7 +306,17 @@ export default function ConsultVehiclesScreen({ veiculos, multasAntt, avarias, m
         )}
       </div>
 
-      {selectedVehicle && <VehicleDetailModal vehicle={selectedVehicle} multas={multasAntt} avarias={avarias} multasTransito={multasTransito} onClose={() => setSelectedVehicle(null)} />}
+      {selectedVehicle && (
+        <VehicleDetailModal
+          vehicle={selectedVehicle}
+          multas={multasAntt}
+          avarias={avarias}
+          multasTransito={multasTransito}
+          registrosOciosidade={registrosOciosidade}
+          motoristas={motoristas}
+          onClose={() => setSelectedVehicle(null)}
+        />
+      )}
     </div>
   );
 }

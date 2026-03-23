@@ -25,12 +25,9 @@ export default function ViewSpeedScreen({ excessos, motoristas }: ViewSpeedScree
 
   const excessosFiltrados = useMemo(() => {
     return excessos.filter(e => {
-      try {
-        const dataOcorrencia = parse(e.dataOcorrencia, 'dd/MM/yyyy', new Date());
-        return dataOcorrencia >= dataInicio && dataOcorrencia <= dataFim;
-      } catch {
-        return false;
-      }
+      const dataOcorrencia = parse(e.dataOcorrencia, 'dd/MM/yyyy', new Date());
+      if (isNaN(dataOcorrencia.getTime())) return false;
+      return dataOcorrencia >= dataInicio && dataOcorrencia <= dataFim && e.velocidadeMediaKmh > 85;
     });
   }, [excessos, dataInicio, dataFim]);
   
@@ -69,10 +66,14 @@ export default function ViewSpeedScreen({ excessos, motoristas }: ViewSpeedScree
     }, {} as Record<string, number>);
 
     const distVelocidade = excessosFiltrados.reduce((acc, e) => {
-      if (e.velocidadeMediaKmh >= 80 && e.velocidadeMediaKmh <= 84) acc['80-84']++;
-      else if (e.velocidadeMediaKmh >= 85 && e.velocidadeMediaKmh <= 90) acc['85-90']++;
+      if (e.velocidadeMediaKmh >= 86 && e.velocidadeMediaKmh <= 90) acc['86-90']++;
+      else if (e.velocidadeMediaKmh >= 91 && e.velocidadeMediaKmh <= 94) acc['91-94']++;
+      else if (e.velocidadeMediaKmh >= 95 && e.velocidadeMediaKmh <= 99) acc['95-99']++;
+      else if (e.velocidadeMediaKmh >= 100 && e.velocidadeMediaKmh <= 104) acc['100-104']++;
+      else if (e.velocidadeMediaKmh >= 105 && e.velocidadeMediaKmh <= 109) acc['105-109']++;
+      else if (e.velocidadeMediaKmh >= 110) acc['110+']++;
       return acc;
-    }, { '80-84': 0, '85-90': 0 } as Record<string, number>);
+    }, { '86-90': 0, '91-94': 0, '95-99': 0, '100-104': 0, '105-109': 0, '110+': 0 } as Record<string, number>);
 
     const motoristasOcorrencias = excessosFiltrados.reduce((acc, e) => {
       const motorista = motoristasMap.get(e.matricula);
@@ -86,7 +87,7 @@ export default function ViewSpeedScreen({ excessos, motoristas }: ViewSpeedScree
 
     return {
       topLinhas: Object.entries(linhas).map(([name, count]) => ({ name, count })).sort((a,b) => b.count - a.count).slice(0, 10),
-      distribuicaoVelocidade: Object.entries(distVelocidade).map(([name, count]) => ({ name, count })),
+      distribuicaoVelocidade: ['86-90', '91-94', '95-99', '100-104', '105-109', '110+'].map(faixa => ({ name: faixa + ' km/h', count: distVelocidade[faixa] || 0 })),
       topMotoristasOcorrencias: Object.values(motoristasOcorrencias).sort((a,b) => b.ocorrencias - a.ocorrencias).slice(0, 10),
       topMotoristasTempo: Object.values(motoristasOcorrencias).sort((a,b) => b.tempoTotal - a.tempoTotal).slice(0, 10),
     }
@@ -136,6 +137,18 @@ export default function ViewSpeedScreen({ excessos, motoristas }: ViewSpeedScree
         </div>
       </div>
       
+      <div className="bg-white p-6 rounded-xl border shadow-sm">
+        <h4 className="font-bold mb-4">Distribuição por Faixa de Velocidade</h4>
+        <ResponsiveContainer width="100%" height={250}>
+          <BarChart data={rankings.distribuicaoVelocidade} layout="vertical" margin={{ left: 20, right: 30 }}>
+            <XAxis type="number" hide />
+            <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 11 }} width={90} interval={0} />
+            <Tooltip cursor={{ fill: '#f1f5f9' }} formatter={(val: number) => [val, 'Ocorrências']} />
+            <Bar dataKey="count" fill="#ef4444" radius={[0, 4, 4, 0]} barSize={18} label={{ position: 'right', fontSize: 11 }} />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+
        <div className="bg-white p-6 rounded-xl border shadow-sm">
         <h4 className="font-bold mb-4">Top 10 - Linhas com Mais Excessos</h4>
          <ResponsiveContainer width="100%" height={300}>

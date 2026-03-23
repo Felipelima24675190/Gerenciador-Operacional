@@ -13,6 +13,9 @@ interface ViewOciosoScreenProps {
 
 const COLORS = ['#0f172a', '#1e40af', '#0369a1', '#0891b2', '#0d9488', '#059669', '#16a34a', '#ca8a04', '#dc2626', '#9333ea'];
 
+const TFD_FRETAMENTO_CODES = new Set(['16021.1', '16047.1', '16056-3', '16021', '16047', '16056']);
+const isFretamento = (code: string) => TFD_FRETAMENTO_CODES.has(code.trim()) || code.trim().startsWith('16021') || code.trim().startsWith('16047') || code.trim() === '16056-3';
+
 function parseDataBR(s: string): Date | null {
   try {
     const [d, m, y] = s.split('/').map(Number);
@@ -87,8 +90,9 @@ export default function ViewOciosoScreen({ registros, linhas, viagens }: ViewOci
     const totalOp = registrosFiltrados.reduce((s, r) => s + r.operacionalKm, 0);
     const totalOcio = registrosFiltrados.reduce((s, r) => s + r.ociosaKm, 0);
     const totalKm = registrosFiltrados.reduce((s, r) => s + r.totalKm, 0);
-    return { veiculosUnicos, totalOp, totalOcio, totalKm };
-  }, [registrosFiltrados]);
+    const totalFretamento = linhas.filter(l => isFretamento(l.numeroLinha)).reduce((s, l) => s + l.km, 0);
+    return { veiculosUnicos, totalOp, totalOcio, totalKm, totalFretamento };
+  }, [registrosFiltrados, linhas]);
 
   // ─── Top 10 veículos - mais km operacional ─────────────────────────────────
   const topVeiculosOp = useMemo(() => {
@@ -159,7 +163,9 @@ export default function ViewOciosoScreen({ registros, linhas, viagens }: ViewOci
     const veicOcioMap: Record<string, number> = {};
     registrosFiltrados.forEach(r => { veicOcioMap[r.prefixo] = (veicOcioMap[r.prefixo] || 0) + r.ociosaKm; });
 
+    // TODO: ociosa per-line from vehicle records
     return linhas
+      .filter(l => !isFretamento(l.numeroLinha))
       .map(l => {
         const ocioTotal = l.veiculos.reduce((s, v) => s + (veicOcioMap[v] || 0), 0);
         return { name: lineDisplayName(l.numeroLinha), fullName: viagensMap.get(l.numeroLinha) || l.numeroLinha, code: l.numeroLinha, value: ocioTotal, pending: l.pendenteCadastro };
@@ -168,6 +174,14 @@ export default function ViewOciosoScreen({ registros, linhas, viagens }: ViewOci
       .sort((a, b) => b.value - a.value)
       .slice(0, 10);
   }, [linhas, registrosFiltrados, viagensMap]);
+
+  // ─── Fretamento lines chart ────────────────────────────────────────────────
+  const topLinhasFretamento = useMemo(() => {
+    return linhas
+      .filter(l => isFretamento(l.numeroLinha))
+      .map(l => ({ name: lineDisplayName(l.numeroLinha), fullName: viagensMap.get(l.numeroLinha) || l.numeroLinha, code: l.numeroLinha, value: l.km, pending: l.pendenteCadastro }))
+      .sort((a, b) => b.value - a.value);
+  }, [linhas, viagensMap]);
 
   // ─── Vehicle lookup: which lines does a vehicle run on? ───────────────────
   const veiculoParaLinhas = useMemo(() => {
@@ -210,6 +224,7 @@ export default function ViewOciosoScreen({ registros, linhas, viagens }: ViewOci
           { l: 'KM Operacional', v: fmtKm(kpis.totalOp) },
           { l: 'KM Ociosa', v: fmtKm(kpis.totalOcio) },
           { l: 'KM Total', v: fmtKm(kpis.totalKm) },
+          { l: 'KM Fretamento', v: fmtKm(kpis.totalFretamento) },
           { l: 'Linhas', v: linhas.length },
         ].map((k, i) => (
           <div key={i} className="bg-slate-700 rounded-lg p-3 text-center min-w-[130px] flex-1">
@@ -294,6 +309,13 @@ export default function ViewOciosoScreen({ registros, linhas, viagens }: ViewOci
             )}
           </div>
           <ChartCard title="Top 10 Linhas — Mais KM Ociosa (Soma dos Veículos)" data={topLinhasOcio} yAxisWidth={130} />
+        </div>
+      )}
+
+      {/* Fretamento chart */}
+      {topLinhasFretamento.length > 0 && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <ChartCard title="Linhas de Fretamento (TFD) — KM Operados" data={topLinhasFretamento} yAxisWidth={130} />
         </div>
       )}
 

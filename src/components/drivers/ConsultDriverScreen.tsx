@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Search, FileDown, User, MapPin, Briefcase, Calendar, X, BarChart2 } from 'lucide-react';
-import { Motorista, Ocorrencia } from '../../types';
+import { Motorista, Ocorrencia, MultaTransito } from '../../types';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { format } from 'date-fns';
@@ -12,11 +12,13 @@ import {
 interface ConsultDriverScreenProps {
   motoristas: Motorista[];
   ocorrencias: Ocorrencia[];
+  multasTransito?: MultaTransito[];
 }
 
 const COLORS = ['#10b981', '#ef4444', '#f97316'];
 
-const DriverChartsModal = ({ motorista, ocorrencias, onClose }: { motorista: Motorista; ocorrencias: Ocorrencia[]; onClose: () => void }) => {
+const DriverChartsModal = ({ motorista, ocorrencias, multasTransito, onClose }: { motorista: Motorista; ocorrencias: Ocorrencia[]; multasTransito: MultaTransito[]; onClose: () => void }) => {
+  const multasDoMotorista = multasTransito.filter(m => m.matriculaMotorista === motorista.matricula);
   const mOccs = ocorrencias.filter(o => o.matriculaMotorista === motorista.matricula);
 
   const pieData = useMemo(() => {
@@ -146,13 +148,59 @@ const DriverChartsModal = ({ motorista, ocorrencias, onClose }: { motorista: Mot
               </ResponsiveContainer>
             </div>
           )}
+
+          {/* Histórico de Multas de Trânsito */}
+          <div className="bg-white border rounded-xl p-5">
+            <h4 className="text-xs font-bold text-slate-500 uppercase mb-4">
+              Histórico de Multas de Trânsito ({multasDoMotorista.length})
+            </h4>
+            {multasDoMotorista.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="bg-slate-50 text-left">
+                      <th className="p-2 font-bold text-slate-500 uppercase">Data</th>
+                      <th className="p-2 font-bold text-slate-500 uppercase">Veículo</th>
+                      <th className="p-2 font-bold text-slate-500 uppercase">Órgão</th>
+                      <th className="p-2 font-bold text-slate-500 uppercase">Infração</th>
+                      <th className="p-2 font-bold text-slate-500 uppercase">Vl. Cobrado</th>
+                      <th className="p-2 font-bold text-slate-500 uppercase">Vl. Recuperado</th>
+                      <th className="p-2 font-bold text-slate-500 uppercase">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {multasDoMotorista.map(m => (
+                      <tr key={m.id} className="border-b hover:bg-slate-50">
+                        <td className="p-2 font-mono">{m.dataInfracao}</td>
+                        <td className="p-2 font-bold">{m.veiculo}</td>
+                        <td className="p-2">{m.orgaoAtuador}</td>
+                        <td className="p-2 max-w-[200px] truncate">{m.descricaoMulta}</td>
+                        <td className="p-2 font-bold text-red-600">R$ {m.valorCobrado.toFixed(2)}</td>
+                        <td className="p-2 font-bold text-emerald-600">R$ {m.valorRecuperado.toFixed(2)}</td>
+                        <td className="p-2">
+                          <span className={`px-1.5 py-0.5 rounded text-[10px] font-black ${
+                            m.status === 'Pago' ? 'bg-green-100 text-green-700' :
+                            m.status === 'Cancelado' ? 'bg-gray-100 text-gray-600' :
+                            m.status === 'Defesa' ? 'bg-blue-100 text-blue-700' :
+                            'bg-amber-100 text-amber-700'
+                          }`}>{m.status}</span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p className="text-xs text-slate-400 text-center py-4">Nenhuma multa de trânsito registrada para este motorista.</p>
+            )}
+          </div>
         </div>
       </div>
     </div>
   );
 };
 
-export default function ConsultDriverScreen({ motoristas, ocorrencias }: ConsultDriverScreenProps) {
+export default function ConsultDriverScreen({ motoristas, ocorrencias, multasTransito = [] }: ConsultDriverScreenProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [filialFilter, setFilialFilter] = useState('Todas');
   const [areaFilter, setAreaFilter] = useState('Todas');
@@ -393,6 +441,7 @@ export default function ConsultDriverScreen({ motoristas, ocorrencias }: Consult
         <DriverChartsModal
           motorista={selectedDriverChart}
           ocorrencias={ocorrencias}
+          multasTransito={multasTransito}
           onClose={() => setSelectedDriverChart(null)}
         />
       )}

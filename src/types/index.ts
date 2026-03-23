@@ -79,13 +79,16 @@ export interface Avaria {
   id: string;
   veiculo: string;
   data: string;
+  motoristaIdentificado: 'SIM' | 'NÃO' | string;
   matriculaMotorista: string;
-  nomeMotorista: string;
   motoristaCulpado: 'SIM' | 'NÃO' | string;
   lancadoNoGlobus: 'SIM' | 'NÃO' | string;
   mesLancamento: string;
   gerente: string;
+  descricaoAvaria: string;
   tipoAvaria: string;
+  causaAvaria: string;
+  acaoTomada: string;
   horario: string;
   valorAvaria: number;
   valorCobrado: number;
@@ -200,4 +203,48 @@ export interface MultaTransito {
   lancadoGlobus: string;
   observacao: string;
   status: 'Aguardando' | 'Defesa' | 'Pago' | 'Cancelado';
+}
+
+export interface OciosidadeMotorista {
+  id: string;
+  dataHora: string;        // "01/03/2026, 01:24"
+  data: string;            // "01/03/2026"
+  codigoLinha: string;     // code before first '-' in Linha column
+  nomeLinha: string;       // from viagensMap or fallback to raw Linha
+  sentido: string;
+  prefixo: string;
+  matricula: string;       // last 5 digits of Motorista column
+  eventoOcorrido: string;
+  tempoMinutos: number;    // parsed from "há X minutos" in eventoOcorrido
+  endereco: string;
+}
+
+export interface Monitriip {
+  id: string;
+  data: string;                   // DD/MM/YYYY extracted from col[0]
+  partidaPrevista: string;
+  partida: string;
+  chegada: string;
+  servico: string;
+  viagemValida: boolean;
+  atraso30min: boolean;
+  vendaPassagem: number;
+  cancelPassagem: number;
+  embarque: number;
+  noShow: number;
+  inicioFimViagem: string;        // "N/A" or numeric string
+  jornadaMotorista: string;
+  detectorParada: string;
+  velTempoLocalizacao: string;    // values >100 or <10 indicate GPS failure
+  velTempLocMinima: string;
+}
+
+export type TipoEventoMotorista = 'FALTA' | 'ATESTADO' | 'FOLGA' | 'TRABALHADO';
+
+export interface EventoMotorista {
+  id: string;
+  matricula: string;
+  data: string;        // DD/MM/YYYY
+  tipo: TipoEventoMotorista;
+  observacao?: string;
 }

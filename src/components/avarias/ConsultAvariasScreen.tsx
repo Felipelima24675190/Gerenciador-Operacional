@@ -15,7 +15,7 @@ interface ConsultAvariasScreenProps {
 
 const formatCurrency = (value: number) => `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-const AvariaDetailModal = ({ group, onClose, onSave }: { group: Avaria[], onClose: () => void, onSave: (a: Avaria) => void }) => {
+const AvariaDetailModal = ({ group, motoristasMap, onClose, onSave }: { group: Avaria[], motoristasMap: Map<string, Motorista>, onClose: () => void, onSave: (a: Avaria) => void }) => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Partial<Avaria>>({});
 
@@ -60,7 +60,7 @@ const AvariaDetailModal = ({ group, onClose, onSave }: { group: Avaria[], onClos
                         ) : (
                           <h4 className="text-base font-black text-slate-800 break-words">{avaria.tipoAvaria}</h4>
                         )}
-                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Motorista: {avaria.nomeMotorista} ({avaria.matriculaMotorista})</p>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Motorista: {motoristasMap.get(avaria.matriculaMotorista)?.nome || avaria.matriculaMotorista} ({avaria.matriculaMotorista})</p>
                       </div>
                     </div>
                     {isEditing ? (
@@ -115,6 +115,35 @@ const AvariaDetailModal = ({ group, onClose, onSave }: { group: Avaria[], onClos
                         )}
                      </div>
                   </div>
+
+                  {(avaria.descricaoAvaria || avaria.tipoAvaria || avaria.causaAvaria || avaria.acaoTomada) && (
+                    <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {avaria.descricaoAvaria && (
+                        <div className="bg-slate-50 p-3 rounded-lg">
+                          <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Descrição</p>
+                          <p className="text-xs text-slate-700">{avaria.descricaoAvaria}</p>
+                        </div>
+                      )}
+                      {avaria.tipoAvaria && (
+                        <div className="bg-slate-50 p-3 rounded-lg">
+                          <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Tipo de Avaria</p>
+                          <p className="text-xs font-bold text-slate-700">{avaria.tipoAvaria}</p>
+                        </div>
+                      )}
+                      {avaria.causaAvaria && (
+                        <div className="bg-slate-50 p-3 rounded-lg">
+                          <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Causa</p>
+                          <p className="text-xs text-slate-700">{avaria.causaAvaria}</p>
+                        </div>
+                      )}
+                      {avaria.acaoTomada && avaria.causaAvaria && (
+                        <div className="bg-slate-50 p-3 rounded-lg">
+                          <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Ação Tomada</p>
+                          <p className="text-xs text-slate-700">{avaria.acaoTomada}</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -352,7 +381,7 @@ export default function ConsultAvariasScreen({ avarias, setAvarias, motoristas, 
                   <tr key={key} className="hover:bg-slate-50 transition-colors">
                     <td className="p-4 font-mono text-xs">{a.data}</td>
                     <td className="p-4 font-bold text-blue-900 text-lg">{a.veiculo}</td>
-                    <td className="p-4"><p className="font-bold text-slate-800 text-xs">{a.nomeMotorista}</p></td>
+                    <td className="p-4"><p className="font-bold text-slate-800 text-xs">{motoristaMap.get(a.matriculaMotorista)?.nome || a.matriculaMotorista}</p></td>
                     <td className="p-4 max-w-[180px]">
                       {isEditing ? (
                         <input
@@ -414,7 +443,7 @@ export default function ConsultAvariasScreen({ avarias, setAvarias, motoristas, 
         </div>
       </div>
 
-      {selectedGroup && <AvariaDetailModal group={selectedGroup} onClose={() => setSelectedGroup(null)} onSave={handleUpdateAvaria} />}
+      {selectedGroup && <AvariaDetailModal group={selectedGroup} motoristasMap={motoristaMap} onClose={() => setSelectedGroup(null)} onSave={handleUpdateAvaria} />}
     </div>
   );
 }

@@ -16,7 +16,9 @@ import {
   AlertTriangle,
   StopCircle,
   Bus,
-  Clock
+  Clock,
+  CarFront,
+  RadioTower,
 } from 'lucide-react';
 import { twMerge } from 'tailwind-merge';
 import { clsx } from 'clsx';
@@ -40,6 +42,8 @@ export default function Sidebar({ activeTab, onTabChange, user, onLogout }: Side
   const [veiculosOpen, setVeiculosOpen] = useState(false);
   const [avariaOpen, setAvariaOpen] = useState(false);
   const [quilometragemOpen, setQuilometragemOpen] = useState(false);
+  const [ociosidadeMotoOpen, setOciosidadeMotoOpen] = useState(false);
+  const [monitriipOpen, setMonitriipOpen] = useState(false);
   const [relatoriosOpen, setRelatoriosOpen] = useState(false);
   const [configOpen, setConfigOpen] = useState(false);
 
@@ -274,6 +278,64 @@ export default function Sidebar({ activeTab, onTabChange, user, onLogout }: Side
                 onClick={() => onTabChange('view-ocioso')}
               >
                 <Clock size={18} /> Consultar Quilometragem
+              </button>
+            </div>
+          )}
+        </div>
+
+        <div>
+          <button
+            onClick={() => setOciosidadeMotoOpen(!ociosidadeMotoOpen)}
+            className="w-full flex items-start justify-between px-3 py-2 text-[10px] font-black text-blue-400 uppercase tracking-wider hover:text-white transition-colors"
+          >
+            <span>Ociosidade Motorista</span>
+            <span className="mt-0.5 shrink-0">{ociosidadeMotoOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}</span>
+          </button>
+
+          {ociosidadeMotoOpen && (
+            <div className="mt-2 space-y-1 flex flex-col">
+              {isAdmin && (
+                <button
+                  className={menuButtonClass(activeTab === 'import-ociosidade-motorista')}
+                  onClick={() => onTabChange('import-ociosidade-motorista')}
+                >
+                  <UploadCloud size={18} /> Importar Ociosidade
+                </button>
+              )}
+              <button
+                className={menuButtonClass(activeTab === 'view-ociosidade-motorista')}
+                onClick={() => onTabChange('view-ociosidade-motorista')}
+              >
+                <CarFront size={18} /> Consultar Ociosidade
+              </button>
+            </div>
+          )}
+        </div>
+
+        <div>
+          <button
+            onClick={() => setMonitriipOpen(!monitriipOpen)}
+            className="w-full flex items-center justify-between px-3 py-2 text-[10px] font-black text-blue-400 uppercase tracking-widest hover:text-white transition-colors"
+          >
+            <span>Monitriip</span>
+            {monitriipOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+          </button>
+
+          {monitriipOpen && (
+            <div className="mt-2 space-y-1 flex flex-col">
+              {isAdmin && (
+                <button
+                  className={menuButtonClass(activeTab === 'import-monitriip')}
+                  onClick={() => onTabChange('import-monitriip')}
+                >
+                  <UploadCloud size={18} /> Importar Monitriip
+                </button>
+              )}
+              <button
+                className={menuButtonClass(activeTab === 'view-monitriip')}
+                onClick={() => onTabChange('view-monitriip')}
+              >
+                <RadioTower size={18} /> Consultar Monitriip
               </button>
             </div>
           )}

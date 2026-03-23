@@ -14,7 +14,8 @@ DECLARE
     'app_users','motoristas','viagens','ocorrencias','veiculos',
     'excessos_velocidade','paradas_indevidas','avarias','resumos_avaria',
     'multas_antt','antt_code_descriptions','multas_transito',
-    'registros_ociosidade','registros_linhas'
+    'registros_ociosidade','registros_linhas',
+    'ociosidades_motorista','monitriips','eventos_motorista'
   ];
 BEGIN
   IF NOT (tname = ANY(allowed)) THEN
@@ -154,13 +155,16 @@ CREATE TABLE IF NOT EXISTS avarias (
   id TEXT PRIMARY KEY,
   veiculo TEXT NOT NULL DEFAULT '',
   data TEXT NOT NULL DEFAULT '',
+  "motoristaIdentificado" TEXT NOT NULL DEFAULT '',
   "matriculaMotorista" TEXT NOT NULL DEFAULT '',
-  "nomeMotorista" TEXT NOT NULL DEFAULT '',
   "motoristaCulpado" TEXT NOT NULL DEFAULT '',
   "lancadoNoGlobus" TEXT NOT NULL DEFAULT '',
   "mesLancamento" TEXT NOT NULL DEFAULT '',
   gerente TEXT NOT NULL DEFAULT '',
+  "descricaoAvaria" TEXT NOT NULL DEFAULT '',
   "tipoAvaria" TEXT NOT NULL DEFAULT '',
+  "causaAvaria" TEXT NOT NULL DEFAULT '',
+  "acaoTomada" TEXT NOT NULL DEFAULT '',
   horario TEXT NOT NULL DEFAULT '',
   "valorAvaria" REAL NOT NULL DEFAULT 0,
   "valorCobrado" REAL NOT NULL DEFAULT 0
@@ -267,7 +271,8 @@ DECLARE
     'app_users','motoristas','viagens','ocorrencias','veiculos',
     'excessos_velocidade','paradas_indevidas','avarias','resumos_avaria',
     'multas_antt','antt_code_descriptions','multas_transito',
-    'registros_ociosidade','registros_linhas'
+    'registros_ociosidade','registros_linhas',
+    'ociosidades_motorista','monitriips','eventos_motorista'
   ];
 BEGIN
   FOREACH t IN ARRAY tables LOOP
@@ -288,3 +293,66 @@ CREATE INDEX IF NOT EXISTS idx_multas_antt_placa ON multas_antt ("placaVeiculo")
 CREATE INDEX IF NOT EXISTS idx_multas_transito_motorista ON multas_transito ("matriculaMotorista");
 CREATE INDEX IF NOT EXISTS idx_registros_ociosidade_prefixo ON registros_ociosidade (prefixo);
 CREATE INDEX IF NOT EXISTS idx_veiculos_prefixo ON veiculos (prefixo);
+
+-- ============================================================
+-- 15. Ociosidade de Motoristas
+-- ============================================================
+CREATE TABLE IF NOT EXISTS ociosidades_motorista (
+  id TEXT PRIMARY KEY,
+  "dataHora" TEXT NOT NULL,
+  data TEXT NOT NULL,
+  "codigoLinha" TEXT NOT NULL,
+  "nomeLinha" TEXT NOT NULL,
+  sentido TEXT,
+  prefixo TEXT,
+  matricula TEXT NOT NULL,
+  "eventoOcorrido" TEXT,
+  "tempoMinutos" INTEGER NOT NULL DEFAULT 0,
+  endereco TEXT
+);
+ALTER TABLE ociosidades_motorista ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "allow_all_ociosidades_motorista" ON ociosidades_motorista FOR ALL USING (true) WITH CHECK (true);
+CREATE INDEX IF NOT EXISTS idx_ociosidades_matricula ON ociosidades_motorista (matricula);
+CREATE INDEX IF NOT EXISTS idx_ociosidades_data ON ociosidades_motorista (data);
+
+-- ============================================================
+-- 16. Monitriip
+-- ============================================================
+CREATE TABLE IF NOT EXISTS monitriips (
+  id TEXT PRIMARY KEY,
+  data TEXT NOT NULL,
+  "partidaPrevista" TEXT,
+  partida TEXT,
+  chegada TEXT,
+  servico TEXT NOT NULL,
+  "viagemValida" BOOLEAN NOT NULL DEFAULT false,
+  "atraso30min" BOOLEAN NOT NULL DEFAULT false,
+  "vendaPassagem" INTEGER NOT NULL DEFAULT 0,
+  "cancelPassagem" INTEGER NOT NULL DEFAULT 0,
+  embarque INTEGER NOT NULL DEFAULT 0,
+  "noShow" INTEGER NOT NULL DEFAULT 0,
+  "inicioFimViagem" TEXT,
+  "jornadaMotorista" TEXT,
+  "detectorParada" TEXT,
+  "velTempoLocalizacao" TEXT,
+  "velTempLocMinima" TEXT
+);
+ALTER TABLE monitriips ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "allow_all_monitriips" ON monitriips FOR ALL USING (true) WITH CHECK (true);
+CREATE INDEX IF NOT EXISTS idx_monitriips_data ON monitriips (data);
+CREATE INDEX IF NOT EXISTS idx_monitriips_servico ON monitriips (servico);
+
+-- ============================================================
+-- 17. Eventos de Motorista (Histórico de Presença)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS eventos_motorista (
+  id TEXT PRIMARY KEY,
+  matricula TEXT NOT NULL,
+  data TEXT NOT NULL,
+  tipo TEXT NOT NULL CHECK (tipo IN ('FALTA','ATESTADO','FOLGA','TRABALHADO')),
+  observacao TEXT
+);
+ALTER TABLE eventos_motorista ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "allow_all_eventos_motorista" ON eventos_motorista FOR ALL USING (true) WITH CHECK (true);
+CREATE INDEX IF NOT EXISTS idx_eventos_motorista_matricula ON eventos_motorista (matricula);
+CREATE INDEX IF NOT EXISTS idx_eventos_motorista_data ON eventos_motorista (data);
