@@ -12,7 +12,7 @@ interface ConsultVehiclesScreenProps {
 const VehicleDetailModal = ({ vehicle, multas, avarias, multasTransito, onClose }: { vehicle: Veiculo; multas: MultaANTT[]; avarias: Avaria[]; multasTransito: MultaTransito[]; onClose: () => void }) => {
   const multasDoVeiculo = multas.filter(m => m.placaVeiculo === vehicle.placa);
   const avariasDoVeiculo = avarias.filter(a => a.veiculo === vehicle.prefixo);
-  const multasTransitoDoVeiculo = multasTransito.filter(m => m.placaVeiculo === vehicle.placa);
+  const multasTransitoDoVeiculo = multasTransito.filter(m => m.veiculo === vehicle.prefixo);
 
   return (
     <div className="fixed inset-0 bg-black/60 z-50 flex justify-center items-center p-4" onClick={onClose}>
@@ -96,15 +96,15 @@ const VehicleDetailModal = ({ vehicle, multas, avarias, multasTransito, onClose 
                     <div key={m.id} className="grid grid-cols-4 gap-2 bg-red-50/40 p-2 rounded-lg border border-red-100/60 text-[10px]">
                       <div>
                         <p className="text-slate-400 uppercase font-bold">Data</p>
-                        <p className="font-mono text-slate-700">{m.dataHora}</p>
+                        <p className="font-mono text-slate-700">{m.dataInfracao}</p>
                       </div>
                       <div>
-                        <p className="text-slate-400 uppercase font-bold">Código</p>
-                        <p className="font-black text-red-700">{m.codigoInfracao}</p>
+                        <p className="text-slate-400 uppercase font-bold">Órgão</p>
+                        <p className="font-black text-red-700 truncate" title={m.orgaoAtuador}>{m.orgaoAtuador || '—'}</p>
                       </div>
                       <div className="col-span-2">
                         <p className="text-slate-400 uppercase font-bold">Descrição</p>
-                        <p className="text-slate-600 italic leading-tight">{m.descricaoInfracao}</p>
+                        <p className="text-slate-600 italic leading-tight">{m.descricaoMulta}</p>
                       </div>
                     </div>
                   ))}

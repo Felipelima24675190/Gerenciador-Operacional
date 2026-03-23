@@ -206,19 +206,29 @@ CREATE TABLE IF NOT EXISTS antt_code_descriptions (
 
 -- ============================================================
 -- 12. Multas de Trânsito
+-- Modelo baseado no CSV: DATA DA INFRAÇÃO; VEÍCULO; ORGÃO ATUADOR;
+-- DESCRIÇÃO DA MULTA; NÚMERO DO AUTO; VALOR COBRADO; VALOR RECUPERADO;
+-- MOTORISTA IDENTIFICADO?; MATRÍCULA; NOME DO MOTORISTA; GESTOR;
+-- FILIAL; ENVIADO AO GERENTE?; GERENTE DEVOLVEU?; LANÇADO NO GLOBUS?; OBSERVAÇÃO
 -- ============================================================
 CREATE TABLE IF NOT EXISTS multas_transito (
   id TEXT PRIMARY KEY,
-  "autoInfracao" TEXT NOT NULL DEFAULT '',
-  "dataHora" TEXT NOT NULL DEFAULT '',
-  empresa TEXT NOT NULL DEFAULT '',
-  setor TEXT NOT NULL DEFAULT '',
-  local TEXT NOT NULL DEFAULT '',
-  "codigoInfracao" TEXT NOT NULL DEFAULT '',
-  "descricaoInfracao" TEXT NOT NULL DEFAULT '',
+  "dataInfracao" TEXT NOT NULL DEFAULT '',
+  veiculo TEXT NOT NULL DEFAULT '',
+  "orgaoAtuador" TEXT NOT NULL DEFAULT '',
+  "descricaoMulta" TEXT NOT NULL DEFAULT '',
+  "numeroAuto" TEXT NOT NULL DEFAULT '',
+  "valorCobrado" REAL NOT NULL DEFAULT 0,
+  "valorRecuperado" REAL NOT NULL DEFAULT 0,
+  "motoristaIdentificado" BOOLEAN NOT NULL DEFAULT FALSE,
   "matriculaMotorista" TEXT NOT NULL DEFAULT '',
-  "placaVeiculo" TEXT NOT NULL DEFAULT '',
-  valor REAL NOT NULL DEFAULT 0,
+  "nomeMotorista" TEXT NOT NULL DEFAULT '',
+  gestor TEXT NOT NULL DEFAULT '',
+  filial TEXT NOT NULL DEFAULT '',
+  "enviadoGerente" TEXT NOT NULL DEFAULT '',
+  "gerenteDevolveu" TEXT NOT NULL DEFAULT '',
+  "lancadoGlobus" TEXT NOT NULL DEFAULT '',
+  observacao TEXT NOT NULL DEFAULT '',
   status TEXT NOT NULL DEFAULT 'Aguardando'
 );
 

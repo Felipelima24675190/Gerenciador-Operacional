@@ -14,48 +14,61 @@ const FILIAL_SIGLAS: Record<string, string> = {
   'ARCOVERDE': 'ACV', 'PETROLINA': 'PNZ', 'CARUARU': 'CAUA',
   'JOÃO PESSOA': 'JPA', 'NATAL': 'NAT', 'SÃO LUÍS': 'SLZ',
   'IMPERATRIZ': 'ITZ', 'BALSAS': 'BLA', 'MACEIÓ': 'MCZ', 'CAMPINA GRANDE': 'CGE',
+  'RECIFE': 'REC',
 };
+
+function parseDataBR(s: string): Date | null {
+  try {
+    const [d, m, y] = s.split('/').map(Number);
+    return new Date(y, m - 1, d);
+  } catch { return null; }
+}
 
 export default function ViewTransitScreen({ multas, motoristas }: ViewTransitScreenProps) {
   const [dataInicio, setDataInicio] = useState('2026-01-01');
   const [dataFim, setDataFim] = useState('2026-12-31');
-  const [empresaFilter, setEmpresaFilter] = useState('Todas');
+  const [filialFilter, setFilialFilter] = useState('Todas');
   const [searchTerm, setSearchTerm] = useState('');
 
   const motoristaMap = useMemo(() => new Map(motoristas.map(m => [m.matricula, m])), [motoristas]);
+
+  const filiaisDisponiveis = useMemo(() => ['Todas', ...[...new Set(multas.map(m => m.filial).filter(Boolean))].sort()], [multas]);
 
   const filteredMultas = useMemo(() => {
     const start = new Date(dataInicio + 'T00:00:00');
     const end = new Date(dataFim + 'T23:59:59');
 
     return multas.filter(m => {
-      const matchEmpresa = empresaFilter === 'Todas' || m.empresa === empresaFilter;
-      try {
-        const [datePart] = m.dataHora.split(' ');
-        const [day, month, year] = datePart.split('/').map(Number);
-        const d = new Date(year, month - 1, day);
-        const matchDate = d >= start && d <= end;
-        return matchEmpresa && matchDate;
-      } catch { return false; }
+      const d = parseDataBR(m.dataInfracao);
+      const matchDate = d ? d >= start && d <= end : false;
+      const matchFilial = filialFilter === 'Todas' || m.filial === filialFilter;
+      return matchDate && matchFilial;
     });
-  }, [multas, dataInicio, dataFim, empresaFilter]);
+  }, [multas, dataInicio, dataFim, filialFilter]);
 
   const kpis = useMemo(() => {
-    const totalValor = filteredMultas.reduce((s, m) => s + m.valor, 0);
-    const empresas = new Set(filteredMultas.map(m => m.empresa));
-    return { total: filteredMultas.length, totalValor, empresas: empresas.size };
+    const valorCobrado = filteredMultas.reduce((s, m) => s + m.valorCobrado, 0);
+    const valorRecuperado = filteredMultas.reduce((s, m) => s + m.valorRecuperado, 0);
+    const motoristasUnicos = new Set(filteredMultas.map(m => m.matriculaMotorista).filter(Boolean)).size;
+    const identificadas = filteredMultas.filter(m => m.motoristaIdentificado).length;
+    return { total: filteredMultas.length, valorCobrado, valorRecuperado, motoristasUnicos, identificadas };
   }, [filteredMultas]);
 
   const topMotoristas = useMemo(() => {
-    const counts: Record<string, number> = {};
-    filteredMultas.forEach(m => {
-      const key = m.matriculaMotorista;
-      counts[key] = (counts[key] || 0) + 1;
+    const counts: Record<string, { multas: number; valor: number }> = {};
+    filteredMultas.filter(m => m.motoristaIdentificado && m.matriculaMotorista).forEach(m => {
+      if (!counts[m.matriculaMotorista]) counts[m.matriculaMotorista] = { multas: 0, valor: 0 };
+      counts[m.matriculaMotorista].multas++;
+      counts[m.matriculaMotorista].valor += m.valorCobrado;
     });
     return Object.entries(counts)
-      .map(([matricula, count]) => {
+      .map(([matricula, data]) => {
         const mot = motoristaMap.get(matricula);
-        return { name: mot ? mot.nome.split(' ').slice(0, 2).join(' ') : `Desligado (${matricula})`, matricula, count, found: !!mot };
+        const nomeCsv = filteredMultas.find(m => m.matriculaMotorista === matricula)?.nomeMotorista || '';
+        const nome = mot
+          ? mot.nome.split(' ').slice(0, 2).join(' ')
+          : (nomeCsv ? nomeCsv.split(' ').slice(0, 2).join(' ') : `Desligado`);
+        return { name: nome, matricula, count: data.multas, valor: data.valor, found: !!mot };
       })
       .sort((a, b) => b.count - a.count)
       .slice(0, 10);
@@ -64,23 +77,23 @@ export default function ViewTransitScreen({ multas, motoristas }: ViewTransitScr
   const topFiliais = useMemo(() => {
     const counts: Record<string, number> = {};
     filteredMultas.forEach(m => {
-      const mot = motoristaMap.get(m.matriculaMotorista);
-      const filial = mot?.filial || 'Desconhecida';
+      const filial = m.filial || 'Não informada';
       counts[filial] = (counts[filial] || 0) + 1;
     });
     return Object.entries(counts)
       .map(([filial, count]) => ({ name: FILIAL_SIGLAS[filial.toUpperCase()] || filial, fullName: filial, count }))
       .sort((a, b) => b.count - a.count)
       .slice(0, 10);
-  }, [filteredMultas, motoristaMap]);
+  }, [filteredMultas]);
 
-  const topCodigos = useMemo(() => {
+  const topOrgaos = useMemo(() => {
     const counts: Record<string, number> = {};
     filteredMultas.forEach(m => {
-      counts[m.codigoInfracao] = (counts[m.codigoInfracao] || 0) + 1;
+      const org = m.orgaoAtuador || 'Não informado';
+      counts[org] = (counts[org] || 0) + 1;
     });
     return Object.entries(counts)
-      .map(([name, count]) => ({ name, count }))
+      .map(([name, count]) => ({ name: name.length > 18 ? name.slice(0, 17) + '…' : name, fullName: name, count }))
       .sort((a, b) => b.count - a.count)
       .slice(0, 10);
   }, [filteredMultas]);
@@ -92,14 +105,16 @@ export default function ViewTransitScreen({ multas, motoristas }: ViewTransitScr
         if (!term) return true;
         const mot = motoristaMap.get(m.matriculaMotorista);
         return (
-          m.placaVeiculo.toLowerCase().includes(term) ||
+          m.veiculo.toLowerCase().includes(term) ||
           m.matriculaMotorista.includes(term) ||
-          m.codigoInfracao.toLowerCase().includes(term) ||
-          m.autoInfracao.toLowerCase().includes(term) ||
+          m.nomeMotorista.toLowerCase().includes(term) ||
+          m.numeroAuto.toLowerCase().includes(term) ||
+          m.descricaoMulta.toLowerCase().includes(term) ||
+          m.orgaoAtuador.toLowerCase().includes(term) ||
           (mot?.nome.toLowerCase().includes(term) ?? false)
         );
       })
-      .slice(0, 100);
+      .slice(0, 150);
   }, [filteredMultas, searchTerm, motoristaMap]);
 
   if (multas.length === 0) {
@@ -111,18 +126,22 @@ export default function ViewTransitScreen({ multas, motoristas }: ViewTransitScr
     );
   }
 
+  const fmtBRL = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
   return (
     <div className="space-y-4">
       {/* KPIs */}
-      <div className="bg-slate-800 p-4 flex gap-4 overflow-x-auto rounded-xl">
+      <div className="bg-slate-800 p-4 flex gap-3 overflow-x-auto rounded-xl">
         {[
           { l: 'Total Multas', v: kpis.total },
-          { l: 'Valor Total', v: kpis.totalValor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), raw: true },
-          { l: 'Empresas', v: kpis.empresas },
+          { l: 'Valor Cobrado', v: fmtBRL(kpis.valorCobrado) },
+          { l: 'Valor Recuperado', v: fmtBRL(kpis.valorRecuperado) },
+          { l: 'Motoristas', v: kpis.motoristasUnicos },
+          { l: 'Identificadas', v: kpis.identificadas },
         ].map((k, i) => (
-          <div key={i} className="bg-slate-700 rounded-lg p-4 text-center min-w-[140px] flex-1">
+          <div key={i} className="bg-slate-700 rounded-lg p-3 text-center min-w-[130px] flex-1">
             <p className="text-[10px] font-bold text-slate-400 uppercase">{k.l}</p>
-            <p className="text-xl font-black text-white mt-1">{k.raw ? k.v : k.v}</p>
+            <p className="text-lg font-black text-white mt-0.5">{k.v}</p>
           </div>
         ))}
       </div>
@@ -131,10 +150,9 @@ export default function ViewTransitScreen({ multas, motoristas }: ViewTransitScr
       <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div>
-            <label className="text-xs font-bold text-slate-500 uppercase block mb-1">Empresa</label>
-            <select value={empresaFilter} onChange={e => setEmpresaFilter(e.target.value)} className="w-full text-sm p-2 rounded-lg border border-gray-300">
-              <option value="Todas">Todas</option>
-              {[...new Set(multas.map(m => m.empresa))].map(e => <option key={e} value={e}>{e}</option>)}
+            <label className="text-xs font-bold text-slate-500 uppercase block mb-1">Filial</label>
+            <select value={filialFilter} onChange={e => setFilialFilter(e.target.value)} className="w-full text-sm p-2 rounded-lg border border-gray-300">
+              {filiaisDisponiveis.map(f => <option key={f} value={f}>{f}</option>)}
             </select>
           </div>
           <div>
@@ -168,7 +186,13 @@ export default function ViewTransitScreen({ multas, motoristas }: ViewTransitScr
                 <BarChart data={topMotoristas} layout="vertical" margin={{ left: 8 }}>
                   <XAxis type="number" hide />
                   <YAxis dataKey="name" type="category" tick={{ fontSize: 9 }} width={90} interval={0} axisLine={false} />
-                  <Tooltip formatter={(v: number) => [`${v} multas`, 'Qtd']} />
+                  <Tooltip
+                    formatter={(v: number) => [`${v} multas`, 'Qtd']}
+                    labelFormatter={(label: string, payload: any[]) => {
+                      const e = payload?.[0]?.payload;
+                      return e ? `${label} (${e.matricula}) — ${fmtBRL(e.valor)}` : label;
+                    }}
+                  />
                   <Bar dataKey="count" radius={[0, 4, 4, 0]}>
                     {topMotoristas.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                   </Bar>
@@ -186,7 +210,7 @@ export default function ViewTransitScreen({ multas, motoristas }: ViewTransitScr
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={topFiliais} layout="vertical" margin={{ left: 8 }}>
                   <XAxis type="number" hide />
-                  <YAxis dataKey="name" type="category" tick={{ fontSize: 9 }} width={60} interval={0} axisLine={false} />
+                  <YAxis dataKey="name" type="category" tick={{ fontSize: 9 }} width={55} interval={0} axisLine={false} />
                   <Tooltip formatter={(v: number) => [`${v} multas`, 'Qtd']} labelFormatter={(l) => topFiliais.find(f => f.name === l)?.fullName || l} />
                   <Bar dataKey="count" radius={[0, 4, 4, 0]}>
                     {topFiliais.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
@@ -197,18 +221,18 @@ export default function ViewTransitScreen({ multas, motoristas }: ViewTransitScr
           ) : <p className="text-xs text-slate-400 text-center py-8">Sem dados</p>}
         </div>
 
-        {/* Top Códigos */}
+        {/* Top Órgãos Atuadores */}
         <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-          <h4 className="text-xs font-black text-slate-600 uppercase tracking-tighter mb-3">Tipos de Infração Mais Comuns</h4>
-          {topCodigos.length > 0 ? (
+          <h4 className="text-xs font-black text-slate-600 uppercase tracking-tighter mb-3">Órgãos Atuadores</h4>
+          {topOrgaos.length > 0 ? (
             <div className="h-56">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={topCodigos} layout="vertical" margin={{ left: 8 }}>
+                <BarChart data={topOrgaos} layout="vertical" margin={{ left: 8 }}>
                   <XAxis type="number" hide />
-                  <YAxis dataKey="name" type="category" tick={{ fontSize: 9 }} width={70} interval={0} axisLine={false} />
-                  <Tooltip formatter={(v: number) => [`${v} multas`, 'Qtd']} />
+                  <YAxis dataKey="name" type="category" tick={{ fontSize: 9 }} width={90} interval={0} axisLine={false} />
+                  <Tooltip formatter={(v: number) => [`${v} multas`, 'Qtd']} labelFormatter={(l) => topOrgaos.find(o => o.name === l)?.fullName || l} />
                   <Bar dataKey="count" radius={[0, 4, 4, 0]}>
-                    {topCodigos.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                    {topOrgaos.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
@@ -223,7 +247,7 @@ export default function ViewTransitScreen({ multas, motoristas }: ViewTransitScr
           <Search size={16} className="text-gray-400" />
           <input
             type="text"
-            placeholder="Buscar por placa, matrícula, código ou auto..."
+            placeholder="Buscar por veículo, matrícula, auto, motorista, órgão..."
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
             className="flex-1 text-sm outline-none"
@@ -233,43 +257,55 @@ export default function ViewTransitScreen({ multas, motoristas }: ViewTransitScr
           <table className="w-full text-xs text-left">
             <thead className="bg-slate-800 text-white">
               <tr>
-                <th className="px-4 py-2 font-bold uppercase tracking-tight">Data/Hora</th>
-                <th className="px-4 py-2 font-bold uppercase tracking-tight">Placa</th>
-                <th className="px-4 py-2 font-bold uppercase tracking-tight">Motorista</th>
-                <th className="px-4 py-2 font-bold uppercase tracking-tight">Filial</th>
-                <th className="px-4 py-2 font-bold uppercase tracking-tight">Código</th>
-                <th className="px-4 py-2 font-bold uppercase tracking-tight">Descrição</th>
-                <th className="px-4 py-2 font-bold uppercase tracking-tight">Auto</th>
-                <th className="px-4 py-2 font-bold uppercase tracking-tight">Valor</th>
-                <th className="px-4 py-2 font-bold uppercase tracking-tight">Status</th>
+                <th className="px-3 py-2 font-bold uppercase tracking-tight whitespace-nowrap">Data</th>
+                <th className="px-3 py-2 font-bold uppercase tracking-tight">Veículo</th>
+                <th className="px-3 py-2 font-bold uppercase tracking-tight">Motorista</th>
+                <th className="px-3 py-2 font-bold uppercase tracking-tight">Filial</th>
+                <th className="px-3 py-2 font-bold uppercase tracking-tight">Órgão</th>
+                <th className="px-3 py-2 font-bold uppercase tracking-tight max-w-[200px]">Infração</th>
+                <th className="px-3 py-2 font-bold uppercase tracking-tight whitespace-nowrap">Auto</th>
+                <th className="px-3 py-2 font-bold uppercase tracking-tight whitespace-nowrap">Vl. Cobrado</th>
+                <th className="px-3 py-2 font-bold uppercase tracking-tight whitespace-nowrap">Vl. Recuperado</th>
+                <th className="px-3 py-2 font-bold uppercase tracking-tight">Globus</th>
+                <th className="px-3 py-2 font-bold uppercase tracking-tight">Status</th>
               </tr>
             </thead>
             <tbody>
               {tableData.map(m => {
                 const mot = motoristaMap.get(m.matriculaMotorista);
+                const nomeExibir = mot ? mot.nome : m.nomeMotorista;
+                const filialSigla = FILIAL_SIGLAS[m.filial?.toUpperCase()] || m.filial || '-';
                 return (
                   <tr key={m.id} className="border-b border-gray-100 hover:bg-slate-50 transition-colors">
-                    <td className="px-4 py-2 font-mono text-slate-500">{m.dataHora}</td>
-                    <td className="px-4 py-2 font-bold text-slate-800">{m.placaVeiculo}</td>
-                    <td className="px-4 py-2">
-                      {mot ? (
+                    <td className="px-3 py-2 font-mono text-slate-500 whitespace-nowrap">{m.dataInfracao}</td>
+                    <td className="px-3 py-2 font-bold text-slate-800">{m.veiculo}</td>
+                    <td className="px-3 py-2 min-w-[120px]">
+                      {m.motoristaIdentificado ? (
                         <>
-                          <p className="font-semibold text-slate-800 leading-tight">{mot.nome}</p>
+                          <p className="font-semibold text-slate-800 leading-tight">{nomeExibir || '—'}</p>
                           <p className="text-[10px] text-slate-400">{m.matriculaMotorista}</p>
+                          {!mot && <p className="text-[9px] text-amber-600 italic">Desligado</p>}
                         </>
                       ) : (
-                        <>
-                          <p className="italic text-slate-500 text-[10px]">Não consta na base (Desligado)</p>
-                          <p className="text-[10px] text-slate-400 font-mono">{m.matriculaMotorista}</p>
-                        </>
+                        <span className="text-slate-400 italic">Não identificado</span>
                       )}
                     </td>
-                    <td className="px-4 py-2 text-slate-600">{mot ? (FILIAL_SIGLAS[mot.filial.toUpperCase()] || mot.filial) : '-'}</td>
-                    <td className="px-4 py-2 font-mono font-bold text-slate-700">{m.codigoInfracao}</td>
-                    <td className="px-4 py-2 text-slate-600 max-w-[200px] truncate" title={m.descricaoInfracao}>{m.descricaoInfracao}</td>
-                    <td className="px-4 py-2 font-mono text-slate-600">{m.autoInfracao}</td>
-                    <td className="px-4 py-2 font-bold text-slate-700">{m.valor > 0 ? m.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '-'}</td>
-                    <td className="px-4 py-2">
+                    <td className="px-3 py-2 text-slate-600 whitespace-nowrap">{filialSigla}</td>
+                    <td className="px-3 py-2 text-slate-600 max-w-[120px] truncate" title={m.orgaoAtuador}>{m.orgaoAtuador}</td>
+                    <td className="px-3 py-2 text-slate-600 max-w-[200px] truncate" title={m.descricaoMulta}>{m.descricaoMulta}</td>
+                    <td className="px-3 py-2 font-mono text-slate-500 whitespace-nowrap">{m.numeroAuto}</td>
+                    <td className="px-3 py-2 font-bold text-red-700 whitespace-nowrap">
+                      {m.valorCobrado > 0 ? fmtBRL(m.valorCobrado) : '-'}
+                    </td>
+                    <td className="px-3 py-2 font-bold text-emerald-700 whitespace-nowrap">
+                      {m.valorRecuperado > 0 ? fmtBRL(m.valorRecuperado) : '-'}
+                    </td>
+                    <td className="px-3 py-2">
+                      <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${
+                        m.lancadoGlobus?.toUpperCase().startsWith('SIM') ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
+                      }`}>{m.lancadoGlobus?.toUpperCase().startsWith('SIM') ? 'Sim' : 'Não'}</span>
+                    </td>
+                    <td className="px-3 py-2">
                       <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${
                         m.status === 'Pago' ? 'bg-green-100 text-green-700' :
                         m.status === 'Cancelado' ? 'bg-red-100 text-red-700' :
@@ -281,7 +317,7 @@ export default function ViewTransitScreen({ multas, motoristas }: ViewTransitScr
                 );
               })}
               {tableData.length === 0 && (
-                <tr><td colSpan={9} className="py-8 text-center text-gray-400">Nenhuma multa encontrada.</td></tr>
+                <tr><td colSpan={11} className="py-8 text-center text-gray-400">Nenhuma multa encontrada.</td></tr>
               )}
             </tbody>
           </table>

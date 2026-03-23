@@ -370,35 +370,39 @@ function ParadasTab({ paradas }: { paradas: ParadaIndevida[] }) {
 function TransitoTab({ motoristas, multas }: { motoristas: Motorista[]; multas: MultaTransito[] }) {
   const [dataInicio, setDataInicio] = useState('2026-01-01');
   const [dataFim, setDataFim] = useState('2026-12-31');
-  const [empresa, setEmpresa] = useState('Todas');
+  const [filial, setFilial] = useState('Todas');
 
   const filtered = useMemo(() => {
     const start = new Date(dataInicio + 'T00:00:00');
     const end = new Date(dataFim + 'T23:59:59');
     return multas.filter(m => {
-      const d = parseDate(m.dataHora);
-      const matchDate = d && d >= start && d <= end;
-      const matchEmpresa = empresa === 'Todas' || m.empresa === empresa;
-      return matchDate && matchEmpresa;
+      try {
+        const [d, mo, y] = m.dataInfracao.split('/').map(Number);
+        const dt = new Date(y, mo - 1, d);
+        const matchDate = dt >= start && dt <= end;
+        const matchFilial = filial === 'Todas' || m.filial === filial;
+        return matchDate && matchFilial;
+      } catch { return false; }
     });
-  }, [multas, dataInicio, dataFim, empresa]);
+  }, [multas, dataInicio, dataFim, filial]);
 
-  const empresasDisponiveis = useMemo(() => [...new Set(multas.map(m => m.empresa))], [multas]);
+  const filiaisDisponiveis = useMemo(() => [...new Set(multas.map(m => m.filial).filter(Boolean))].sort(), [multas]);
 
   const metricas = useMemo(() => ({
     total: filtered.length,
-    valor: filtered.reduce((s, m) => s + m.valor, 0),
-    motoristas: new Set(filtered.map(m => m.matriculaMotorista)).size,
-    veiculos: new Set(filtered.map(m => m.placaVeiculo)).size,
+    valorCobrado: filtered.reduce((s, m) => s + m.valorCobrado, 0),
+    valorRecuperado: filtered.reduce((s, m) => s + m.valorRecuperado, 0),
+    motoristas: new Set(filtered.filter(m => m.motoristaIdentificado).map(m => m.matriculaMotorista)).size,
+    veiculos: new Set(filtered.map(m => m.veiculo)).size,
   }), [filtered]);
 
   const handleExport = () => {
     if (!filtered.length) return;
     const motMap = new Map(motoristas.map(m => [m.matricula, m]));
-    const headers = ['Data/Hora', 'Placa', 'Empresa', 'Matrícula', 'Motorista', 'Filial', 'Código', 'Descrição', 'Auto', 'Local', 'Setor', 'Valor', 'Status'];
+    const headers = ['Data Infração', 'Veículo', 'Órgão Atuador', 'Descrição', 'Nº Auto', 'Valor Cobrado', 'Valor Recuperado', 'Motorista Identificado', 'Matrícula', 'Nome Motorista', 'Nome na Base', 'Gestor', 'Filial', 'Enviado Gerente', 'Gerente Devolveu', 'Lançado Globus', 'Observação', 'Status'];
     const rows = filtered.map(m => {
       const mot = motMap.get(m.matriculaMotorista);
-      return [m.dataHora, m.placaVeiculo, m.empresa, m.matriculaMotorista, mot?.nome || '', mot?.filial || '', m.codigoInfracao, m.descricaoInfracao, m.autoInfracao, m.local, m.setor, m.valor, m.status];
+      return [m.dataInfracao, m.veiculo, m.orgaoAtuador, m.descricaoMulta, m.numeroAuto, m.valorCobrado.toFixed(2).replace('.', ','), m.valorRecuperado.toFixed(2).replace('.', ','), m.motoristaIdentificado ? 'SIM' : 'NÃO', m.matriculaMotorista, m.nomeMotorista, mot?.nome || '', m.gestor, m.filial, m.enviadoGerente, m.gerenteDevolveu, m.lancadoGlobus, m.observacao, m.status];
     });
     downloadCSV([headers, ...rows].map(r => r.join(';')).join('\n'), `multas_transito_${dataInicio}_${dataFim}.csv`);
   };
@@ -410,18 +414,19 @@ function TransitoTab({ motoristas, multas }: { motoristas: Motorista[]; multas: 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div><label className="block text-sm font-medium text-gray-700 mb-1">Data Início</label><div className="relative"><input type="date" value={dataInicio} onChange={e => setDataInicio(e.target.value)} className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm bg-slate-50" /><Calendar className="absolute left-3 top-2.5 text-gray-400" size={18} /></div></div>
           <div><label className="block text-sm font-medium text-gray-700 mb-1">Data Fim</label><div className="relative"><input type="date" value={dataFim} onChange={e => setDataFim(e.target.value)} className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm bg-slate-50" /><Calendar className="absolute left-3 top-2.5 text-gray-400" size={18} /></div></div>
-          <div><label className="block text-sm font-medium text-gray-700 mb-1">Empresa</label>
-            <select value={empresa} onChange={e => setEmpresa(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm bg-slate-50">
+          <div><label className="block text-sm font-medium text-gray-700 mb-1">Filial</label>
+            <select value={filial} onChange={e => setFilial(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm bg-slate-50">
               <option value="Todas">Todas</option>
-              {empresasDisponiveis.map(e => <option key={e} value={e}>{e}</option>)}
+              {filiaisDisponiveis.map(f => <option key={f} value={f}>{f}</option>)}
             </select>
           </div>
         </div>
       </div>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         {[
           { label: 'Total Multas', value: metricas.total },
-          { label: 'Valor Total', value: metricas.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) },
+          { label: 'Valor Cobrado', value: metricas.valorCobrado.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) },
+          { label: 'Valor Recuperado', value: metricas.valorRecuperado.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) },
           { label: 'Motoristas', value: metricas.motoristas },
           { label: 'Veículos', value: metricas.veiculos },
         ].map((k, i) => (

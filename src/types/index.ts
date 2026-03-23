@@ -183,15 +183,21 @@ export interface RegistroLinha {
 
 export interface MultaTransito {
   id: string;
-  autoInfracao: string;
-  dataHora: string;
-  empresa: string;
-  setor: string;
-  local: string;
-  codigoInfracao: string;
-  descricaoInfracao: string;
+  dataInfracao: string;        // DD/MM/YYYY
+  veiculo: string;             // prefixo do veículo
+  orgaoAtuador: string;        // DNIT, PREF. DE PE, etc.
+  descricaoMulta: string;
+  numeroAuto: string;
+  valorCobrado: number;
+  valorRecuperado: number;
+  motoristaIdentificado: boolean;
   matriculaMotorista: string;
-  placaVeiculo: string;
-  valor: number;
+  nomeMotorista: string;       // nome conforme CSV
+  gestor: string;
+  filial: string;              // filial conforme CSV
+  enviadoGerente: string;
+  gerenteDevolveu: string;
+  lancadoGlobus: string;
+  observacao: string;
   status: 'Aguardando' | 'Defesa' | 'Pago' | 'Cancelado';
 }
