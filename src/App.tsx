@@ -28,23 +28,18 @@ import ViewSpeedScreen from './components/speed/ViewSpeedScreen';
 import ConsultSpeedDriverScreen from './components/speed/ConsultSpeedDriverScreen';
 import ImportAvariasScreen from './components/avarias/ImportAvariasScreen';
 import ConsultAvariasScreen from './components/avarias/ConsultAvariasScreen';
+import { usePersistedState } from './hooks/usePersistedState';
+import { isSupabaseConfigured } from './lib/supabase';
+import { Loader2, Cloud, HardDrive } from 'lucide-react';
 
 function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
+
+  // ─── Session auth (localStorage only — not data, just login state) ─────────
   const [currentUser, setCurrentUser] = useState<User | null>(() => {
     const saved = localStorage.getItem('currentUser');
     return saved ? JSON.parse(saved) : null;
   });
-
-  const [users, setUsers] = useState<User[]>(() => {
-    const saved = localStorage.getItem('usersData');
-    if (saved) return JSON.parse(saved);
-    return [{ id: '1', username: 'admin', password: '123', nome: 'Admin Master', role: 'admin' }];
-  });
-
-  useEffect(() => {
-    localStorage.setItem('usersData', JSON.stringify(users));
-  }, [users]);
 
   useEffect(() => {
     if (currentUser) {
@@ -59,180 +54,25 @@ function App() {
     setActiveTab('dashboard');
   };
 
-  // Initialize state from localStorage or fallback to mockData
-  const [motoristas, setMotoristas] = useState<Motorista[]>(() => {
-    const saved = localStorage.getItem('motoristasData');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        console.error('Error parsing motoristas from localStorage', e);
-        return mockMotoristas;
-      }
-    }
-    return mockMotoristas;
-  });
+  // ─── Persisted data (Supabase + localStorage cache) ────────────────────────
+  const defaultUsers: User[] = [{ id: '1', username: 'admin', password: '123', nome: 'Admin Master', role: 'admin', titulo: 'Administrador' }];
 
-  // Save to localStorage whenever motoristas changes
-  useEffect(() => {
-    localStorage.setItem('motoristasData', JSON.stringify(motoristas));
-  }, [motoristas]);
+  const [users, setUsers, usersLoading]                           = usePersistedState<User>('app_users', 'usersData', defaultUsers);
+  const [motoristas, setMotoristas]                               = usePersistedState<Motorista>('motoristas', 'motoristasData', mockMotoristas);
+  const [viagens, setViagens]                                     = usePersistedState<Viagem>('viagens', 'viagensData', mockViagens);
+  const [ocorrencias, setOcorrencias]                             = usePersistedState<Ocorrencia>('ocorrencias', 'ocorrenciasData', mockOcorrencias);
+  const [veiculos, setVeiculos]                                   = usePersistedState<Veiculo>('veiculos', 'veiculosData');
+  const [paradasIndevidas, setParadasIndevidas]                   = usePersistedState<ParadaIndevida>('paradas_indevidas', 'paradasIndevidasData');
+  const [excessosVelocidade, setExcessosVelocidade]               = usePersistedState<ExcessoVelocidade>('excessos_velocidade', 'excessosVelocidadeData');
+  const [avarias, setAvarias]                                     = usePersistedState<Avaria>('avarias', 'avariasData');
+  const [resumosAvaria, setResumosAvaria]                         = usePersistedState<ResumoAvaria>('resumos_avaria', 'resumosAvariaData');
+  const [multasAntt, setMultasAntt]                               = usePersistedState<MultaANTT>('multas_antt', 'multasAnttData', mockMultas);
+  const [anttCodeDescriptions, setAnttCodeDescriptions]           = usePersistedState<AnttCodeDescription>('antt_code_descriptions', 'anttCodeDescriptionsData');
+  const [multasTransito, setMultasTransito]                       = usePersistedState<MultaTransito>('multas_transito', 'multasTransitoData');
+  const [registrosOciosidade, setRegistrosOciosidade]             = usePersistedState<RegistroOciosidade>('registros_ociosidade', 'registrosOciosidadeData');
+  const [registrosLinhas, setRegistrosLinhas]                     = usePersistedState<RegistroLinha>('registros_linhas', 'registrosLinhasData');
 
-  // Initialize state for viagens
-  const [viagens, setViagens] = useState<Viagem[]>(() => {
-    const saved = localStorage.getItem('viagensData');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        return mockViagens;
-      }
-    }
-    return mockViagens;
-  });
-
-  // Save to localStorage whenever viagens changes
-  useEffect(() => {
-    localStorage.setItem('viagensData', JSON.stringify(viagens));
-  }, [viagens]);
-
-  // Initialize state for ocorrencias
-  const [ocorrencias, setOcorrencias] = useState<Ocorrencia[]>(() => {
-    const saved = localStorage.getItem('ocorrenciasData');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        return mockOcorrencias;
-      }
-    }
-    return mockOcorrencias;
-  });
-
-  // Save to localStorage whenever ocorrencias changes
-  useEffect(() => {
-    localStorage.setItem('ocorrenciasData', JSON.stringify(ocorrencias));
-  }, [ocorrencias]);
-
-  // Initialize state for veiculos
-  const [veiculos, setVeiculos] = useState<Veiculo[]>(() => {
-    const saved = localStorage.getItem('veiculosData');
-    return saved ? JSON.parse(saved) : [];
-  });
-
-  // Save to localStorage whenever veiculos changes
-  useEffect(() => {
-    localStorage.setItem('veiculosData', JSON.stringify(veiculos));
-  }, [veiculos]);
-
-  // Initialize state for paradas indevidas
-  const [paradasIndevidas, setParadasIndevidas] = useState<ParadaIndevida[]>(() => {
-    const saved = localStorage.getItem('paradasIndevidasData');
-    return saved ? JSON.parse(saved) : [];
-  });
-
-  // Save to localStorage whenever paradas indevidas changes
-  useEffect(() => {
-    localStorage.setItem('paradasIndevidasData', JSON.stringify(paradasIndevidas));
-  }, [paradasIndevidas]);
-
-  // Initialize state for excessos de velocidade
-  const [excessosVelocidade, setExcessosVelocidade] = useState<ExcessoVelocidade[]>(() => {
-    const saved = localStorage.getItem('excessosVelocidadeData');
-    return saved ? JSON.parse(saved) : [];
-  });
-
-  // Save to localStorage whenever excessos de velocidade changes
-  useEffect(() => {
-    localStorage.setItem('excessosVelocidadeData', JSON.stringify(excessosVelocidade));
-  }, [excessosVelocidade]);
-
-  // Initialize state for avarias
-  const [avarias, setAvarias] = useState<Avaria[]>(() => {
-    const saved = localStorage.getItem('avariasData');
-    return saved ? JSON.parse(saved) : [];
-  });
-
-  useEffect(() => {
-    localStorage.setItem('avariasData', JSON.stringify(avarias));
-  }, [avarias]);
-
-  // Initialize state for resumos de avaria
-  const [resumosAvaria, setResumosAvaria] = useState<ResumoAvaria[]>(() => {
-    const saved = localStorage.getItem('resumosAvariaData');
-    return saved ? JSON.parse(saved) : [];
-  });
-
-  useEffect(() => {
-    localStorage.setItem('resumosAvariaData', JSON.stringify(resumosAvaria));
-  }, [resumosAvaria]);
-
-  // Initialize state for multas ANTT
-  const [multasAntt, setMultasAntt] = useState<MultaANTT[]>(() => {
-    const saved = localStorage.getItem('multasAnttData');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        return mockMultas;
-      }
-    }
-    return mockMultas;
-  });
-
-  // Save to localStorage whenever multasAntt changes
-  useEffect(() => {
-    localStorage.setItem('multasAnttData', JSON.stringify(multasAntt));
-  }, [multasAntt]);
-
-  // NEW: Initialize state for ANTT Code Descriptions
-  const [anttCodeDescriptions, setAnttCodeDescriptions] = useState<AnttCodeDescription[]>(() => {
-    const saved = localStorage.getItem('anttCodeDescriptionsData');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        console.error('Error parsing anttCodeDescriptions from localStorage', e);
-        return []; // Default to empty array on error
-      }
-    }
-    return []; // Default to empty array if no data in localStorage
-  });
-
-  // NEW: Save to localStorage whenever anttCodeDescriptions changes
-  useEffect(() => {
-    localStorage.setItem('anttCodeDescriptionsData', JSON.stringify(anttCodeDescriptions));
-  }, [anttCodeDescriptions]);
-
-  // Initialize state for multas de trânsito
-  const [multasTransito, setMultasTransito] = useState<MultaTransito[]>(() => {
-    const saved = localStorage.getItem('multasTransitoData');
-    return saved ? JSON.parse(saved) : [];
-  });
-
-  useEffect(() => {
-    localStorage.setItem('multasTransitoData', JSON.stringify(multasTransito));
-  }, [multasTransito]);
-
-  // Initialize state for tempo ocioso
-  const [registrosOciosidade, setRegistrosOciosidade] = useState<RegistroOciosidade[]>(() => {
-    const saved = localStorage.getItem('registrosOciosidadeData');
-    return saved ? JSON.parse(saved) : [];
-  });
-
-  useEffect(() => {
-    localStorage.setItem('registrosOciosidadeData', JSON.stringify(registrosOciosidade));
-  }, [registrosOciosidade]);
-
-  const [registrosLinhas, setRegistrosLinhas] = useState<RegistroLinha[]>(() => {
-    const saved = localStorage.getItem('registrosLinhasData');
-    return saved ? JSON.parse(saved) : [];
-  });
-
-  useEffect(() => {
-    localStorage.setItem('registrosLinhasData', JSON.stringify(registrosLinhas));
-  }, [registrosLinhas]);
-
+  // ─── Render ────────────────────────────────────────────────────────────────
   const renderContent = () => {
     if (!currentUser) return null;
 
@@ -266,8 +106,10 @@ function App() {
       case 'import-speed':
         return <ImportSpeedScreen setExcessos={setExcessosVelocidade} userRole={currentUser.role} />;
       case 'view-speed':
-        return <ViewSpeedScreen excessos={excessosVelocidade} motoristas={motoristas} userRole={currentUser.role} />;      case 'consult-speed-driver':
-        return <ConsultSpeedDriverScreen motoristas={motoristas} excessos={excessosVelocidade} />;      case 'reports':
+        return <ViewSpeedScreen excessos={excessosVelocidade} motoristas={motoristas} userRole={currentUser.role} />;
+      case 'consult-speed-driver':
+        return <ConsultSpeedDriverScreen motoristas={motoristas} excessos={excessosVelocidade} />;
+      case 'reports':
         return <ReportsScreen motoristas={motoristas} ocorrencias={ocorrencias} excessos={excessosVelocidade} multasAntt={multasAntt} avarias={avarias} paradas={paradasIndevidas} multasTransito={multasTransito} registrosOciosidade={registrosOciosidade} registrosLinhas={registrosLinhas} viagens={viagens} />;
       case 'manual-driver':
         return <ManualDriverScreen setMotoristas={setMotoristas} />;
@@ -276,7 +118,8 @@ function App() {
       case 'import-antt':
         return <ImportAnttScreen multas={multasAntt} setMultas={setMultasAntt} userRole={currentUser.role} anttCodeDescriptions={anttCodeDescriptions} setAnttCodeDescriptions={setAnttCodeDescriptions} />;
       case 'view-antt':
-        return <ViewAnttScreen multas={multasAntt} anttCodeDescriptions={anttCodeDescriptions} motoristas={motoristas} />;      case 'import-transit':
+        return <ViewAnttScreen multas={multasAntt} anttCodeDescriptions={anttCodeDescriptions} motoristas={motoristas} />;
+      case 'import-transit':
         return <ImportTransitScreen multas={multasTransito} setMultas={setMultasTransito} motoristas={motoristas} userRole={currentUser.role} />;
       case 'view-transit':
         return <ViewTransitScreen multas={multasTransito} motoristas={motoristas} />;
@@ -324,14 +167,30 @@ function App() {
     }
   };
 
+  // ─── Loading screen (while users load from Supabase for login validation) ──
+  if (usersLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 flex flex-col items-center justify-center gap-4">
+        <Loader2 className="animate-spin text-blue-400" size={48} />
+        <p className="text-slate-300 font-bold text-sm uppercase tracking-widest">Carregando dados...</p>
+        <div className="flex items-center gap-2 mt-2">
+          {isSupabaseConfigured
+            ? <><Cloud size={14} className="text-emerald-400" /><span className="text-[10px] text-emerald-400 font-bold">Supabase conectado</span></>
+            : <><HardDrive size={14} className="text-amber-400" /><span className="text-[10px] text-amber-400 font-bold">Modo local (localStorage)</span></>
+          }
+        </div>
+      </div>
+    );
+  }
+
   if (!currentUser) {
     return <LoginScreen onLogin={setCurrentUser} users={users} />;
   }
 
   return (
-    <Layout 
-      activeTab={activeTab} 
-      onTabChange={setActiveTab} 
+    <Layout
+      activeTab={activeTab}
+      onTabChange={setActiveTab}
       title={getPageTitle()}
       user={currentUser}
       onLogout={handleLogout}

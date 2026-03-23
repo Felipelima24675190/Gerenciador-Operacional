@@ -8,7 +8,8 @@
       "Bash(cmd /c \"where npm\")",
       "Read(//c/Users/luis.lima/Downloads/**)",
       "Bash(python3 -c \":*)",
-      "Bash(node ./node_modules/vite/bin/vite.js build)"
+      "Bash(node ./node_modules/vite/bin/vite.js build)",
+      "Bash(npm install:*)"
     ]
   }
 }
