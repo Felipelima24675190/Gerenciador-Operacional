@@ -11,6 +11,32 @@ async function insertChunked(table: string, rows: any[], chunkSize = 500) {
   }
 }
 
+/**
+ * Fetches ALL rows from a Supabase table, bypassing the default 1000-row cap
+ * by paginating with .range() until fewer rows than PAGE_SIZE are returned.
+ */
+async function fetchAllRows<T>(table: string): Promise<T[]> {
+  if (!supabase) return [];
+  const PAGE_SIZE = 1000;
+  const all: T[] = [];
+  let from = 0;
+  while (true) {
+    const { data, error } = await supabase
+      .from(table)
+      .select('*')
+      .range(from, from + PAGE_SIZE - 1);
+    if (error) {
+      console.error(`[supabase] fetchAllRows ${table}:`, error.message);
+      break;
+    }
+    if (!data || data.length === 0) break;
+    all.push(...(data as T[]));
+    if (data.length < PAGE_SIZE) break; // last page reached
+    from += PAGE_SIZE;
+  }
+  return all;
+}
+
 // ─── Hook ──────────────────────────────────────────────────────────────────────
 
 /**
@@ -53,14 +79,14 @@ export function usePersistedState<T>(
 
     (async () => {
       try {
-        const { data: rows, error } = await supabase.from(table).select('*');
+        const rows = await fetchAllRows<T>(table);
         if (dead) return;
 
-        if (!error && rows && rows.length > 0) {
+        if (rows.length > 0) {
           // Supabase has data → use it
-          echoRef.current = rows as T[];
-          setData(rows as T[]);
-        } else if (!error) {
+          echoRef.current = rows;
+          setData(rows);
+        } else {
           // Supabase empty → seed with current localStorage / fallback
           try {
             const s = localStorage.getItem(lsKey);

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { UploadCloud, CheckCircle, AlertTriangle, FileText } from 'lucide-react';
 import { ExcessoVelocidade, UserRole } from '../../types';
 
@@ -12,6 +12,7 @@ export default function ImportSpeedScreen({ setExcessos, userRole }: ImportSpeed
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [stats, setStats] = useState<{ count: number } | null>(null);
   const [errorMessage, setErrorMessage] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (userRole !== 'admin') {
     return (
@@ -25,13 +26,8 @@ export default function ImportSpeedScreen({ setExcessos, userRole }: ImportSpeed
     );
   }
 
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-    setErrorMessage('');
-    
-    const file = e.dataTransfer.files[0];
-    if (file && (file.name.endsWith('.csv') || file.name.endsWith('.txt'))) {
+  const processFile = (file: File) => {
+    if (file.name.endsWith('.csv') || file.name.endsWith('.txt')) {
       const reader = new FileReader();
       reader.onload = (event) => {
         try {
@@ -49,8 +45,7 @@ export default function ImportSpeedScreen({ setExcessos, userRole }: ImportSpeed
             if (!line.trim()) continue;
 
             const parts = line.split(/\t/).map(p => p.trim());
-            
-            // Ignora o cabeçalho se a primeira coluna tiver a palavra matrícula
+
             if (parts[0].toLowerCase().includes('matr')) continue;
 
             if (parts.length < 8) continue;
@@ -91,30 +86,48 @@ export default function ImportSpeedScreen({ setExcessos, userRole }: ImportSpeed
       };
       reader.readAsText(file);
     } else {
-      setErrorMessage("Por favor, solte um arquivo .csv ou .txt.");
+      setErrorMessage("Por favor, selecione um arquivo .csv ou .txt.");
       setUploadStatus('error');
       setTimeout(() => setUploadStatus('idle'), 5000);
     }
   };
-  
-  const handleDragOver = (e: React.DragEvent) => e.preventDefault();
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    setErrorMessage('');
+    const file = e.dataTransfer.files[0];
+    if (file) processFile(file);
+  };
+
+  const handleDragOver  = (e: React.DragEvent) => { e.preventDefault(); setIsDragging(true); };
   const handleDragLeave = () => setIsDragging(false);
+  const handleClick     = () => fileInputRef.current?.click();
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) { setErrorMessage(''); processFile(file); }
+    e.target.value = '';
+  };
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="bg-white p-8 rounded-xl border border-gray-200 shadow-sm text-center">
         <h3 className="text-xl font-bold text-slate-800">Importar Excesso de Velocidade</h3>
-        <div 
+
+        <input ref={fileInputRef} type="file" accept=".csv,.txt" className="hidden" onChange={handleFileChange} />
+
+        <div
           className={`mt-6 border-2 border-dashed rounded-xl p-10 flex flex-col items-center justify-center transition-colors cursor-pointer
             ${isDragging ? 'border-red-500 bg-red-50' : 'border-gray-300 bg-gray-50 hover:bg-gray-100'}`}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
+          onClick={handleClick}
         >
           {uploadStatus === 'idle' && (
             <>
               <UploadCloud size={32} />
-              <p className="font-semibold mt-4">Arraste o arquivo aqui</p>
+              <p className="font-semibold mt-4">Clique ou arraste o arquivo aqui</p>
             </>
           )}
           {uploadStatus === 'success' && stats && (
