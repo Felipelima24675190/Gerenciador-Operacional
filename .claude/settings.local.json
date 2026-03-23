@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run:*)",
+      "Bash(npx tsc:*)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(where npm:*)",
+      "Bash(cmd /c \"where npm\")",
+      "Read(//c/Users/luis.lima/Downloads/**)",
+      "Bash(python3 -c \":*)",
+      "Bash(node ./node_modules/vite/bin/vite.js build)"
+    ]
+  }
+}

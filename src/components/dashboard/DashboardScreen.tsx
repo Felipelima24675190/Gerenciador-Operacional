@@ -1,0 +1,555 @@
+import { useMemo, useState, Dispatch, SetStateAction } from 'react';
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
+  AreaChart, Area
+} from 'recharts';
+import { clsx } from 'clsx';
+import { Motorista, Ocorrencia, Viagem, UserRole } from '../../types';
+import StatCard from './StatCard';
+import { AlertCircle, Clock, CheckCircle2, TrendingUp, Edit3, Save, X, Calendar, Search } from 'lucide-react';
+import { getDay, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
+
+const CustomYAxisTick = (props: any) => {
+  const { x, y, payload } = props;
+  const text = payload.value;
+  
+  if (text.includes(' - ')) {
+    const [code, ...nameParts] = text.split(' - ');
+    const name = nameParts.join(' - ');
+    return (
+      <g transform={`translate(${x},${y})`}>
+        <text x={-10} y={-5} dy={0} textAnchor="end" fill="#64748b" fontSize={11} fontWeight={700}>{name}</text>
+        <text x={-10} y={10} dy={0} textAnchor="end" fill="#94a3b8" fontSize={9} fontWeight={600}>{code}</text>
+      </g>
+    );
+  }
+
+  return (
+    <g transform={`translate(${x},${y})`}>
+      <text x={-10} y={0} dy={4} textAnchor="end" fill="#64748b" fontSize={11} fontWeight={600}>{text}</text>
+    </g>
+  );
+};
+
+interface DashboardScreenProps {
+  motoristas: Motorista[];
+  ocorrencias: Ocorrencia[];
+  viagens: Viagem[];
+  setOcorrencias: Dispatch<SetStateAction<Ocorrencia[]>>;
+  userRole?: UserRole;
+}
+
+export default function DashboardScreen({ motoristas, ocorrencias, viagens, setOcorrencias, userRole }: DashboardScreenProps) {
+  const [editingOccId, setEditingOccId] = useState<string | null>(null);
+  const [motivoTemp, setMotivoTemp] = useState('');
+  const [dataInicio, setDataInicio] = useState('2026-03-18');
+  const [dataFim, setDataFim] = useState('2026-03-18');
+  const [filialFilter, setFilialFilter] = useState('Todas');
+  const [linhaFilter, setLinhaFilter] = useState('Todas');
+  const [linePreviewId, setLinePreviewId] = useState<string | null>(null);
+
+  const filiaisUnicas = useMemo(() => {
+    const filiais = new Set(motoristas.map(m => m.filial));
+    return ['Todas', ...Array.from(filiais)].sort();
+  }, [motoristas]);
+
+  const linhasUnicas = useMemo(() => {
+    const linhas = new Map<string, string>(); // codigo -> nome
+    // Build from voyages base to ensure all lines are present
+    viagens.forEach(v => {
+      linhas.set(v.numeroLinha, v.nomeLinha);
+    });
+    // Add lines from occurrences that might not be in the base
+    ocorrencias.forEach(o => {
+      if (!linhas.has(o.numeroLinha)) {
+        linhas.set(o.numeroLinha, o.nomeLinha);
+      }
+    });
+    return ['Todas', ...Array.from(linhas.entries()).map(([cod, nome]) => `${cod} - ${nome}`)].sort();
+  }, [viagens, ocorrencias]);
+
+  const ocorrenciasFiltradas = useMemo(() => {
+    return ocorrencias.filter(o => {
+      // Data Filter
+      const datePart = o.prevInicio.split(' ')[0];
+      const [day, month, year] = datePart.split('/').map(Number);
+      const dataOcorrencia = new Date(year, month - 1, day);
+      const start = startOfDay(new Date(dataInicio + 'T00:00:00'));
+      const end = endOfDay(new Date(dataFim + 'T23:59:59'));
+      const matchDate = isWithinInterval(dataOcorrencia, { start, end });
+
+      // Filial Filter - Don't hide unknown drivers if "Todas" is selected
+      const motorista = motoristas.find(m => m.matricula === o.matriculaMotorista);
+      const filial = motorista ? motorista.filial : 'Desconhecida';
+      const matchFilial = filialFilter === 'Todas' || filial === filialFilter;
+
+      // Linha Filter
+      const matchLinha = linhaFilter === 'Todas' || `${o.numeroLinha} - ${o.nomeLinha}` === linhaFilter;
+      
+      return matchDate && matchFilial && matchLinha;
+    });
+  }, [ocorrencias, dataInicio, dataFim, filialFilter, linhaFilter, motoristas]);
+
+  const isAdmin = userRole === 'admin';
+
+  const metricasGlobais = useMemo(() => {
+    let atrasos = 0;
+    let adiantamentos = 0;
+    let noHorario = 0;
+
+    ocorrenciasFiltradas.forEach(o => {
+      // Regra de Sequência REMOVIDA conforme solicitação do usuário.
+      // Agora todas as viagens presentes na lista filtrada contam para o relatório.
+
+      const isAtraso = o.statusInicio === 'Atraso' || o.statusFim === 'Atraso';
+      const isAdiantamento = o.statusInicio === 'Adiantamento' || o.statusFim === 'Adiantamento';
+
+      if (isAtraso) atrasos++;
+      else if (isAdiantamento) adiantamentos++;
+      else noHorario++;
+    });
+
+    const totalCalculado = atrasos + adiantamentos + noHorario;
+    const percPontual = totalCalculado > 0 ? ((noHorario / totalCalculado) * 100).toFixed(1) : '0.0';
+    const percAtraso = totalCalculado > 0 ? ((atrasos / totalCalculado) * 100).toFixed(1) : '0.0';
+    const percAdiantamento = totalCalculado > 0 ? ((adiantamentos / totalCalculado) * 100).toFixed(1) : '0.0';
+
+    return { atrasos, adiantamentos, noHorario, total: totalCalculado, percPontual, percAtraso, percAdiantamento };
+  }, [ocorrenciasFiltradas]);
+
+  const linhaMaisAtrasada = useMemo(() => {
+    const contagem: Record<string, { count: number, nome: string, atendimento: string }> = {};
+    ocorrenciasFiltradas.forEach(o => {
+      if (o.statusInicio === 'Atraso' || o.statusFim === 'Atraso') {
+        if (!contagem[o.numeroLinha]) {
+          contagem[o.numeroLinha] = { count: 0, nome: o.nomeLinha, atendimento: o.atendimento };
+        }
+        contagem[o.numeroLinha].count++;
+      }
+    });
+
+    const sorted = Object.entries(contagem).sort((a, b) => b[1].count - a[1].count);
+    return sorted.length > 0 ? { id: sorted[0][0], ...sorted[0][1] } : null;
+  }, [ocorrenciasFiltradas]);
+
+  const saveMotivo = (id: string) => {
+    setOcorrencias(prev => prev.map(o => o.id === id ? { ...o, motivoAtraso: motivoTemp } : o));
+    setEditingOccId(null);
+  };
+
+  const renderDashboardTitle = (baseTitle: string, filterValue: string) => {
+    if (filterValue === 'Todas') return baseTitle;
+    if (filterValue.includes(' - ')) {
+      const [code, ...nameParts] = filterValue.split(' - ');
+      const name = nameParts.join(' - ');
+      return (
+        <div className="flex flex-col">
+          <span className="text-lg font-bold text-slate-800 leading-tight">{name}</span>
+          <span className="text-xs font-semibold text-slate-400 uppercase tracking-widest">{code}</span>
+        </div>
+      );
+    }
+    return <span className="text-lg font-bold text-slate-800">{baseTitle}: {filterValue}</span>;
+  };
+
+  const dadosGraficoFilial = useMemo(() => {
+    const contagem: Record<string, { Atraso: number; Adiantamento: number; NoHorario: number }> = {};
+    
+    ocorrenciasFiltradas.forEach(o => {
+      // Se houver filtro de linha, agrupamos por Motorista ou Área em vez de Filial para dar mais detalhe?
+      // Por enquanto mantemos Filial mas garantimos que os dados batam com as métricas.
+      const motorista = motoristas.find(m => m.matricula === o.matriculaMotorista);
+      const label = motorista ? motorista.filial : 'Desconhecida';
+      
+      if (!contagem[label]) {
+        contagem[label] = { Atraso: 0, Adiantamento: 0, NoHorario: 0 };
+      }
+      
+      const isAtraso = o.statusInicio === 'Atraso' || o.statusFim === 'Atraso';
+      const isAdiantamento = o.statusInicio === 'Adiantamento' || o.statusFim === 'Adiantamento';
+
+      if (isAtraso) contagem[label].Atraso++;
+      else if (isAdiantamento) contagem[label].Adiantamento++;
+      else contagem[label].NoHorario++;
+    });
+
+    return Object.entries(contagem).map(([name, data]) => ({ name, ...data }));
+  }, [ocorrenciasFiltradas, motoristas]);
+
+  const dadosLinhaDoTempo = useMemo(() => {
+    const diasSemana = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+    const contagem: Record<string, number> = { Dom: 0, Seg: 0, Ter: 0, Qua: 0, Qui: 0, Sex: 0, Sáb: 0 };
+    
+    ocorrenciasFiltradas.forEach(o => {
+      if (o.statusInicio !== 'No Horário') {
+        const datePart = o.prevInicio.split(' ')[0];
+        const [day, month, year] = datePart.split('/').map(Number);
+        const date = new Date(year, month - 1, day);
+        const diaIndex = getDay(date);
+        const diaNome = diasSemana[diaIndex];
+        if (contagem[diaNome] !== undefined) {
+          contagem[diaNome]++;
+        }
+      }
+    });
+
+    return Object.entries(contagem).map(([name, Ocorrencias]) => ({ name, Ocorrencias }));
+  }, [ocorrenciasFiltradas]);
+
+  const rankingMotoristas = useMemo(() => {
+    const rank: Record<string, { nome: string, filial: string, total: number }> = {};
+    
+    ocorrenciasFiltradas.forEach(o => {
+      if (o.statusInicio !== 'No Horário') {
+        const m = motoristas.find(m => m.matricula === o.matriculaMotorista);
+        if (m) {
+          if (!rank[m.matricula]) {
+            rank[m.matricula] = { nome: m.nome, filial: m.filial, total: 0 };
+          }
+          rank[m.matricula].total++;
+        }
+      }
+    });
+
+    return Object.values(rank).sort((a, b) => b.total - a.total).slice(0, 10);
+  }, [ocorrenciasFiltradas, motoristas]);
+
+  return (
+    <div className="space-y-6">
+      {/* Filtros */}
+      <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm space-y-4">
+        <div className="flex items-center gap-2 border-b border-gray-100 pb-3">
+          <Calendar size={20} className="text-red-500" />
+          <h3 className="font-bold text-slate-800 uppercase text-xs tracking-widest">Filtros do Dashboard</h3>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div className="space-y-1">
+            <label className="text-[10px] font-black text-slate-400 uppercase">Intervalo de Data</label>
+            <div className="flex items-center gap-2">
+              <input 
+                type="date" 
+                value={dataInicio}
+                onChange={e => setDataInicio(e.target.value)}
+                className="w-full px-2 py-1.5 border border-gray-200 rounded text-xs font-bold bg-slate-50 focus:ring-2 focus:ring-red-500 transition-all"
+              />
+              <span className="text-slate-300">→</span>
+              <input 
+                type="date" 
+                value={dataFim}
+                onChange={e => setDataFim(e.target.value)}
+                className="w-full px-2 py-1.5 border border-gray-200 rounded text-xs font-bold bg-slate-50 focus:ring-2 focus:ring-red-500 transition-all"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-[10px] font-black text-slate-400 uppercase">Filial</label>
+            <select 
+              value={filialFilter}
+              onChange={e => setFilialFilter(e.target.value)}
+              className="w-full px-3 py-1.5 border border-gray-200 rounded text-xs font-bold bg-slate-50 focus:ring-2 focus:ring-red-500"
+            >
+              {filiaisUnicas.map(f => <option key={f} value={f}>{f === 'Todas' ? 'Todas as Filiais' : f}</option>)}
+            </select>
+          </div>
+
+          <div className="space-y-1 md:col-span-2">
+            <label className="text-[10px] font-black text-slate-400 uppercase">Linha / Operação</label>
+            <select 
+              value={linhaFilter}
+              onChange={e => setLinhaFilter(e.target.value)}
+              className="w-full px-3 py-1.5 border border-gray-200 rounded text-xs font-bold bg-slate-50 focus:ring-2 focus:ring-red-500"
+            >
+              {linhasUnicas.map(l => <option key={l} value={l}>{l === 'Todas' ? 'Todas as Linhas' : l}</option>)}
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <StatCard 
+          title="Taxa de Pontualidade" 
+          value={`${metricasGlobais.percPontual}%`} 
+          icon={CheckCircle2} 
+          color="green" 
+        />
+        <StatCard 
+          title="Taxa de Atrasos" 
+          value={`${metricasGlobais.percAtraso}%`} 
+          icon={Clock} 
+          color="red" 
+        />
+        <StatCard 
+          title="Taxa de Adiantamentos" 
+          value={`${metricasGlobais.percAdiantamento}%`} 
+          icon={TrendingUp} 
+          color="orange" 
+        />
+        <StatCard 
+          title="Viagens Analisadas" 
+          value={metricasGlobais.total} 
+          icon={AlertCircle} 
+          color="blue" 
+        />
+      </div>
+
+      {linhaMaisAtrasada && (
+        <div className="bg-red-50 border border-red-100 rounded-2xl p-6 flex flex-col md:flex-row justify-between items-center gap-4 relative overflow-hidden">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center">
+              <AlertCircle size={24} />
+            </div>
+            <div>
+              <p className="text-xs font-bold text-red-600 uppercase tracking-wider">Linha Crítica (Mais Atrasos)</p>
+              <h4 className="text-lg font-black text-slate-800">{linhaMaisAtrasada.nome}</h4>
+              <p className="text-xs font-bold text-slate-400">{linhaMaisAtrasada.id}</p>
+              <p className="text-sm text-slate-500 mt-1">{linhaMaisAtrasada.count} ocorrências de atraso hoje.</p>
+            </div>
+          </div>
+          
+          <div className="flex flex-col gap-3 w-full md:w-auto">
+            <button 
+              onClick={() => setLinePreviewId(linhaMaisAtrasada.id)}
+              className="px-6 py-2 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-slate-800 transition-all shadow-lg flex items-center justify-center gap-2"
+            >
+              <Search size={14} />
+              Visualizar Todas as Viagens
+            </button>
+            <p className="text-[10px] font-bold text-slate-400 uppercase text-center">Clique para preview detalhado</p>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Preview de Linha */}
+      {linePreviewId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-4xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="bg-slate-900 p-6 text-white flex justify-between items-center">
+              <div>
+                <h3 className="text-xl font-black">Detalhamento da Operação</h3>
+                <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">{linePreviewId} - {ocorrenciasFiltradas.find(o => o.numeroLinha === linePreviewId)?.nomeLinha}</p>
+              </div>
+              <button onClick={() => setLinePreviewId(null)} className="p-2 hover:bg-slate-800 rounded-full transition-colors">
+                <X size={24} />
+              </button>
+            </div>
+            
+            <div className="p-6 max-h-[70vh] overflow-y-auto">
+              {(() => {
+                // Parse "DD/MM/YYYY HH:MM" → sortable number
+                const parsePrev = (s: string) => {
+                  try {
+                    const [datePart, timePart] = s.split(' ');
+                    const [d, m, y] = datePart.split('/').map(Number);
+                    const [h, min] = (timePart || '00:00').split(':').map(Number);
+                    return new Date(y, m - 1, d, h, min).getTime();
+                  } catch { return 0; }
+                };
+
+                // Group by motorista, sort trips within each group by prevInicio asc
+                const lineOccs = ocorrenciasFiltradas.filter(o => o.numeroLinha === linePreviewId);
+                const grupos: Record<string, typeof lineOccs> = {};
+                lineOccs.forEach(o => {
+                  if (!grupos[o.matriculaMotorista]) grupos[o.matriculaMotorista] = [];
+                  grupos[o.matriculaMotorista].push(o);
+                });
+                // Sort trips within each group ascending
+                Object.values(grupos).forEach(arr => arr.sort((a, b) => parsePrev(a.prevInicio) - parsePrev(b.prevInicio)));
+                // Sort groups by first trip time
+                const gruposOrdenados = Object.entries(grupos).sort(([, a], [, b]) => parsePrev(a[0].prevInicio) - parsePrev(b[0].prevInicio));
+
+                return (
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="border-b border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-wider">
+                        <th className="pb-3">Atendimento</th>
+                        <th className="pb-3">Sentido</th>
+                        <th className="pb-3">Veículo</th>
+                        <th className="pb-3">Previsto (Início/Fim)</th>
+                        <th className="pb-3">Realizado (Início/Fim)</th>
+                        <th className="pb-3">Status</th>
+                        <th className="pb-3 text-right">Ação</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {gruposOrdenados.map(([matricula, occs]) => {
+                        const mot = motoristas.find(m => m.matricula === matricula);
+                        return (
+                          <>
+                            {/* Driver group header */}
+                            <tr key={`header-${matricula}`} className="bg-slate-100 border-t-2 border-slate-300">
+                              <td colSpan={7} className="px-3 py-2">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-6 h-6 rounded-full bg-slate-700 flex items-center justify-center text-white text-[9px] font-black">
+                                    {(mot?.nome || matricula).charAt(0)}
+                                  </div>
+                                  <span className="font-black text-slate-700 text-xs">{mot?.nome || `Matrícula ${matricula}`}</span>
+                                  {mot && <span className="text-[9px] text-slate-400 font-bold uppercase">{mot.filial} · {mot.area}</span>}
+                                  <span className="ml-auto text-[9px] font-black text-slate-500 bg-white px-2 py-0.5 rounded border">{occs.length} viagem{occs.length !== 1 ? 'ns' : ''}</span>
+                                </div>
+                              </td>
+                            </tr>
+                            {/* Driver's trips */}
+                            {occs.map((occ, idx) => (
+                              <tr key={occ.id} className={`border-b border-slate-50 hover:bg-slate-50 transition-colors ${idx === occs.length - 1 ? 'border-b-2 border-slate-200' : ''}`}>
+                                <td className="py-3 pl-10 font-bold text-slate-700 text-sm">{occ.atendimento}</td>
+                                <td className="py-3">
+                                  <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase ${occ.sentido === 'Ida' ? 'bg-blue-50 text-blue-600' : 'bg-orange-50 text-orange-600'}`}>
+                                    {occ.sentido}
+                                  </span>
+                                </td>
+                                <td className="py-3 text-xs font-semibold text-slate-500">{occ.veiculo}</td>
+                                <td className="py-3 font-mono text-xs text-slate-400">
+                                  <div>{occ.prevInicio}</div>
+                                  <div>{occ.prevFim}</div>
+                                </td>
+                                <td className="py-3 font-mono text-xs font-bold text-slate-700">
+                                  <div>{occ.realInicio}</div>
+                                  <div>{occ.realFim}</div>
+                                </td>
+                                <td className="py-3">
+                                  <span className={`px-2 py-1 rounded-full text-[10px] font-bold ${occ.statusInicio === 'Atraso' ? 'bg-red-100 text-red-600' : occ.statusInicio === 'Adiantamento' ? 'bg-orange-100 text-orange-600' : 'bg-emerald-100 text-emerald-600'}`}>
+                                    {occ.statusInicio}
+                                  </span>
+                                </td>
+                                <td className="py-3 text-right">
+                                  {editingOccId === occ.id && isAdmin ? (
+                                    <div className="flex items-center gap-1 justify-end" onClick={e => e.stopPropagation()}>
+                                      <input className="w-32 text-[10px] p-1 border rounded focus:ring-1 focus:ring-red-500" value={motivoTemp} onChange={e => setMotivoTemp(e.target.value)} placeholder="Justificativa..." autoFocus />
+                                      <button onClick={() => saveMotivo(occ.id)} className="p-1 text-emerald-600 hover:bg-emerald-50 rounded"><Save size={14} /></button>
+                                    </div>
+                                  ) : (
+                                    <div className="flex items-center justify-end gap-2">
+                                      <p className="text-[10px] text-slate-500 italic max-w-[120px] truncate">{occ.motivoAtraso || ''}</p>
+                                      {isAdmin && (
+                                        <button onClick={() => { setEditingOccId(occ.id); setMotivoTemp(occ.motivoAtraso || ''); }} className="p-1.5 text-slate-400 hover:text-red-500 transition-colors">
+                                          <Edit3 size={14} />
+                                        </button>
+                                      )}
+                                    </div>
+                                  )}
+                                </td>
+                              </tr>
+                            ))}
+                          </>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                );
+              })()}
+            </div>
+            
+            <div className="p-4 bg-slate-50 border-t border-slate-100 text-center">
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Fim da listagem de Pontualidade</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Gráfico de Ocorrências por Filial / Linha */}
+        <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+          <div className="mb-6">
+            {renderDashboardTitle(linhaFilter === 'Todas' ? 'Ocorrências por Filial' : 'Desvios da Linha', linhaFilter)}
+          </div>
+          <div className="h-80">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={dadosGraficoFilial} layout="vertical" margin={{ left: 60, right: 20 }}>
+                <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#e5e7eb" />
+                <XAxis type="number" hide />
+                <YAxis 
+                  dataKey="name" 
+                  type="category" 
+                  axisLine={false} 
+                  tickLine={false} 
+                  width={120}
+                  interval={0}
+                  tick={<CustomYAxisTick />}
+                />
+                <Tooltip cursor={{ fill: '#f3f4f6' }} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                <Legend iconType="circle" />
+                <Bar dataKey="Atraso" stackId="a" fill="#ef4444" radius={[0, 4, 4, 0]} barSize={20} />
+                <Bar dataKey="Adiantamento" stackId="a" fill="#f97316" radius={[0, 4, 4, 0]} barSize={20} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Gráfico de Linha do Tempo */}
+        <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+          <div className="mb-6">
+            {renderDashboardTitle(linhaFilter === 'Todas' ? 'Volume de Ocorrências (Semana)' : 'Tendência Semanal', linhaFilter)}
+          </div>
+          <div className="h-80">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={dadosLinhaDoTempo}>
+                <defs>
+                  <linearGradient id="colorOcorrencias" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#ef4444" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} />
+                <YAxis axisLine={false} tickLine={false} />
+                <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                <Area type="monotone" dataKey="Ocorrencias" stroke="#ef4444" strokeWidth={3} fillOpacity={1} fill="url(#colorOcorrencias)" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
+
+      {/* Ranking de Motoristas */}
+      <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+        <h3 className="text-lg font-bold text-slate-800 mb-6">Top 10 Motoristas com mais Ocorrências</h3>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="border-b border-gray-200 text-sm text-gray-500">
+                <th className="pb-3 font-semibold pl-4">Posição</th>
+                <th className="pb-3 font-semibold">Motorista</th>
+                <th className="pb-3 font-semibold">Filial</th>
+                <th className="pb-3 font-semibold text-right pr-4">Ocorrências (Atraso/Adiantamento)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rankingMotoristas.map((motorista, index) => (
+                <tr key={index} className="border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors">
+                  <td className="py-4 pl-4">
+                    <span className={clsx(
+                      "w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm",
+                      index === 0 ? "bg-red-100 text-red-600" :
+                      index === 1 ? "bg-orange-100 text-orange-600" :
+                      index === 2 ? "bg-yellow-100 text-yellow-600" :
+                      "bg-gray-100 text-gray-600"
+                    )}>
+                      {index + 1}
+                    </span>
+                  </td>
+                  <td className="py-4 font-medium text-slate-800">{motorista.nome}</td>
+                  <td className="py-4 text-gray-500">
+                    <span className="px-2.5 py-1 rounded-md text-xs font-medium bg-slate-100 text-slate-600">
+                      {motorista.filial}
+                    </span>
+                  </td>
+                  <td className="py-4 text-right pr-4 font-bold text-red-600">{motorista.total}</td>
+                </tr>
+              ))}
+              
+              {rankingMotoristas.length === 0 && (
+                <tr>
+                  <td colSpan={4} className="py-8 text-center text-gray-500">
+                    Nenhuma ocorrência registrada no período.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
