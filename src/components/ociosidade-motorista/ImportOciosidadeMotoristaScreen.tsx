@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { UploadCloud, CheckCircle, AlertTriangle, Trash2, Info } from 'lucide-react';
 import { OciosidadeMotorista, Motorista, Viagem, UserRole } from '../../types';
+import { buildLinhaLookup } from '../../utils/linhaLookup';
 
 interface Props {
   ociosidades: OciosidadeMotorista[];
@@ -44,8 +45,8 @@ export default function ImportOciosidadeMotoristaScreen({
     );
   }
 
-  // Build lookup maps
-  const viagensMap = new Map(viagens.map(v => [v.numeroLinha.trim(), v.nomeLinha]));
+  // Build flexible lookup (matches by numero, servico, partial name, city extraction)
+  const resolveLinha = buildLinhaLookup(viagens);
   const motoristasSet = new Set(motoristas.map(m => m.matricula.trim()));
 
   const processFile = (file: File) => {
@@ -81,7 +82,7 @@ export default function ImportOciosidadeMotoristaScreen({
         const linhaRaw = cols[1]?.trim() || '';
         const dashIdx = linhaRaw.indexOf('-');
         const codigoLinha = dashIdx !== -1 ? linhaRaw.substring(0, dashIdx).trim() : linhaRaw;
-        const nomeLinha = viagensMap.get(codigoLinha) || linhaRaw;
+        const nomeLinha = resolveLinha(codigoLinha) || resolveLinha(linhaRaw) || linhaRaw;
 
         const sentido = cols[2]?.trim() || '';
         const prefixo = cols[3]?.trim() || '';

@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
-import { Monitriip } from '../../types';
+import { Monitriip, Viagem } from '../../types';
+import { buildLinhaLookup } from '../../utils/linhaLookup';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
 } from 'recharts';
@@ -7,6 +8,7 @@ import { Calendar, Search } from 'lucide-react';
 
 interface Props {
   monitriips: Monitriip[];
+  viagens: Viagem[];
 }
 
 const COLORS = ['#0f172a', '#1e40af', '#0369a1', '#0891b2', '#0d9488', '#059669', '#16a34a', '#ca8a04', '#dc2626', '#9333ea'];
@@ -70,11 +72,14 @@ const ChartCard = ({
 
 const PAGE_SIZE = 50;
 
-export default function ViewMonitriipScreen({ monitriips }: Props) {
+export default function ViewMonitriipScreen({ monitriips, viagens }: Props) {
   const [dataInicio, setDataInicio] = useState('');
   const [dataFim, setDataFim] = useState('');
   const [servicoBusca, setServicoBusca] = useState('');
   const [page, setPage] = useState(1);
+
+  const resolveLinha = useMemo(() => buildLinhaLookup(viagens), [viagens]);
+  const getLinhaName = (servico: string) => resolveLinha(servico) || servico;
 
   // Filter
   const filtered = useMemo(() => {
@@ -106,35 +111,35 @@ export default function ViewMonitriipScreen({ monitriips }: Props) {
     return { total, validas, atrasos, totalEmbarque, totalNoShow, pctValidas, pctAtrasos };
   }, [filtered]);
 
-  // Chart 1: Top 15 serviços by total count
+  // Chart 1: Top 15 viagens by total count (resolved by line name)
   const topServicosCount = useMemo(() => {
     const acc: Record<string, number> = {};
-    filtered.forEach(r => { acc[r.servico] = (acc[r.servico] || 0) + 1; });
+    filtered.forEach(r => { const nome = getLinhaName(r.servico); acc[nome] = (acc[nome] || 0) + 1; });
     return Object.entries(acc)
-      .map(([name, value]) => ({ name, value }))
+      .map(([name, value]) => ({ name: name.length > 35 ? name.slice(0, 34) + '…' : name, value, fullName: name }))
       .sort((a, b) => b.value - a.value)
       .slice(0, 15);
-  }, [filtered]);
+  }, [filtered, getLinhaName]);
 
-  // Chart 2: Top 10 serviços with most atrasos
+  // Chart 2: Top 10 viagens with most atrasos
   const topServicosAtraso = useMemo(() => {
     const acc: Record<string, number> = {};
-    filtered.filter(r => r.atraso30min).forEach(r => { acc[r.servico] = (acc[r.servico] || 0) + 1; });
+    filtered.filter(r => r.atraso30min).forEach(r => { const nome = getLinhaName(r.servico); acc[nome] = (acc[nome] || 0) + 1; });
     return Object.entries(acc)
-      .map(([name, value]) => ({ name, value }))
+      .map(([name, value]) => ({ name: name.length > 35 ? name.slice(0, 34) + '…' : name, value, fullName: name }))
       .sort((a, b) => b.value - a.value)
       .slice(0, 10);
-  }, [filtered]);
+  }, [filtered, getLinhaName]);
 
-  // Chart 3: Top 10 serviços with most invalid trips
+  // Chart 3: Top 10 viagens with most invalid trips
   const topServicosInvalidas = useMemo(() => {
     const acc: Record<string, number> = {};
-    filtered.filter(r => !r.viagemValida).forEach(r => { acc[r.servico] = (acc[r.servico] || 0) + 1; });
+    filtered.filter(r => !r.viagemValida).forEach(r => { const nome = getLinhaName(r.servico); acc[nome] = (acc[nome] || 0) + 1; });
     return Object.entries(acc)
-      .map(([name, value]) => ({ name, value }))
+      .map(([name, value]) => ({ name: name.length > 35 ? name.slice(0, 34) + '…' : name, value, fullName: name }))
       .sort((a, b) => b.value - a.value)
       .slice(0, 10);
-  }, [filtered]);
+  }, [filtered, getLinhaName]);
 
   // GPS quality rows: velTempoLocalizacao not N/A and (>100 or <10)
   const gpsProblems = useMemo(() => {
@@ -168,7 +173,7 @@ export default function ViewMonitriipScreen({ monitriips }: Props) {
         {[
           { l: 'Total de Viagens', v: kpis.total },
           { l: 'Viagens Válidas', v: `${kpis.validas} (${kpis.pctValidas}%)` },
-          { l: 'Com Atraso >30min', v: `${kpis.atrasos} (${kpis.pctAtrasos}%)` },
+          { l: 'Viagens Inválidas', v: `${kpis.total - kpis.validas} (${((kpis.total - kpis.validas) / Math.max(1, kpis.total) * 100).toFixed(1)}%)` },
           { l: 'Total Embarques', v: kpis.totalEmbarque },
           { l: 'NoShow Total', v: kpis.totalNoShow },
         ].map((k, i) => (
@@ -291,7 +296,7 @@ export default function ViewMonitriipScreen({ monitriips }: Props) {
               <tr>
                 {[
                   'Data', 'Partida Prev.', 'Partida Real', 'Chegada',
-                  'Serviço', 'Válida', 'Atraso', 'Embarque', 'NoShow', 'Vel. Loc.',
+                  'Serviço', 'Linha', 'Válida', 'Atraso', 'Embarque', 'NoShow', 'Vel. Loc.',
                 ].map(h => (
                   <th key={h} className="px-3 py-2 font-bold uppercase whitespace-nowrap">{h}</th>
                 ))}
@@ -307,6 +312,7 @@ export default function ViewMonitriipScreen({ monitriips }: Props) {
                     <td className="px-3 py-2 whitespace-nowrap text-slate-600">{r.partida}</td>
                     <td className="px-3 py-2 whitespace-nowrap text-slate-600">{r.chegada}</td>
                     <td className="px-3 py-2 font-bold text-slate-800">{r.servico}</td>
+                    <td className="px-3 py-2 text-slate-600 truncate max-w-[200px]" title={getLinhaName(r.servico)}>{getLinhaName(r.servico)}</td>
                     <td className="px-3 py-2 whitespace-nowrap">
                       <span className={`px-1.5 py-0.5 rounded font-bold text-[10px] ${r.viagemValida ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
                         {r.viagemValida ? 'Sim' : 'Não'}
@@ -329,7 +335,7 @@ export default function ViewMonitriipScreen({ monitriips }: Props) {
               })}
               {paginated.length === 0 && (
                 <tr>
-                  <td colSpan={10} className="text-center py-10 text-slate-400">
+                  <td colSpan={11} className="text-center py-10 text-slate-400">
                     Nenhum registro no período selecionado
                   </td>
                 </tr>

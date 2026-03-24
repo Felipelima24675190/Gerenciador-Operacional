@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { UploadCloud, CheckCircle, AlertTriangle, Trash2, Info } from 'lucide-react';
 import { Ocorrencia, Motorista, Viagem, UserRole } from '../../types';
 import { processarOcorrenciaIndividual } from '../../utils/pontualidade';
+import { buildLinhaLookup } from '../../utils/linhaLookup';
 
 interface ImportOccurrencesScreenProps {
   ocorrencias: Ocorrencia[];
@@ -56,12 +57,8 @@ export default function ImportOccurrencesScreen({ ocorrencias, setOcorrencias, m
       let missingEnd = 0;
       let unknownDrivers = 0;
 
-      // Build lookup maps
-      // viagens can have multiple entries per numeroLinha; pick the first match
-      const viagensMap = new Map<string, string>();
-      for (const v of viagens) {
-        if (!viagensMap.has(v.numeroLinha)) viagensMap.set(v.numeroLinha, v.nomeLinha);
-      }
+      // Build flexible lookup (matches by numero, servico, partial name, city extraction)
+      const resolveLinha = buildLinhaLookup(viagens);
       const motoristasSet = new Set(motoristas.map(m => m.matricula));
 
       for (let i = 0; i < lines.length; i++) {
@@ -89,18 +86,17 @@ export default function ImportOccurrencesScreen({ ocorrencias, setOcorrencias, m
 
         if (!motoristasSet.has(matricula)) unknownDrivers++;
 
-        // Resolve line name: use viagens base if found, else fall back to atendimento field
-        const nomeLinhaDaBase = viagensMap.get(numLinha);
-        if (!nomeLinhaDaBase) {
+        // Resolve line name: try flexible lookup, only use nomeLinha (not atendimento code)
+        const nomeLinha = resolveLinha(numLinha) || resolveLinha(atendimento);
+        if (!nomeLinha) {
           localUnmatched[numLinha] = (localUnmatched[numLinha] || 0) + 1;
         }
-        const nomeLinha = nomeLinhaDaBase ?? atendimento;
 
         const rawOcorrencia: Partial<Ocorrencia> = {
           id: crypto.randomUUID(),
           numeroLinha: numLinha,
           atendimento,
-          nomeLinha,
+          nomeLinha: nomeLinha || numLinha,
           sentido,
           pontoInicio,
           pontoFim,
@@ -255,7 +251,7 @@ export default function ImportOccurrencesScreen({ ocorrencias, setOcorrencias, m
                       <Info className="text-blue-500 shrink-0" size={20} />
                       <div>
                         <p className="text-sm font-bold text-blue-800">{Object.values(unmatchedLines).reduce((a, b) => a + b, 0)} viagens com linha não cadastrada</p>
-                        <p className="text-xs text-blue-700 mt-1">Estas viagens foram importadas normalmente usando o código de atendimento como nome da linha. Os seguintes códigos não constam na base:</p>
+                        <p className="text-xs text-blue-700 mt-1">Estas viagens foram importadas usando o código da linha como nome. Os seguintes códigos não constam na base de linhas:</p>
                         <ul className="list-disc list-inside mt-2 space-y-0.5 font-mono text-[11px] bg-blue-100 p-2 rounded-md">
                           {Object.entries(unmatchedLines).map(([code, count]) => (
                             <li key={code}>Linha <strong>{code}</strong>: {count} viagem(ns)</li>

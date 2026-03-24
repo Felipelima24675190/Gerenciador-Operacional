@@ -1,5 +1,5 @@
 import { useState, useMemo, Dispatch, SetStateAction, MouseEvent, DragEvent } from 'react';
-import { Search, ChevronDown, ChevronRight, Edit2, Check, X, GripVertical, Calendar as CalendarIcon, List, PlusCircle } from 'lucide-react';
+import { Search, ChevronDown, ChevronRight, Edit2, Check, X, GripVertical, Calendar as CalendarIcon, List, PlusCircle, Building2, MapPin, Trash2 } from 'lucide-react';
 import { Viagem, UserRole } from '../../types';
 
 const DIAS_SEMANA = [
@@ -30,18 +30,33 @@ const COLORS = [
 
 export default function ConsultLinesScreen({ viagens, setViagens, userRole }: ConsultLinesScreenProps) {
   const [searchTerm, setSearchTerm] = useState('');
-  const [sentidoFilter, setSentidoFilter] = useState('Ambos');
+  const [regiaoFilter, setRegiaoFilter] = useState('Todas');
+  const [empresaFilter, setEmpresaFilter] = useState('Todas');
+
+  // Extract unique regions and companies from viagens
+  const regioes = useMemo(() => {
+    const set = new Set<string>();
+    viagens.forEach(v => { if (v.regiao) set.add(v.regiao); });
+    return ['Todas', ...Array.from(set).sort()];
+  }, [viagens]);
+
+  const empresas = useMemo(() => {
+    const set = new Set<string>();
+    viagens.forEach(v => { if (v.empresa) set.add(v.empresa); });
+    return ['Todas', ...Array.from(set).sort()];
+  }, [viagens]);
 
   const dashboardData = useMemo(() => {
     return {
-      totalLinhas: new Set(viagens.map(v => v.numeroLinha)).size,
+      totalLinhas: new Set(viagens.map(v => v.nomeLinha)).size,
       totalViagens: viagens.length,
+      totalServicos: new Set(viagens.flatMap(v => (v.servico || '').split('/').map(s => s.trim())).filter(Boolean)).size,
     };
   }, [viagens]);
 
   const [expandedLine, setExpandedLine] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<Record<string, 'list' | 'weekly'>>({});
-  
+
   const isAdmin = userRole === 'admin';
 
   // Edit Line Name State
@@ -63,45 +78,62 @@ export default function ConsultLinesScreen({ viagens, setViagens, userRole }: Co
   // Drag and Drop State
   const [draggedItemIndex, setDraggedItemIndex] = useState<number | null>(null);
 
-  // Group trips by line number
+  // Group trips by nomeLinha (full line name is the grouping key now)
   const groupedViagens = useMemo(() => {
     const map = new Map<string, Viagem[]>();
     viagens.forEach(v => {
-      if (!map.has(v.numeroLinha)) {
-        map.set(v.numeroLinha, []);
+      const key = v.nomeLinha || v.numeroLinha;
+      if (!map.has(key)) {
+        map.set(key, []);
       }
-      map.get(v.numeroLinha)!.push(v);
+      map.get(key)!.push(v);
     });
 
-    // Sort trips within each line by order
-    Array.from(map.values()).forEach(list => list.sort((a, b) => a.ordem - b.ordem));
+    // Sort trips within each line by horarioSaida then ordem
+    Array.from(map.values()).forEach(list => list.sort((a, b) =>
+      (a.horarioSaida || a.prevInicio).localeCompare(b.horarioSaida || b.prevInicio) || a.ordem - b.ordem
+    ));
 
     return map;
   }, [viagens]);
 
   const linhasUnicas = useMemo(() => {
-    return Array.from(groupedViagens.entries()).map(([numeroLinha, vgs]) => ({
-      numeroLinha,
-      nomeLinha: vgs[0]?.nomeLinha || '',
-      totalViagens: vgs.length
-    })).filter(l => 
-      l.numeroLinha.includes(searchTerm) || 
-      l.nomeLinha.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [groupedViagens, searchTerm, sentidoFilter]);
+    return Array.from(groupedViagens.entries()).map(([nomeLinha, vgs]) => ({
+      nomeLinha,
+      numeroLinha: vgs[0]?.numeroLinha || '',
+      empresa: vgs[0]?.empresa || '',
+      regiao: vgs[0]?.regiao || '',
+      origem: vgs[0]?.origem || '',
+      destino: vgs[0]?.destino || '',
+      totalViagens: vgs.length,
+      servicos: [...new Set(vgs.flatMap(v => (v.servico || '').split('/').map(s => s.trim())).filter(Boolean))],
+    })).filter(l => {
+      // Search filter: match by serviço, código, nome
+      const term = searchTerm.toLowerCase().trim();
+      const matchSearch = !term ||
+        l.nomeLinha.toLowerCase().includes(term) ||
+        l.numeroLinha.toLowerCase().includes(term) ||
+        l.servicos.some(s => s!.toLowerCase().includes(term)) ||
+        l.origem.toLowerCase().includes(term) ||
+        l.destino.toLowerCase().includes(term);
 
-  const toggleExpand = (numeroLinha: string) => {
-    if (expandedLine === numeroLinha) {
-      setExpandedLine(null);
-    } else {
-      setExpandedLine(numeroLinha);
-    }
+      // Region filter
+      const matchRegiao = regiaoFilter === 'Todas' || l.regiao === regiaoFilter;
+      // Company filter
+      const matchEmpresa = empresaFilter === 'Todas' || l.empresa === empresaFilter;
+
+      return matchSearch && matchRegiao && matchEmpresa;
+    }).sort((a, b) => a.nomeLinha.localeCompare(b.nomeLinha));
+  }, [groupedViagens, searchTerm, regiaoFilter, empresaFilter]);
+
+  const toggleExpand = (nomeLinha: string) => {
+    setExpandedLine(prev => prev === nomeLinha ? null : nomeLinha);
   };
 
-  const toggleViewMode = (numeroLinha: string) => {
+  const toggleViewMode = (nomeLinha: string) => {
     setViewMode(prev => ({
       ...prev,
-      [numeroLinha]: prev[numeroLinha] === 'weekly' ? 'list' : 'weekly'
+      [nomeLinha]: prev[nomeLinha] === 'weekly' ? 'list' : 'weekly'
     }));
   };
 
@@ -109,7 +141,7 @@ export default function ConsultLinesScreen({ viagens, setViagens, userRole }: Co
     setViagens(prev => prev.map(v => {
       if (v.id === viagemId) {
         const dias = v.diasOperantes || [0, 1, 2, 3, 4, 5, 6];
-        const novosDias = dias.includes(dayId) 
+        const novosDias = dias.includes(dayId)
           ? dias.filter(d => d !== dayId)
           : [...dias, dayId].sort();
         return { ...v, diasOperantes: novosDias };
@@ -118,15 +150,16 @@ export default function ConsultLinesScreen({ viagens, setViagens, userRole }: Co
     }));
   };
 
-  const handleAddTrip = (numeroLinha: string, nomeLinha: string) => {
+  const handleAddTrip = (nomeLinha: string) => {
     if (!newTrip.atendimento) return;
-    
-    const trips = groupedViagens.get(numeroLinha) || [];
+
+    const trips = groupedViagens.get(nomeLinha) || [];
     const maxOrder = trips.length > 0 ? Math.max(...trips.map(t => t.ordem)) : 0;
+    const ref = trips[0];
 
     const viagemCompleta: Viagem = {
       id: crypto.randomUUID(),
-      numeroLinha,
+      numeroLinha: ref?.numeroLinha || nomeLinha,
       nomeLinha,
       atendimento: newTrip.atendimento!,
       sentido: newTrip.sentido!,
@@ -150,18 +183,18 @@ export default function ConsultLinesScreen({ viagens, setViagens, userRole }: Co
     });
   };
 
-  const startEditingLine = (numeroLinha: string, currentName: string, e: MouseEvent) => {
+  const startEditingLine = (nomeLinha: string, currentName: string, e: MouseEvent) => {
     e.stopPropagation();
-    setEditingLineId(numeroLinha);
+    setEditingLineId(nomeLinha);
     setEditLineName(currentName);
-    setEditLineCode(numeroLinha);
+    setEditLineCode(nomeLinha);
   };
 
-  const saveLineName = (numeroLinha: string, e: MouseEvent) => {
+  const saveLineName = (nomeLinha: string, e: MouseEvent) => {
     e.stopPropagation();
-    setViagens(prev => prev.map(v => 
-      v.numeroLinha === numeroLinha 
-        ? { ...v, nomeLinha: editLineName, numeroLinha: editLineCode } 
+    setViagens(prev => prev.map(v =>
+      v.nomeLinha === nomeLinha
+        ? { ...v, nomeLinha: editLineName, numeroLinha: editLineCode }
         : v
     ));
     setEditingLineId(null);
@@ -172,16 +205,22 @@ export default function ConsultLinesScreen({ viagens, setViagens, userRole }: Co
     setEditingLineId(null);
   };
 
+  const handleDeleteLine = (nomeLinha: string, e: MouseEvent) => {
+    e.stopPropagation();
+    if (confirm(`Excluir a linha "${nomeLinha}" e todas as suas viagens?`)) {
+      setViagens(prev => prev.filter(v => v.nomeLinha !== nomeLinha));
+    }
+  };
+
   const saveTripEdit = (viagemId: string, field: keyof Viagem, value: string) => {
     setViagens(prev => prev.map(v => v.id === viagemId ? { ...v, [field]: value } : v));
   };
 
   const handleDragStart = (e: DragEvent, index: number) => {
     setDraggedItemIndex(index);
-    // Needed for Firefox
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', index.toString());
-    
+
     setTimeout(() => {
       const target = e.target as HTMLElement;
       target.classList.add('opacity-50');
@@ -198,32 +237,29 @@ export default function ConsultLinesScreen({ viagens, setViagens, userRole }: Co
     e.preventDefault();
   };
 
-  const handleDrop = (e: DragEvent, numeroLinha: string, dropIndex: number) => {
+  const handleDrop = (e: DragEvent, nomeLinha: string, dropIndex: number) => {
     e.preventDefault();
     e.stopPropagation();
     if (draggedItemIndex === null || draggedItemIndex === dropIndex) return;
 
-    const currentLineTrips = [...groupedViagens.get(numeroLinha)!];
+    const currentLineTrips = [...groupedViagens.get(nomeLinha)!];
     const itemToMove = currentLineTrips[draggedItemIndex];
-    
-    // Remove from old position and insert at new position
+
     currentLineTrips.splice(draggedItemIndex, 1);
     currentLineTrips.splice(dropIndex, 0, itemToMove);
 
-    // Update order property based on new index
     const updatedLineTrips = currentLineTrips.map((trip, idx) => ({
       ...trip,
       ordem: idx + 1
     }));
 
-    // Save back to main state, preserving order to prevent the list from re-rendering out of place
     setViagens(prev => prev.map(v => {
-      if (v.numeroLinha === numeroLinha) {
+      if (v.nomeLinha === nomeLinha) {
         return updatedLineTrips.find(u => u.id === v.id) || v;
       }
       return v;
     }));
-    
+
     setDraggedItemIndex(null);
   };
 
@@ -236,19 +272,30 @@ export default function ConsultLinesScreen({ viagens, setViagens, userRole }: Co
     e.stopPropagation();
     const currentIndex = COLORS.indexOf(currentColor || 'transparent');
     const nextColor = COLORS[(currentIndex + 1) % COLORS.length];
-    setViagens(prev => prev.map(v => 
-      v.id === viagemId 
-        ? { ...v, grupoCor: nextColor === 'transparent' ? undefined : nextColor } 
+    setViagens(prev => prev.map(v =>
+      v.id === viagemId
+        ? { ...v, grupoCor: nextColor === 'transparent' ? undefined : nextColor }
         : v
     ));
   };
 
+  const diasLabel = (dias: number[]) => {
+    if (dias.length === 7) return 'Todos os dias';
+    if (dias.length === 0) return 'Nenhum dia';
+    return dias.map(d => DIAS_SEMANA[d]?.label).join(', ');
+  };
+
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-white p-4 rounded-xl border shadow-sm">
           <p className="text-sm text-gray-500">Total de Linhas</p>
           <p className="text-3xl font-bold">{dashboardData.totalLinhas}</p>
+        </div>
+        <div className="bg-white p-4 rounded-xl border shadow-sm">
+          <p className="text-sm text-gray-500">Total de Serviços</p>
+          <p className="text-3xl font-bold">{dashboardData.totalServicos}</p>
         </div>
         <div className="bg-white p-4 rounded-xl border shadow-sm">
           <p className="text-sm text-gray-500">Total de Viagens Programadas</p>
@@ -256,48 +303,71 @@ export default function ConsultLinesScreen({ viagens, setViagens, userRole }: Co
         </div>
       </div>
 
+      {/* Filters */}
       <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-        <div className="relative w-full md:w-96">
-          <input 
-            type="text" 
-            placeholder="Buscar linha por código ou nome..." 
+        <div className="relative w-full md:w-80">
+          <input
+            type="text"
+            placeholder="Buscar por serviço, código, nome, cidade..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50"
           />
           <Search className="absolute left-3 top-2.5 text-gray-400" size={18} />
         </div>
-        <div className="text-sm text-gray-500 font-medium">
-          Total de linhas: {linhasUnicas.length}
+
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex items-center gap-2">
+            <MapPin size={14} className="text-slate-400" />
+            <select
+              value={regiaoFilter}
+              onChange={e => setRegiaoFilter(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              {regioes.map(r => <option key={r} value={r}>{r}</option>)}
+            </select>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Building2 size={14} className="text-slate-400" />
+            <select
+              value={empresaFilter}
+              onChange={e => setEmpresaFilter(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              {empresas.map(e => <option key={e} value={e}>{e}</option>)}
+            </select>
+          </div>
+
+          <span className="text-sm text-gray-500 font-medium">
+            {linhasUnicas.length} linhas
+          </span>
         </div>
       </div>
 
+      {/* Lines List */}
       <div className="space-y-3">
         {linhasUnicas.length > 0 ? (
           linhasUnicas.map(linha => {
-            const isExpanded = expandedLine === linha.numeroLinha;
-            const trips = groupedViagens.get(linha.numeroLinha) || [];
+            const isExpanded = expandedLine === linha.nomeLinha;
+            const trips = groupedViagens.get(linha.nomeLinha) || [];
 
             return (
-              <div key={linha.numeroLinha} className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden transition-all duration-200">
+              <div key={linha.nomeLinha} className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden transition-all duration-200">
                 {/* Header (Line info) */}
-                <div 
+                <div
                   className={`flex items-center justify-between p-4 cursor-pointer hover:bg-slate-50 transition-colors ${isExpanded ? 'bg-slate-50 border-b border-gray-100' : ''}`}
-                  onClick={() => toggleExpand(linha.numeroLinha)}
+                  onClick={() => toggleExpand(linha.nomeLinha)}
                 >
-                  <div className="flex items-center gap-4 flex-1">
-                    {isExpanded ? <ChevronDown size={20} className="text-gray-400" /> : <ChevronRight size={20} className="text-gray-400" />}
-                    
-                    <span className="font-bold text-slate-800 bg-blue-100 text-blue-800 px-3 py-1 rounded-lg">
-                      {linha.numeroLinha}
-                    </span>
-                    
-                    {editingLineId === linha.numeroLinha && isAdmin ? (
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    {isExpanded ? <ChevronDown size={20} className="text-gray-400 shrink-0" /> : <ChevronRight size={20} className="text-gray-400 shrink-0" />}
+
+                    {editingLineId === linha.nomeLinha && isAdmin ? (
                       <div className="flex items-center gap-3 flex-1 max-w-2xl" onClick={e => e.stopPropagation()}>
                         <div className="flex flex-col gap-1 w-24">
                           <label className="text-[8px] font-bold text-slate-400 uppercase">Cód. Linha</label>
-                          <input 
-                            type="text" 
+                          <input
+                            type="text"
                             value={editLineCode}
                             onChange={e => setEditLineCode(e.target.value)}
                             className="px-2 py-1 border border-blue-300 rounded focus:ring-1 focus:ring-blue-500 text-xs font-bold text-blue-700 bg-blue-50"
@@ -305,15 +375,15 @@ export default function ConsultLinesScreen({ viagens, setViagens, userRole }: Co
                         </div>
                         <div className="flex flex-col gap-1 flex-1">
                           <label className="text-[8px] font-bold text-slate-400 uppercase">Nome da Linha</label>
-                          <input 
-                            type="text" 
+                          <input
+                            type="text"
                             value={editLineName}
                             onChange={e => setEditLineName(e.target.value)}
                             className="px-3 py-1 border border-blue-300 rounded focus:ring-1 focus:ring-blue-500 text-sm font-semibold text-slate-700"
                           />
                         </div>
                         <div className="flex gap-1 pt-4">
-                          <button onClick={(e) => saveLineName(linha.numeroLinha, e)} className="p-1.5 text-emerald-600 hover:bg-emerald-100 rounded">
+                          <button onClick={(e) => saveLineName(linha.nomeLinha, e)} className="p-1.5 text-emerald-600 hover:bg-emerald-100 rounded">
                             <Check size={16} />
                           </button>
                           <button onClick={cancelEditingLine} className="p-1.5 text-red-600 hover:bg-red-100 rounded">
@@ -322,41 +392,95 @@ export default function ConsultLinesScreen({ viagens, setViagens, userRole }: Co
                         </div>
                       </div>
                     ) : (
-                      <div className="flex items-center gap-3">
-                        <span className="font-semibold text-slate-700">{linha.nomeLinha}</span>
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <span className="font-bold text-slate-800 truncate">{linha.nomeLinha}</span>
+                        {linha.regiao && (
+                          <span className="px-2 py-0.5 bg-purple-50 text-purple-700 text-[10px] font-bold rounded-full shrink-0">
+                            {linha.regiao}
+                          </span>
+                        )}
+                        {linha.empresa && (
+                          <span className="px-2 py-0.5 bg-blue-50 text-blue-700 text-[10px] font-bold rounded-full shrink-0 hidden md:inline">
+                            {linha.empresa}
+                          </span>
+                        )}
                         {isAdmin && (
-                          <button 
-                            onClick={(e) => startEditingLine(linha.numeroLinha, linha.nomeLinha, e)} 
-                            className="text-gray-400 hover:text-blue-600 transition-colors"
-                            title="Editar nome da linha"
-                          >
-                            <Edit2 size={14} />
-                          </button>
+                          <>
+                            <button
+                              onClick={(e) => startEditingLine(linha.nomeLinha, linha.nomeLinha, e)}
+                              className="text-gray-400 hover:text-blue-600 transition-colors shrink-0"
+                              title="Editar nome da linha"
+                            >
+                              <Edit2 size={14} />
+                            </button>
+                            <button
+                              onClick={(e) => handleDeleteLine(linha.nomeLinha, e)}
+                              className="text-gray-400 hover:text-red-600 transition-colors shrink-0"
+                              title="Excluir linha"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </>
                         )}
                       </div>
                     )}
                   </div>
-                  
-                  <div className="text-sm text-gray-500 font-medium px-4">
-                    {linha.totalViagens} viagens
+
+                  <div className="flex items-center gap-4 shrink-0">
+                    <span className="text-xs text-gray-400 font-mono hidden md:inline">
+                      {linha.servicos.length} serviço{linha.servicos.length !== 1 ? 's' : ''}
+                    </span>
+                    <span className="text-sm text-gray-500 font-medium">
+                      {linha.totalViagens} viagen{linha.totalViagens !== 1 ? 's' : ''}
+                    </span>
                   </div>
                 </div>
 
-                {/* Expanded Content (Trips) */}
+                {/* Expanded Content */}
                 {isExpanded && (
                   <div className="p-4 bg-slate-50">
+                    {/* Line summary info */}
+                    <div className="mb-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+                      <div className="bg-white p-3 rounded-lg border border-gray-100">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase">Empresa</p>
+                        <p className="text-sm font-bold text-slate-700">{linha.empresa || '-'}</p>
+                      </div>
+                      <div className="bg-white p-3 rounded-lg border border-gray-100">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase">Região</p>
+                        <p className="text-sm font-bold text-slate-700">{linha.regiao || '-'}</p>
+                      </div>
+                      <div className="bg-white p-3 rounded-lg border border-gray-100">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase">Origem</p>
+                        <p className="text-sm font-bold text-slate-700">{linha.origem || '-'}</p>
+                      </div>
+                      <div className="bg-white p-3 rounded-lg border border-gray-100">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase">Destino</p>
+                        <p className="text-sm font-bold text-slate-700">{linha.destino || '-'}</p>
+                      </div>
+                      <div className="bg-white p-3 rounded-lg border border-gray-100 md:col-span-2">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase">Serviços ({linha.servicos.length})</p>
+                        <div className="flex flex-wrap gap-1 mt-1 max-h-32 overflow-y-auto">
+                          {linha.servicos.map(s => (
+                            <span key={s} className="px-1.5 py-0.5 bg-slate-100 text-slate-600 text-[10px] font-mono font-bold rounded">
+                              {s}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
                     <div className="flex justify-between items-center mb-4">
                       <div className="flex gap-2">
-                        <button 
-                          onClick={() => toggleViewMode(linha.numeroLinha)}
-                          className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${viewMode[linha.numeroLinha] !== 'weekly' ? 'bg-blue-600 text-white shadow-md' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}`}
+                        <button
+                          onClick={() => toggleViewMode(linha.nomeLinha)}
+                          className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${viewMode[linha.nomeLinha] !== 'weekly' ? 'bg-blue-600 text-white shadow-md' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}`}
                         >
                           <List size={14} />
                           Lista Sequencial
                         </button>
-                        <button 
-                          onClick={() => toggleViewMode(linha.numeroLinha)}
-                          className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${viewMode[linha.numeroLinha] === 'weekly' ? 'bg-blue-600 text-white shadow-md' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}`}
+                        <button
+                          onClick={() => toggleViewMode(linha.nomeLinha)}
+                          className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${viewMode[linha.nomeLinha] === 'weekly' ? 'bg-blue-600 text-white shadow-md' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}`}
                         >
                           <CalendarIcon size={14} />
                           Visualização Semanal
@@ -364,8 +488,8 @@ export default function ConsultLinesScreen({ viagens, setViagens, userRole }: Co
                       </div>
 
                       {isAdmin && (
-                        <button 
-                          onClick={() => setIsAddingTrip(linha.numeroLinha)}
+                        <button
+                          onClick={() => setIsAddingTrip(linha.nomeLinha)}
                           className="flex items-center gap-2 px-4 py-1.5 bg-emerald-600 text-white rounded-lg text-xs font-bold hover:bg-emerald-700 transition-colors shadow-md"
                         >
                           <PlusCircle size={14} />
@@ -374,13 +498,13 @@ export default function ConsultLinesScreen({ viagens, setViagens, userRole }: Co
                       )}
                     </div>
 
-                    {isAddingTrip === linha.numeroLinha && isAdmin && (
+                    {isAddingTrip === linha.nomeLinha && isAdmin && (
                       <div className="mb-4 bg-white border-2 border-emerald-100 rounded-xl p-4 shadow-sm animate-in zoom-in-95 duration-200">
                         <div className="grid grid-cols-2 md:grid-cols-6 gap-4 items-end">
                           <div className="space-y-1">
                             <label className="text-[10px] font-bold text-slate-400 uppercase">Atendimento</label>
-                            <input 
-                              type="text" 
+                            <input
+                              type="text"
                               className="w-full px-2 py-1.5 border border-slate-200 rounded text-sm font-semibold focus:ring-1 focus:ring-emerald-500"
                               placeholder="REC X ..."
                               value={newTrip.atendimento}
@@ -389,7 +513,7 @@ export default function ConsultLinesScreen({ viagens, setViagens, userRole }: Co
                           </div>
                           <div className="space-y-1">
                             <label className="text-[10px] font-bold text-slate-400 uppercase">Sentido</label>
-                            <select 
+                            <select
                               className="w-full px-2 py-1.5 border border-slate-200 rounded text-sm font-semibold"
                               value={newTrip.sentido}
                               onChange={e => setNewTrip({...newTrip, sentido: e.target.value})}
@@ -400,8 +524,8 @@ export default function ConsultLinesScreen({ viagens, setViagens, userRole }: Co
                           </div>
                           <div className="space-y-1">
                             <label className="text-[10px] font-bold text-slate-400 uppercase">Início</label>
-                            <input 
-                              type="text" 
+                            <input
+                              type="text"
                               className="w-full px-2 py-1.5 border border-slate-200 rounded text-sm font-semibold"
                               placeholder="REC Tip"
                               value={newTrip.pontoInicio}
@@ -410,8 +534,8 @@ export default function ConsultLinesScreen({ viagens, setViagens, userRole }: Co
                           </div>
                           <div className="space-y-1">
                             <label className="text-[10px] font-bold text-slate-400 uppercase">Fim</label>
-                            <input 
-                              type="text" 
+                            <input
+                              type="text"
                               className="w-full px-2 py-1.5 border border-slate-200 rounded text-sm font-semibold"
                               placeholder="CAU"
                               value={newTrip.pontoFim}
@@ -420,8 +544,8 @@ export default function ConsultLinesScreen({ viagens, setViagens, userRole }: Co
                           </div>
                           <div className="space-y-1">
                             <label className="text-[10px] font-bold text-slate-400 uppercase">Prev. Início (HH:mm)</label>
-                            <input 
-                              type="time" 
+                            <input
+                              type="time"
                               className="w-full px-2 py-1.5 border border-slate-200 rounded text-sm font-semibold"
                               value={newTrip.prevInicio}
                               onChange={e => setNewTrip({...newTrip, prevInicio: e.target.value})}
@@ -429,21 +553,21 @@ export default function ConsultLinesScreen({ viagens, setViagens, userRole }: Co
                           </div>
                           <div className="space-y-1">
                             <label className="text-[10px] font-bold text-slate-400 uppercase">Prev. Fim (HH:mm)</label>
-                            <input 
-                              type="time" 
+                            <input
+                              type="time"
                               className="w-full px-2 py-1.5 border border-slate-200 rounded text-sm font-semibold"
                               value={newTrip.prevFim}
                               onChange={e => setNewTrip({...newTrip, prevFim: e.target.value})}
                             />
                           </div>
                           <div className="flex gap-2">
-                            <button 
-                              onClick={() => handleAddTrip(linha.numeroLinha, linha.nomeLinha)}
+                            <button
+                              onClick={() => handleAddTrip(linha.nomeLinha)}
                               className="flex-1 bg-emerald-600 text-white py-1.5 rounded font-bold text-xs hover:bg-emerald-700"
                             >
                               Gravar
                             </button>
-                            <button 
+                            <button
                               onClick={() => setIsAddingTrip(null)}
                               className="px-3 bg-slate-100 text-slate-500 py-1.5 rounded font-bold text-xs hover:bg-slate-200"
                             >
@@ -454,7 +578,7 @@ export default function ConsultLinesScreen({ viagens, setViagens, userRole }: Co
                       </div>
                     )}
 
-                    {viewMode[linha.numeroLinha] === 'weekly' ? (
+                    {viewMode[linha.nomeLinha] === 'weekly' ? (
                       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
                         {DIAS_SEMANA.map(dia => {
                           const tripsOnDay = trips.filter(v => (v.diasOperantes || [0,1,2,3,4,5,6]).includes(dia.id));
@@ -468,12 +592,12 @@ export default function ConsultLinesScreen({ viagens, setViagens, userRole }: Co
                                   tripsOnDay.map(v => (
                                     <div key={v.id} className="text-[10px] p-1.5 rounded border border-slate-100 bg-slate-50 flex flex-col gap-0.5">
                                       <div className="flex justify-between items-center">
-                                        <span className="font-bold text-slate-700">{v.atendimento}</span>
+                                        <span className="font-bold text-slate-700">{v.servico || v.atendimento}</span>
                                         <span className={`px-1 rounded-[2px] font-black text-[8px] ${v.sentido === 'Ida' ? 'bg-blue-50 text-blue-600' : 'bg-orange-50 text-orange-600'}`}>
                                           {v.sentido === 'Ida' ? 'I' : 'V'}
                                         </span>
                                       </div>
-                                      <span className="font-mono text-slate-500">{formatTimeOnly(v.prevInicio)}</span>
+                                      <span className="font-mono text-slate-500">{v.horarioSaida || formatTimeOnly(v.prevInicio)}</span>
                                     </div>
                                   ))
                                 ) : (
@@ -488,19 +612,18 @@ export default function ConsultLinesScreen({ viagens, setViagens, userRole }: Co
                       </div>
                     ) : (
                       <>
-                        <div className={`mb-3 grid ${isAdmin ? 'grid-cols-[32px_1fr_64px_1.5fr_1.5fr_1.5fr_1.5fr_48px_120px]' : 'grid-cols-[32px_1fr_64px_1.5fr_1.5fr_1.5fr_1.5fr]'} gap-4 items-center text-xs font-semibold text-slate-500 uppercase tracking-wider px-3`}>
+                        <div className={`mb-3 grid ${isAdmin ? 'grid-cols-[32px_80px_1fr_64px_1fr_80px_48px_110px]' : 'grid-cols-[32px_80px_1fr_64px_1fr_80px_110px]'} gap-3 items-center text-xs font-semibold text-slate-500 uppercase tracking-wider px-3`}>
                           <span className="text-center">Ord</span>
+                          <span>Serviço</span>
                           <span>Atendimento</span>
                           <span>Sentido</span>
-                          <span>Ponto Início</span>
-                          <span>Ponto Fim</span>
-                          <span>Início (Previsto)</span>
-                          <span>Fim (Previsto)</span>
+                          <span>Origem / Destino</span>
+                          <span>Saída</span>
                           {isAdmin && <span className="text-center">Grupo</span>}
-                          {isAdmin && <span className="text-center">Dias Operantes</span>}
+                          <span className="text-center">Dias</span>
                         </div>
 
-                        <div className="space-y-2">
+                        <div className="space-y-1.5">
                           {trips.map((viagem, index) => (
                             <div
                               key={viagem.id}
@@ -508,40 +631,32 @@ export default function ConsultLinesScreen({ viagens, setViagens, userRole }: Co
                               onDragStart={(e) => handleDragStart(e, index)}
                               onDragEnd={handleDragEnd}
                               onDragOver={handleDragOver}
-                              onDrop={(e) => handleDrop(e, linha.numeroLinha, index)}
-                              className={`grid ${isAdmin ? 'grid-cols-[32px_1fr_64px_1.5fr_1.5fr_1.5fr_1.5fr_48px_120px]' : 'grid-cols-[32px_1fr_64px_1.5fr_1.5fr_1.5fr_1.5fr]'} gap-4 items-center bg-white border border-gray-200 rounded-lg p-3 text-sm hover:border-blue-300 hover:shadow-sm transition-all ${isAdmin ? 'cursor-move' : ''} group relative`}
+                              onDrop={(e) => handleDrop(e, linha.nomeLinha, index)}
+                              className={`grid ${isAdmin ? 'grid-cols-[32px_80px_1fr_64px_1fr_80px_48px_110px]' : 'grid-cols-[32px_80px_1fr_64px_1fr_80px_110px]'} gap-3 items-center bg-white border border-gray-200 rounded-lg p-2.5 text-sm hover:border-blue-300 hover:shadow-sm transition-all ${isAdmin ? 'cursor-move' : ''} group relative`}
                               style={{ borderLeft: (isAdmin && viagem.grupoCor) ? `4px solid ${viagem.grupoCor}` : '1px solid #e5e7eb' }}
                             >
                               <div className="flex justify-center text-gray-400 group-hover:text-blue-500">
                                 {isAdmin ? <GripVertical size={16} /> : <span className="text-[10px] font-bold">{viagem.ordem}</span>}
                               </div>
-                              <div className="font-medium text-slate-700 truncate" title={viagem.atendimento}>{viagem.atendimento}</div>
+                              <div className="font-mono text-xs text-slate-600 font-bold truncate" title={viagem.servico}>{viagem.servico || '-'}</div>
+                              <div className="font-medium text-slate-700 truncate text-xs" title={viagem.atendimento}>{viagem.atendimento}</div>
                               <div>
                                 <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${viagem.sentido === 'Ida' ? 'bg-blue-100 text-blue-700' : 'bg-orange-100 text-orange-700'}`}>
                                   {viagem.sentido}
                                 </span>
                               </div>
-                              <div className="text-slate-600 truncate" title={viagem.pontoInicio}>{viagem.pontoInicio}</div>
-                              <div className="text-slate-600 truncate" title={viagem.pontoFim}>{viagem.pontoFim}</div>
-                              <div className="font-mono text-slate-700 text-xs truncate flex items-center gap-1">
-                                {isAdmin ? (
-                                  <input 
-                                    type="time" 
-                                    value={formatTimeOnly(viagem.prevInicio)} 
-                                    onChange={(e) => saveTripEdit(viagem.id, 'prevInicio', `18/03/2026 ${e.target.value}`)}
-                                    className="bg-slate-50 border border-slate-200 rounded px-1 py-0.5 w-[75px] focus:ring-1 focus:ring-blue-500 text-center"
-                                  />
-                                ) : <span>{formatTimeOnly(viagem.prevInicio)}</span>}
+                              <div className="text-slate-600 truncate text-xs" title={`${viagem.pontoInicio} → ${viagem.pontoFim}`}>
+                                {viagem.pontoInicio} → {viagem.pontoFim}
                               </div>
-                              <div className="font-mono text-slate-700 text-xs truncate flex items-center gap-1">
+                              <div className="font-mono text-slate-700 text-xs text-center">
                                 {isAdmin ? (
-                                  <input 
-                                    type="time" 
-                                    value={formatTimeOnly(viagem.prevFim)} 
-                                    onChange={(e) => saveTripEdit(viagem.id, 'prevFim', `18/03/2026 ${e.target.value}`)}
+                                  <input
+                                    type="time"
+                                    value={viagem.horarioSaida || formatTimeOnly(viagem.prevInicio)}
+                                    onChange={(e) => saveTripEdit(viagem.id, 'horarioSaida', e.target.value)}
                                     className="bg-slate-50 border border-slate-200 rounded px-1 py-0.5 w-[75px] focus:ring-1 focus:ring-blue-500 text-center"
                                   />
-                                ) : <span>{formatTimeOnly(viagem.prevFim)}</span>}
+                                ) : <span>{viagem.horarioSaida || formatTimeOnly(viagem.prevInicio)}</span>}
                               </div>
                               {isAdmin && (
                                 <div className="flex justify-center">
@@ -553,9 +668,9 @@ export default function ConsultLinesScreen({ viagens, setViagens, userRole }: Co
                                   />
                                 </div>
                               )}
-                              {isAdmin && (
-                                <div className="flex gap-0.5 justify-center">
-                                  {DIAS_SEMANA.map(dia => (
+                              <div className="flex gap-0.5 justify-center">
+                                {isAdmin ? (
+                                  DIAS_SEMANA.map(dia => (
                                     <button
                                       key={dia.id}
                                       onClick={(e) => {
@@ -571,9 +686,11 @@ export default function ConsultLinesScreen({ viagens, setViagens, userRole }: Co
                                     >
                                       {dia.label[0]}
                                     </button>
-                                  ))}
-                                </div>
-                              )}
+                                  ))
+                                ) : (
+                                  <span className="text-[10px] text-slate-500">{diasLabel(viagem.diasOperantes || [0,1,2,3,4,5,6])}</span>
+                                )}
+                              </div>
                             </div>
                           ))}
                         </div>

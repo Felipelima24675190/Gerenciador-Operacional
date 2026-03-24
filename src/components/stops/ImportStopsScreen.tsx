@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { UploadCloud, CheckCircle, AlertTriangle, Info } from 'lucide-react';
 import { ParadaIndevida, UserRole, Motorista, Viagem } from '../../types';
+import { buildLinhaLookup } from '../../utils/linhaLookup';
 
 interface ImportStopsScreenProps {
   setParadas: React.Dispatch<React.SetStateAction<ParadaIndevida[]>>;
@@ -28,10 +29,7 @@ export default function ImportStopsScreen({ setParadas, motoristas, viagens, use
 
   // Mapas para lookup rápido
   const motoristasMap = new Map(motoristas.map(m => [m.matricula, m]));
-  const linhasMap = new Map<string, string>();
-  viagens.forEach(v => {
-    if (!linhasMap.has(v.numeroLinha)) linhasMap.set(v.numeroLinha, v.nomeLinha);
-  });
+  const resolveLinha = buildLinhaLookup(viagens);
 
   const processFile = (text: string) => {
     const lines = text.split('\n').slice(1); // Pular cabeçalho
@@ -56,8 +54,8 @@ export default function ImportStopsScreen({ setParadas, motoristas, viagens, use
       const nomeMotorista = motoristaBase ? motoristaBase.nome : (parts[5] || 'Desconhecido');
       const area = motoristaBase ? motoristaBase.area : (parts[6] || '');
 
-      // Lookup linha na base
-      const nomeLinha = linhasMap.get(codigoLinha) || codigoLinha;
+      // Lookup linha na base (flexible: by numero, servico, partial name)
+      const nomeLinha = resolveLinha(codigoLinha) || codigoLinha;
 
       if (motoristaBase) found++;
       else if (matricula) notFound++;

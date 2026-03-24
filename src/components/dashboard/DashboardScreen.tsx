@@ -57,15 +57,22 @@ export default function DashboardScreen({ motoristas, ocorrencias, viagens, setO
     const linhas = new Map<string, string>(); // codigo -> nome
     // Build from voyages base to ensure all lines are present
     viagens.forEach(v => {
-      linhas.set(v.numeroLinha, v.nomeLinha);
+      linhas.set(v.nomeLinha, v.nomeLinha);
+      // Also index by servico for quick filtering
+      if (v.servico) linhas.set(v.servico, v.nomeLinha);
     });
     // Add lines from occurrences that might not be in the base
     ocorrencias.forEach(o => {
-      if (!linhas.has(o.numeroLinha)) {
+      if (!linhas.has(o.nomeLinha) && !linhas.has(o.numeroLinha)) {
         linhas.set(o.numeroLinha, o.nomeLinha);
       }
     });
-    return ['Todas', ...Array.from(linhas.entries()).map(([cod, nome]) => `${cod} - ${nome}`)].sort();
+    // Deduplicate by nome
+    const uniqueNames = new Map<string, string>();
+    linhas.forEach((nome, key) => {
+      if (!uniqueNames.has(nome)) uniqueNames.set(nome, key);
+    });
+    return ['Todas', ...Array.from(uniqueNames.keys())].sort();
   }, [viagens, ocorrencias]);
 
   const ocorrenciasFiltradas = useMemo(() => {
@@ -84,7 +91,7 @@ export default function DashboardScreen({ motoristas, ocorrencias, viagens, setO
       const matchFilial = filialFilter === 'Todas' || filial === filialFilter;
 
       // Linha Filter
-      const matchLinha = linhaFilter === 'Todas' || `${o.numeroLinha} - ${o.nomeLinha}` === linhaFilter;
+      const matchLinha = linhaFilter === 'Todas' || o.nomeLinha === linhaFilter || o.numeroLinha === linhaFilter;
       
       return matchDate && matchFilial && matchLinha;
     });
@@ -231,14 +238,14 @@ export default function DashboardScreen({ motoristas, ocorrencias, viagens, setO
                 type="date" 
                 value={dataInicio}
                 onChange={e => setDataInicio(e.target.value)}
-                className="w-full px-2 py-1.5 border border-gray-200 rounded text-xs font-bold bg-slate-50 focus:ring-2 focus:ring-red-500 transition-all"
+                className="w-full px-2 py-1.5 border border-gray-200 rounded text-xs font-bold bg-slate-50 focus:ring-2 focus:ring-brand-400 transition-all"
               />
               <span className="text-slate-300">→</span>
               <input 
                 type="date" 
                 value={dataFim}
                 onChange={e => setDataFim(e.target.value)}
-                className="w-full px-2 py-1.5 border border-gray-200 rounded text-xs font-bold bg-slate-50 focus:ring-2 focus:ring-red-500 transition-all"
+                className="w-full px-2 py-1.5 border border-gray-200 rounded text-xs font-bold bg-slate-50 focus:ring-2 focus:ring-brand-400 transition-all"
               />
             </div>
           </div>
@@ -248,7 +255,7 @@ export default function DashboardScreen({ motoristas, ocorrencias, viagens, setO
             <select 
               value={filialFilter}
               onChange={e => setFilialFilter(e.target.value)}
-              className="w-full px-3 py-1.5 border border-gray-200 rounded text-xs font-bold bg-slate-50 focus:ring-2 focus:ring-red-500"
+              className="w-full px-3 py-1.5 border border-gray-200 rounded text-xs font-bold bg-slate-50 focus:ring-2 focus:ring-brand-400"
             >
               {filiaisUnicas.map(f => <option key={f} value={f}>{f === 'Todas' ? 'Todas as Filiais' : f}</option>)}
             </select>
@@ -259,7 +266,7 @@ export default function DashboardScreen({ motoristas, ocorrencias, viagens, setO
             <select 
               value={linhaFilter}
               onChange={e => setLinhaFilter(e.target.value)}
-              className="w-full px-3 py-1.5 border border-gray-200 rounded text-xs font-bold bg-slate-50 focus:ring-2 focus:ring-red-500"
+              className="w-full px-3 py-1.5 border border-gray-200 rounded text-xs font-bold bg-slate-50 focus:ring-2 focus:ring-brand-400"
             >
               {linhasUnicas.map(l => <option key={l} value={l}>{l === 'Todas' ? 'Todas as Linhas' : l}</option>)}
             </select>
@@ -416,7 +423,7 @@ export default function DashboardScreen({ motoristas, ocorrencias, viagens, setO
                                 <td className="py-3 text-right">
                                   {editingOccId === occ.id && isAdmin ? (
                                     <div className="flex items-center gap-1 justify-end" onClick={e => e.stopPropagation()}>
-                                      <input className="w-32 text-[10px] p-1 border rounded focus:ring-1 focus:ring-red-500" value={motivoTemp} onChange={e => setMotivoTemp(e.target.value)} placeholder="Justificativa..." autoFocus />
+                                      <input className="w-32 text-[10px] p-1 border rounded focus:ring-1 focus:ring-brand-400" value={motivoTemp} onChange={e => setMotivoTemp(e.target.value)} placeholder="Justificativa..." autoFocus />
                                       <button onClick={() => saveMotivo(occ.id)} className="p-1 text-emerald-600 hover:bg-emerald-50 rounded"><Save size={14} /></button>
                                     </div>
                                   ) : (

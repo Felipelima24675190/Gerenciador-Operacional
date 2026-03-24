@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { 
-  BarChart3, 
-  UploadCloud, 
-  Users, 
-  FileText, 
+import {
+  BarChart3,
+  UploadCloud,
+  Users,
+  FileText,
   Database,
   UserPlus,
   ChevronDown,
@@ -19,6 +19,8 @@ import {
   Clock,
   CarFront,
   RadioTower,
+  LayoutDashboard,
+  BookOpen,
 } from 'lucide-react';
 import { twMerge } from 'tailwind-merge';
 import { clsx } from 'clsx';
@@ -51,450 +53,347 @@ export default function Sidebar({ activeTab, onTabChange, user, onLogout }: Side
 
   const menuButtonClass = (isActive: boolean) => twMerge(
     clsx(
-      "w-full flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors duration-200 rounded-lg",
-      isActive ? "bg-red-600 text-white shadow-lg shadow-red-900/20" : "text-blue-100 hover:bg-blue-800 hover:text-white"
+      "w-full flex items-center gap-3 px-4 py-2.5 text-[13px] font-medium rounded-lg transition-all duration-200",
+      isActive
+        ? "bg-white/15 text-white shadow-lg shadow-black/10 border-l-[3px] border-white pl-[13px]"
+        : "text-white/70 hover:bg-white/10 hover:text-white border-l-[3px] border-transparent pl-[13px]"
     )
   );
 
+  const sectionHeaderClass = "w-full flex items-center justify-between px-3 py-2 text-[10px] font-black text-white/50 uppercase tracking-widest hover:text-white/80 transition-colors";
+
   return (
-    <aside className="w-64 bg-[#0e4f8f] text-white flex flex-col h-screen fixed top-0 left-0 shadow-2xl z-20 overflow-y-auto">
-      <div className="p-6 border-b border-[#0d5e87] bg-[#0d5e87]">
+    <aside className="w-64 bg-gradient-to-b from-brand-800 via-brand-700 to-brand-800 text-white flex flex-col h-screen fixed top-0 left-0 shadow-2xl z-20 overflow-y-auto">
+      {/* Logo */}
+      <div className="p-5 border-b border-white/10 bg-brand-900/50">
         <div className="flex items-center gap-3">
-          <img src="/progresso-logo.png" alt="Progresso" className="w-12 h-12 object-contain rounded-md border border-white/30 bg-white/10" loading="lazy" onError={(e) => { const target = e.currentTarget as HTMLImageElement; target.src = '/fallback-logo.png'; target.style.objectFit = 'contain'; }} />
+          <img src="/progresso-logo.png" alt="Progresso" className="w-11 h-11 object-contain rounded-xl border border-white/20 bg-white/10 p-0.5" loading="lazy" onError={(e) => { const target = e.currentTarget as HTMLImageElement; target.src = '/fallback-logo.png'; target.style.objectFit = 'contain'; }} />
           <div>
-            <p className="text-lg font-black">Gerenciador da Operação Progresso</p>
+            <p className="text-sm font-black leading-tight">Gerenciador</p>
+            <p className="text-[11px] font-bold text-white/60 leading-tight">Operacao Progresso</p>
           </div>
         </div>
       </div>
 
-      <nav className="flex-1 py-6 px-3 space-y-8">
+      <nav className="flex-1 py-4 px-3 space-y-5">
+        {/* Dashboard Operacional - Top Item */}
         <div>
-          <button 
-            onClick={() => setPontualidadeOpen(!pontualidadeOpen)}
-            className="w-full flex items-center justify-between px-3 py-2 text-[10px] font-black text-white uppercase tracking-widest hover:text-white transition-colors"
+          <button
+            className={twMerge(clsx(
+              "w-full flex items-center gap-3 px-4 py-3 text-[13px] font-bold rounded-xl transition-all duration-200",
+              activeTab === 'dashboard-operacional'
+                ? "bg-brand-400 text-white shadow-lg shadow-brand-900/40"
+                : "bg-white/5 text-white/80 hover:bg-white/10 hover:text-white border border-white/10"
+            ))}
+            onClick={() => onTabChange('dashboard-operacional')}
           >
+            <LayoutDashboard size={18} /> Dashboard Operacional
+          </button>
+        </div>
+
+        {/* Dicionario de Linha - Standalone */}
+        <div>
+          <button
+            className={twMerge(clsx(
+              "w-full flex items-center gap-3 px-4 py-3 text-[13px] font-bold rounded-xl transition-all duration-200",
+              activeTab === 'line-dictionary'
+                ? "bg-brand-400 text-white shadow-lg shadow-brand-900/40"
+                : "bg-white/5 text-white/80 hover:bg-white/10 hover:text-white border border-white/10"
+            ))}
+            onClick={() => onTabChange('line-dictionary')}
+          >
+            <BookOpen size={18} /> Dicionario de Linha
+          </button>
+        </div>
+
+        <div className="border-t border-white/10 pt-4">
+          <button onClick={() => setPontualidadeOpen(!pontualidadeOpen)} className={sectionHeaderClass}>
             <span>Pontualidade</span>
             {pontualidadeOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
           </button>
-          
           {pontualidadeOpen && (
-            <div className="mt-2 space-y-1 flex flex-col">
-              <button 
-                className={menuButtonClass(activeTab === 'dashboard')}
-                onClick={() => onTabChange('dashboard')}
-              >
-                <BarChart3 size={18} /> Dashboard
+            <div className="mt-1.5 space-y-0.5 flex flex-col sidebar-collapse-enter">
+              <button className={menuButtonClass(activeTab === 'dashboard')} onClick={() => onTabChange('dashboard')}>
+                <BarChart3 size={17} /> Dashboard Pontualidade
               </button>
               {isAdmin && (
-                <button 
-                  className={menuButtonClass(activeTab === 'import-occurrences')}
-                  onClick={() => onTabChange('import-occurrences')}
-                >
-                  <UploadCloud size={18} /> Importar Ocorrências
+                <button className={menuButtonClass(activeTab === 'import-occurrences')} onClick={() => onTabChange('import-occurrences')}>
+                  <UploadCloud size={17} /> Importar Ocorrencias
                 </button>
               )}
-              <button 
-                className={menuButtonClass(activeTab === 'consult-driver')}
-                onClick={() => onTabChange('consult-driver')}
-              >
-                <Users size={18} /> Consultar Motorista
+              <button className={menuButtonClass(activeTab === 'consult-driver')} onClick={() => onTabChange('consult-driver')}>
+                <Users size={17} /> Consultar Motorista
               </button>
             </div>
           )}
         </div>
 
         <div>
-          <button 
-            onClick={() => setSpeedOpen(!speedOpen)}
-            className="w-full flex items-center justify-between px-3 py-2 text-[10px] font-black text-blue-400 uppercase tracking-widest hover:text-white transition-colors"
-          >
+          <button onClick={() => setSpeedOpen(!speedOpen)} className={sectionHeaderClass}>
             <span>Velocidade</span>
             {speedOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
           </button>
-          
           {speedOpen && (
-            <div className="mt-2 space-y-1 flex flex-col">
+            <div className="mt-1.5 space-y-0.5 flex flex-col sidebar-collapse-enter">
               {isAdmin && (
-                <button 
-                  className={menuButtonClass(activeTab === 'import-speed')}
-                  onClick={() => onTabChange('import-speed')}
-                >
-                  <UploadCloud size={18} /> Importar Excessos
+                <button className={menuButtonClass(activeTab === 'import-speed')} onClick={() => onTabChange('import-speed')}>
+                  <UploadCloud size={17} /> Importar Excessos
                 </button>
               )}
-              <button 
-                className={menuButtonClass(activeTab === 'view-speed')}
-                onClick={() => onTabChange('view-speed')}
-              >
-                <Gauge size={18} /> Consultar Excessos
+              <button className={menuButtonClass(activeTab === 'view-speed')} onClick={() => onTabChange('view-speed')}>
+                <Gauge size={17} /> Consultar Excessos
               </button>
-              <button 
-                className={menuButtonClass(activeTab === 'consult-speed-driver')}
-                onClick={() => onTabChange('consult-speed-driver')}
-              >
-                <Users size={18} /> Consultar Motorista
+              <button className={menuButtonClass(activeTab === 'consult-speed-driver')} onClick={() => onTabChange('consult-speed-driver')}>
+                <Users size={17} /> Consultar Motorista
               </button>
             </div>
           )}
         </div>
 
         <div>
-          <button 
-            onClick={() => setAnttOpen(!anttOpen)}
-            className="w-full flex items-center justify-between px-3 py-2 text-[10px] font-black text-blue-400 uppercase tracking-widest hover:text-white transition-colors"
-          >
+          <button onClick={() => setAnttOpen(!anttOpen)} className={sectionHeaderClass}>
             <span>Multas ANTT</span>
             {anttOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
           </button>
-          
           {anttOpen && (
-            <div className="mt-2 space-y-1 flex flex-col">
+            <div className="mt-1.5 space-y-0.5 flex flex-col sidebar-collapse-enter">
               {isAdmin && (
-                <button 
-                  className={menuButtonClass(activeTab === 'import-antt')}
-                  onClick={() => onTabChange('import-antt')}
-                >
-                  <UploadCloud size={18} /> Importar Multas
+                <button className={menuButtonClass(activeTab === 'import-antt')} onClick={() => onTabChange('import-antt')}>
+                  <UploadCloud size={17} /> Importar Multas
                 </button>
               )}
-              <button 
-                className={menuButtonClass(activeTab === 'view-antt')}
-                onClick={() => onTabChange('view-antt')}
-              >
-                <FileWarning size={18} /> Consultar Multas
+              <button className={menuButtonClass(activeTab === 'view-antt')} onClick={() => onTabChange('view-antt')}>
+                <FileWarning size={17} /> Consultar Multas
               </button>
             </div>
           )}
         </div>
 
         <div>
-          <button 
-            onClick={() => setTransitOpen(!transitOpen)}
-            className="w-full flex items-center justify-between px-3 py-2 text-[10px] font-black text-blue-400 uppercase tracking-widest hover:text-white transition-colors"
-          >
-            <span>Multas Trânsito</span>
+          <button onClick={() => setTransitOpen(!transitOpen)} className={sectionHeaderClass}>
+            <span>Multas Transito</span>
             {transitOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
           </button>
-          
           {transitOpen && (
-            <div className="mt-2 space-y-1 flex flex-col">
+            <div className="mt-1.5 space-y-0.5 flex flex-col sidebar-collapse-enter">
               {isAdmin && (
-                <button 
-                  className={menuButtonClass(activeTab === 'import-transit')}
-                  onClick={() => onTabChange('import-transit')}
-                >
-                  <UploadCloud size={18} /> Importar Multas
+                <button className={menuButtonClass(activeTab === 'import-transit')} onClick={() => onTabChange('import-transit')}>
+                  <UploadCloud size={17} /> Importar Multas
                 </button>
               )}
-              <button 
-                className={menuButtonClass(activeTab === 'view-transit')}
-                onClick={() => onTabChange('view-transit')}
-              >
-                <AlertTriangle size={18} /> Consultar Multas
+              <button className={menuButtonClass(activeTab === 'view-transit')} onClick={() => onTabChange('view-transit')}>
+                <AlertTriangle size={17} /> Consultar Multas
               </button>
             </div>
           )}
         </div>
 
         <div>
-          <button
-            onClick={() => setStopsOpen(!stopsOpen)}
-            className="w-full flex items-center justify-between px-3 py-2 text-[10px] font-black text-blue-400 uppercase tracking-widest hover:text-white transition-colors"
-          >
+          <button onClick={() => setStopsOpen(!stopsOpen)} className={sectionHeaderClass}>
             <span>Paradas Indevidas</span>
             {stopsOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
           </button>
-          
           {stopsOpen && (
-            <div className="mt-2 space-y-1 flex flex-col">
+            <div className="mt-1.5 space-y-0.5 flex flex-col sidebar-collapse-enter">
               {isAdmin && (
-                <button 
-                  className={menuButtonClass(activeTab === 'import-stops')}
-                  onClick={() => onTabChange('import-stops')}
-                >
-                  <UploadCloud size={18} /> Importar Paradas
+                <button className={menuButtonClass(activeTab === 'import-stops')} onClick={() => onTabChange('import-stops')}>
+                  <UploadCloud size={17} /> Importar Paradas
                 </button>
               )}
-              <button 
-                className={menuButtonClass(activeTab === 'view-stops')}
-                onClick={() => onTabChange('view-stops')}
-              >
-                <StopCircle size={18} /> Consultar Paradas
+              <button className={menuButtonClass(activeTab === 'view-stops')} onClick={() => onTabChange('view-stops')}>
+                <StopCircle size={17} /> Consultar Paradas
               </button>
             </div>
           )}
         </div>
 
         <div>
-          <button 
-            onClick={() => setAvariaOpen(!avariaOpen)}
-            className="w-full flex items-center justify-between px-3 py-2 text-[10px] font-black text-blue-400 uppercase tracking-widest hover:text-white transition-colors"
-          >
+          <button onClick={() => setAvariaOpen(!avariaOpen)} className={sectionHeaderClass}>
             <span>Avaria</span>
             {avariaOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
           </button>
-          
           {avariaOpen && (
-            <div className="mt-2 space-y-1 flex flex-col">
+            <div className="mt-1.5 space-y-0.5 flex flex-col sidebar-collapse-enter">
               {isAdmin && (
-                <button 
-                  className={menuButtonClass(activeTab === 'create-avaria')}
-                  onClick={() => onTabChange('create-avaria')}
-                >
-                  <AlertTriangle size={18} /> Cadastrar Avaria
+                <button className={menuButtonClass(activeTab === 'create-avaria')} onClick={() => onTabChange('create-avaria')}>
+                  <AlertTriangle size={17} /> Cadastrar Avaria
                 </button>
               )}
-              <button 
-                className={menuButtonClass(activeTab === 'view-avaria')}
-                onClick={() => onTabChange('view-avaria')}
-              >
-                <AlertTriangle size={18} /> Consultar Avarias
+              <button className={menuButtonClass(activeTab === 'view-avaria')} onClick={() => onTabChange('view-avaria')}>
+                <AlertTriangle size={17} /> Consultar Avarias
               </button>
             </div>
           )}
         </div>
 
         <div>
-          <button
-            onClick={() => setQuilometragemOpen(!quilometragemOpen)}
-            className="w-full flex items-start justify-between px-3 py-2 text-[10px] font-black text-blue-400 uppercase tracking-wider hover:text-white transition-colors"
-          >
-            <span>Quilometragem Operacional</span>
-            <span className="mt-0.5 shrink-0">{quilometragemOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}</span>
+          <button onClick={() => setQuilometragemOpen(!quilometragemOpen)} className={sectionHeaderClass}>
+            <span>Quilometragem Op.</span>
+            {quilometragemOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
           </button>
-
           {quilometragemOpen && (
-            <div className="mt-2 space-y-1 flex flex-col">
+            <div className="mt-1.5 space-y-0.5 flex flex-col sidebar-collapse-enter">
               {isAdmin && (
-                <button
-                  className={menuButtonClass(activeTab === 'import-ocioso')}
-                  onClick={() => onTabChange('import-ocioso')}
-                >
-                  <UploadCloud size={18} /> Importar Quilometragem
+                <button className={menuButtonClass(activeTab === 'import-ocioso')} onClick={() => onTabChange('import-ocioso')}>
+                  <UploadCloud size={17} /> Importar Quilometragem
                 </button>
               )}
-              <button
-                className={menuButtonClass(activeTab === 'view-ocioso')}
-                onClick={() => onTabChange('view-ocioso')}
-              >
-                <Clock size={18} /> Consultar Quilometragem
+              <button className={menuButtonClass(activeTab === 'view-ocioso')} onClick={() => onTabChange('view-ocioso')}>
+                <Clock size={17} /> Consultar Quilometragem
               </button>
             </div>
           )}
         </div>
 
         <div>
-          <button
-            onClick={() => setOciosidadeMotoOpen(!ociosidadeMotoOpen)}
-            className="w-full flex items-start justify-between px-3 py-2 text-[10px] font-black text-blue-400 uppercase tracking-wider hover:text-white transition-colors"
-          >
+          <button onClick={() => setOciosidadeMotoOpen(!ociosidadeMotoOpen)} className={sectionHeaderClass}>
             <span>Ociosidade Motorista</span>
-            <span className="mt-0.5 shrink-0">{ociosidadeMotoOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}</span>
+            {ociosidadeMotoOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
           </button>
-
           {ociosidadeMotoOpen && (
-            <div className="mt-2 space-y-1 flex flex-col">
+            <div className="mt-1.5 space-y-0.5 flex flex-col sidebar-collapse-enter">
               {isAdmin && (
-                <button
-                  className={menuButtonClass(activeTab === 'import-ociosidade-motorista')}
-                  onClick={() => onTabChange('import-ociosidade-motorista')}
-                >
-                  <UploadCloud size={18} /> Importar Ociosidade
+                <button className={menuButtonClass(activeTab === 'import-ociosidade-motorista')} onClick={() => onTabChange('import-ociosidade-motorista')}>
+                  <UploadCloud size={17} /> Importar Ociosidade
                 </button>
               )}
-              <button
-                className={menuButtonClass(activeTab === 'view-ociosidade-motorista')}
-                onClick={() => onTabChange('view-ociosidade-motorista')}
-              >
-                <CarFront size={18} /> Consultar Ociosidade
+              <button className={menuButtonClass(activeTab === 'view-ociosidade-motorista')} onClick={() => onTabChange('view-ociosidade-motorista')}>
+                <CarFront size={17} /> Consultar Ociosidade
               </button>
             </div>
           )}
         </div>
 
         <div>
-          <button
-            onClick={() => setMonitriipOpen(!monitriipOpen)}
-            className="w-full flex items-center justify-between px-3 py-2 text-[10px] font-black text-blue-400 uppercase tracking-widest hover:text-white transition-colors"
-          >
+          <button onClick={() => setMonitriipOpen(!monitriipOpen)} className={sectionHeaderClass}>
             <span>Monitriip</span>
             {monitriipOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
           </button>
-
           {monitriipOpen && (
-            <div className="mt-2 space-y-1 flex flex-col">
+            <div className="mt-1.5 space-y-0.5 flex flex-col sidebar-collapse-enter">
               {isAdmin && (
-                <button
-                  className={menuButtonClass(activeTab === 'import-monitriip')}
-                  onClick={() => onTabChange('import-monitriip')}
-                >
-                  <UploadCloud size={18} /> Importar Monitriip
+                <button className={menuButtonClass(activeTab === 'import-monitriip')} onClick={() => onTabChange('import-monitriip')}>
+                  <UploadCloud size={17} /> Importar Monitriip
                 </button>
               )}
-              <button
-                className={menuButtonClass(activeTab === 'view-monitriip')}
-                onClick={() => onTabChange('view-monitriip')}
-              >
-                <RadioTower size={18} /> Consultar Monitriip
+              <button className={menuButtonClass(activeTab === 'view-monitriip')} onClick={() => onTabChange('view-monitriip')}>
+                <RadioTower size={17} /> Consultar Monitriip
               </button>
             </div>
           )}
         </div>
 
         <div>
-          <button
-            onClick={() => setRelatoriosOpen(!relatoriosOpen)}
-            className="w-full flex items-center justify-between px-3 py-2 text-[10px] font-black text-blue-400 uppercase tracking-widest hover:text-white transition-colors"
-          >
-            <span>Relatórios</span>
+          <button onClick={() => setRelatoriosOpen(!relatoriosOpen)} className={sectionHeaderClass}>
+            <span>Relatorios</span>
             {relatoriosOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
           </button>
-
           {relatoriosOpen && (
-            <div className="mt-2 space-y-1 flex flex-col">
-              <button
-                className={menuButtonClass(activeTab === 'reports')}
-                onClick={() => onTabChange('reports')}
-              >
-                <FileText size={18} /> Relatórios e Métricas
+            <div className="mt-1.5 space-y-0.5 flex flex-col sidebar-collapse-enter">
+              <button className={menuButtonClass(activeTab === 'reports')} onClick={() => onTabChange('reports')}>
+                <FileText size={17} /> Relatorios e Metricas
               </button>
             </div>
           )}
         </div>
 
-        <div>
-          <button
-            onClick={() => setMotoristasOpen(!motoristasOpen)}
-            className="w-full flex items-center justify-between px-3 py-2 text-[10px] font-black text-blue-400 uppercase tracking-widest hover:text-white transition-colors"
-          >
+        <div className="border-t border-white/10 pt-4">
+          <button onClick={() => setMotoristasOpen(!motoristasOpen)} className={sectionHeaderClass}>
             <span>Base de Motoristas</span>
             {motoristasOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
           </button>
-          
           {motoristasOpen && (
-            <div className="mt-2 space-y-1 flex flex-col">
+            <div className="mt-1.5 space-y-0.5 flex flex-col sidebar-collapse-enter">
               {isAdmin && (
-                <button 
-                  className={menuButtonClass(activeTab === 'import-drivers')}
-                  onClick={() => onTabChange('import-drivers')}
-                >
-                  <Database size={18} /> Importar Base
+                <button className={menuButtonClass(activeTab === 'import-drivers')} onClick={() => onTabChange('import-drivers')}>
+                  <Database size={17} /> Importar Base
                 </button>
               )}
               {isAdmin && (
-                <button 
-                  className={menuButtonClass(activeTab === 'manual-driver')}
-                  onClick={() => onTabChange('manual-driver')}
-                >
-                  <UserPlus size={18} /> Cadastrar Manualmente
+                <button className={menuButtonClass(activeTab === 'manual-driver')} onClick={() => onTabChange('manual-driver')}>
+                  <UserPlus size={17} /> Cadastrar Manualmente
                 </button>
               )}
-              <button 
-                className={menuButtonClass(activeTab === 'consult-base')}
-                onClick={() => onTabChange('consult-base')}
-              >
-                <Users size={18} /> Consultar Base
+              <button className={menuButtonClass(activeTab === 'consult-base')} onClick={() => onTabChange('consult-base')}>
+                <Users size={17} /> Consultar Base
               </button>
             </div>
           )}
         </div>
 
         <div>
-          <button 
-            onClick={() => setLinhasOpen(!linhasOpen)}
-            className="w-full flex items-center justify-between px-3 py-2 text-[10px] font-black text-blue-400 uppercase tracking-widest hover:text-white transition-colors"
-          >
+          <button onClick={() => setLinhasOpen(!linhasOpen)} className={sectionHeaderClass}>
             <span>Base de Linhas</span>
             {linhasOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
           </button>
-          
           {linhasOpen && (
-            <div className="mt-2 space-y-1 flex flex-col">
+            <div className="mt-1.5 space-y-0.5 flex flex-col sidebar-collapse-enter">
               {isAdmin && (
-                <button 
-                  className={menuButtonClass(activeTab === 'import-lines')}
-                  onClick={() => onTabChange('import-lines')}
-                >
-                  <Database size={18} /> Importar Linhas
+                <button className={menuButtonClass(activeTab === 'import-lines')} onClick={() => onTabChange('import-lines')}>
+                  <Database size={17} /> Importar Linhas
                 </button>
               )}
-              <button 
-                className={menuButtonClass(activeTab === 'consult-lines')}
-                onClick={() => onTabChange('consult-lines')}
-              >
-                <Map size={18} /> Consultar Linhas
+              <button className={menuButtonClass(activeTab === 'consult-lines')} onClick={() => onTabChange('consult-lines')}>
+                <Map size={17} /> Consultar Linhas
+              </button>
+              <button className={menuButtonClass(activeTab === 'line-dictionary')} onClick={() => onTabChange('line-dictionary')}>
+                <BookOpen size={17} /> Dicionario de Linhas
               </button>
             </div>
           )}
         </div>
 
         <div>
-          <button
-            onClick={() => setVeiculosOpen(!veiculosOpen)}
-            className="w-full flex items-center justify-between px-3 py-2 text-[10px] font-black text-blue-400 uppercase tracking-widest hover:text-white transition-colors"
-          >
-            <span>Base de Veículos</span>
+          <button onClick={() => setVeiculosOpen(!veiculosOpen)} className={sectionHeaderClass}>
+            <span>Base de Veiculos</span>
             {veiculosOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
           </button>
-          
           {veiculosOpen && (
-            <div className="mt-2 space-y-1 flex flex-col">
+            <div className="mt-1.5 space-y-0.5 flex flex-col sidebar-collapse-enter">
               {isAdmin && (
-                <button 
-                  className={menuButtonClass(activeTab === 'import-vehicles')}
-                  onClick={() => onTabChange('import-vehicles')}
-                >
-                  <Database size={18} /> Importar Veículos
+                <button className={menuButtonClass(activeTab === 'import-vehicles')} onClick={() => onTabChange('import-vehicles')}>
+                  <Database size={17} /> Importar Veiculos
                 </button>
               )}
-              <button 
-                className={menuButtonClass(activeTab === 'consult-vehicles')}
-                onClick={() => onTabChange('consult-vehicles')}
-              >
-                <Bus size={18} /> Consultar Veículos
+              <button className={menuButtonClass(activeTab === 'consult-vehicles')} onClick={() => onTabChange('consult-vehicles')}>
+                <Bus size={17} /> Consultar Veiculos
               </button>
             </div>
           )}
         </div>
 
-        <div>
-          <button 
-            onClick={() => setConfigOpen(!configOpen)}
-            className="w-full flex items-center justify-between px-3 py-2 text-[10px] font-black text-blue-400 uppercase tracking-widest hover:text-white transition-colors"
-          >
-            <span>Configurações</span>
+        <div className="border-t border-white/10 pt-4">
+          <button onClick={() => setConfigOpen(!configOpen)} className={sectionHeaderClass}>
+            <span>Configuracoes</span>
             {configOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
           </button>
-          
           {configOpen && (
-            <div className="mt-2 space-y-1 flex flex-col">
+            <div className="mt-1.5 space-y-0.5 flex flex-col sidebar-collapse-enter">
               {isAdmin && (
-                <button 
-                  className={menuButtonClass(activeTab === 'users')}
-                  onClick={() => onTabChange('users')}
-                >
-                  <UserCog size={18} /> Usuários
+                <button className={menuButtonClass(activeTab === 'users')} onClick={() => onTabChange('users')}>
+                  <UserCog size={17} /> Usuarios
                 </button>
               )}
-              <button 
+              <button
                 onClick={onLogout}
-                className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors rounded-lg"
+                className="w-full flex items-center gap-3 px-4 py-2.5 text-[13px] font-medium text-red-300 hover:bg-red-500/10 hover:text-red-200 transition-all rounded-lg border-l-[3px] border-transparent pl-[13px]"
               >
-                <LogOut size={18} /> Sair
+                <LogOut size={17} /> Sair
               </button>
             </div>
           )}
         </div>
       </nav>
 
-      <div className="p-6 mt-auto border-t border-blue-900 bg-blue-900/20">
+      {/* User Footer */}
+      <div className="p-4 mt-auto border-t border-white/10 bg-brand-900/30">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-blue-800 rounded-lg flex items-center justify-center text-blue-300 font-bold text-xs">
+          <div className="w-9 h-9 bg-brand-400 rounded-xl flex items-center justify-center text-white font-bold text-xs shadow-md">
             {user.nome.charAt(0)}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-black truncate">{user.nome}</p>
-            <p className="text-[10px] text-blue-500 font-bold uppercase">{user.role}</p>
+            <p className="text-xs font-bold truncate">{user.nome}</p>
+            <p className="text-[10px] text-white/40 font-bold uppercase">{user.role}</p>
           </div>
         </div>
       </div>

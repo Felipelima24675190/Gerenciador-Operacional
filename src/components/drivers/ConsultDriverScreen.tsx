@@ -335,7 +335,7 @@ export default function ConsultDriverScreen({ motoristas, ocorrencias, multasTra
                 placeholder="Ex: 26646..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500 bg-slate-50"
+                className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-400 bg-slate-50"
               />
               <Search className="absolute left-3 top-2.5 text-gray-400" size={16} />
             </div>

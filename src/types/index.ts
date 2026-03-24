@@ -15,17 +15,24 @@ export interface Linha {
 
 export interface Viagem {
   id: string;
-  numeroLinha: string;
-  atendimento: string;
-  nomeLinha: string;
-  sentido: string;
-  pontoInicio: string;
-  pontoFim: string;
-  prevInicio: string; // Ex: 18/03/2026 04:00
-  prevFim: string;    // Ex: 18/03/2026 09:00
-  ordem: number; 
+  numeroLinha: string;       // Line identifier (used for matching across reports)
+  atendimento: string;       // Display name: "ORIGEM X DESTINO"
+  nomeLinha: string;         // Full line name from xlsx: "RECIFE(PE) X PETROLINA(PE)"
+  sentido: string;           // "IDA" | "VOLTA" | "Ida" | "Volta"
+  pontoInicio: string;       // Origin city
+  pontoFim: string;          // Destination city
+  prevInicio: string;        // Ex: 18/03/2026 04:00
+  prevFim: string;           // Ex: 18/03/2026 09:00 (may be empty for xlsx imports)
+  ordem: number;
   grupoCor?: string;
-  diasOperantes: number[]; // [0,1,2,3,4,5,6] onde 0 é Domingo
+  diasOperantes: number[];   // [0,1,2,3,4,5,6] onde 0 é Domingo
+  // New fields from xlsx import
+  servico?: string;          // 8-digit ANTT service code (e.g., "10202990")
+  empresa?: string;          // "VIACAO PROGRESSO" | "VIACAO CRUZEIRO"
+  regiao?: string;           // "LITORAL" | "NORDESTE" | "NORTE"
+  origem?: string;           // Origin with state: "RECIFE(PE)"
+  destino?: string;          // Destination with state: "PETROLINA(PE)"
+  horarioSaida?: string;     // Departure time HH:MM
 }
 
 export interface Veiculo {
@@ -247,4 +254,10 @@ export interface EventoMotorista {
   data: string;        // DD/MM/YYYY
   tipo: TipoEventoMotorista;
   observacao?: string;
+}
+
+export interface LinhaAbreviacao {
+  id: string;
+  sigla: string;
+  nomeCompleto: string;
 }

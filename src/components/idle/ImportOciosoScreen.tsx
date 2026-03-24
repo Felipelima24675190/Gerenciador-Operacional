@@ -1,6 +1,7 @@
 import { useState, Dispatch, SetStateAction } from 'react';
 import { UploadCloud, CheckCircle, AlertTriangle, Trash2, AlertCircle } from 'lucide-react';
 import { RegistroOciosidade, RegistroLinha, Viagem, UserRole } from '../../types';
+import { buildLinhaLookup } from '../../utils/linhaLookup';
 
 interface ImportOciosoScreenProps {
   registros: RegistroOciosidade[];
@@ -34,8 +35,11 @@ export default function ImportOciosoScreen({ registros, setRegistros, linhas, se
     );
   }
 
-  // Build a set of known line codes from viagens base
+  // Build flexible lookup for line matching
+  const resolveLinha = buildLinhaLookup(viagens);
   const linhasCadastradas = new Set(viagens.map(v => v.numeroLinha.trim()));
+  // Also index by servico for broader matching
+  viagens.forEach(v => { if (v.servico) linhasCadastradas.add(v.servico.trim()); });
 
   // ─── File 2: Operacional e Ocioso por Veículo ───────────────────────────────
   const processVeicFile = (file: File) => {
@@ -112,7 +116,7 @@ export default function ImportOciosoScreen({ registros, setRegistros, linhas, se
 
         if (!numeroLinha) continue;
 
-        const pendenteCadastro = !linhasCadastradas.has(numeroLinha);
+        const pendenteCadastro = !linhasCadastradas.has(numeroLinha) && !resolveLinha(numeroLinha);
 
         novosRegistros.push({
           id: crypto.randomUUID(),

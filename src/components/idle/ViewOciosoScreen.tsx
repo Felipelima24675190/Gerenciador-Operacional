@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { RegistroOciosidade, RegistroLinha, Viagem } from '../../types';
+import { buildLinhaLookup } from '../../utils/linhaLookup';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
 } from 'recharts';
@@ -68,7 +69,7 @@ export default function ViewOciosoScreen({ registros, linhas, viagens }: ViewOci
   const [dataFim, setDataFim] = useState('');
   const [veiculoBusca, setVeiculoBusca] = useState('');
 
-  const viagensMap = useMemo(() => new Map(viagens.map(v => [v.numeroLinha.trim(), v.nomeLinha])), [viagens]);
+  const resolveLinha = useMemo(() => buildLinhaLookup(viagens), [viagens]);
 
   // ─── Filter file-2 records by date range ──────────────────────────────────
   const registrosFiltrados = useMemo(() => {
@@ -143,7 +144,7 @@ export default function ViewOciosoScreen({ registros, linhas, viagens }: ViewOci
   }, [registrosFiltrados]);
 
   const lineDisplayName = (codigo: string) => {
-    const nome = viagensMap.get(codigo);
+    const nome = resolveLinha(codigo);
     if (!nome) return codigo;
     // Show short name truncated to 22 chars; tooltip shows full
     return nome.length > 22 ? nome.slice(0, 21) + '…' : nome;
@@ -155,8 +156,8 @@ export default function ViewOciosoScreen({ registros, linhas, viagens }: ViewOci
       .filter(l => l.km > 0)
       .sort((a, b) => b.km - a.km)
       .slice(0, 10)
-      .map(l => ({ name: lineDisplayName(l.numeroLinha), fullName: viagensMap.get(l.numeroLinha) || l.numeroLinha, code: l.numeroLinha, value: l.km, pending: l.pendenteCadastro }));
-  }, [linhas, viagensMap]);
+      .map(l => ({ name: lineDisplayName(l.numeroLinha), fullName: resolveLinha(l.numeroLinha) || l.numeroLinha, code: l.numeroLinha, value: l.km, pending: l.pendenteCadastro }));
+  }, [linhas, resolveLinha]);
 
   // ─── Top 10 linhas por km ociosa ──────────────────────────────────────────
   const topLinhasOcio = useMemo(() => {
@@ -168,20 +169,20 @@ export default function ViewOciosoScreen({ registros, linhas, viagens }: ViewOci
       .filter(l => !isFretamento(l.numeroLinha))
       .map(l => {
         const ocioTotal = l.veiculos.reduce((s, v) => s + (veicOcioMap[v] || 0), 0);
-        return { name: lineDisplayName(l.numeroLinha), fullName: viagensMap.get(l.numeroLinha) || l.numeroLinha, code: l.numeroLinha, value: ocioTotal, pending: l.pendenteCadastro };
+        return { name: lineDisplayName(l.numeroLinha), fullName: resolveLinha(l.numeroLinha) || l.numeroLinha, code: l.numeroLinha, value: ocioTotal, pending: l.pendenteCadastro };
       })
       .filter(l => l.value > 0)
       .sort((a, b) => b.value - a.value)
       .slice(0, 10);
-  }, [linhas, registrosFiltrados, viagensMap]);
+  }, [linhas, registrosFiltrados, resolveLinha]);
 
   // ─── Fretamento lines chart ────────────────────────────────────────────────
   const topLinhasFretamento = useMemo(() => {
     return linhas
       .filter(l => isFretamento(l.numeroLinha))
-      .map(l => ({ name: lineDisplayName(l.numeroLinha), fullName: viagensMap.get(l.numeroLinha) || l.numeroLinha, code: l.numeroLinha, value: l.km, pending: l.pendenteCadastro }))
+      .map(l => ({ name: lineDisplayName(l.numeroLinha), fullName: resolveLinha(l.numeroLinha) || l.numeroLinha, code: l.numeroLinha, value: l.km, pending: l.pendenteCadastro }))
       .sort((a, b) => b.value - a.value);
-  }, [linhas, viagensMap]);
+  }, [linhas, resolveLinha]);
 
   // ─── Vehicle lookup: which lines does a vehicle run on? ───────────────────
   const veiculoParaLinhas = useMemo(() => {
@@ -354,7 +355,7 @@ export default function ViewOciosoScreen({ registros, linhas, viagens }: ViewOci
                     {veiculoBuscaLinhas.linhasList.sort((a, b) => b.km - a.km).map(l => (
                       <tr key={l.id} className="border-b border-gray-100 hover:bg-slate-50">
                         <td className="px-4 py-2 font-mono font-bold text-slate-800">{l.numeroLinha}</td>
-                        <td className="px-4 py-2 text-slate-600">{viagensMap.get(l.numeroLinha) || <span className="text-slate-400 italic">Não cadastrada</span>}</td>
+                        <td className="px-4 py-2 text-slate-600">{resolveLinha(l.numeroLinha) || <span className="text-slate-400 italic">Não cadastrada</span>}</td>
                         <td className="px-4 py-2 text-right font-bold text-slate-700">{fmtKm(l.km)}</td>
                         <td className="px-4 py-2">
                           {l.pendenteCadastro ? (

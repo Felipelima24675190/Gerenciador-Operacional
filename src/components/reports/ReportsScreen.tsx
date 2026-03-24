@@ -1,9 +1,9 @@
 import { useState, useMemo } from 'react';
 import { Calendar, Filter, FileBarChart, Users, Bus, FileDown } from 'lucide-react';
-import { Motorista, Ocorrencia, ExcessoVelocidade, MultaANTT, Avaria, ParadaIndevida, MultaTransito, RegistroOciosidade, RegistroLinha, Viagem } from '../../types';
+import { Motorista, Ocorrencia, ExcessoVelocidade, MultaANTT, Avaria, ParadaIndevida, MultaTransito, RegistroOciosidade, RegistroLinha } from '../../types';
 import StatCard from '../dashboard/StatCard';
 import { isWithinInterval, startOfDay, endOfDay } from 'date-fns';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+
 
 interface ReportsScreenProps {
   motoristas: Motorista[];
@@ -15,7 +15,6 @@ interface ReportsScreenProps {
   multasTransito?: MultaTransito[];
   registrosOciosidade?: RegistroOciosidade[];
   registrosLinhas?: RegistroLinha[];
-  viagens?: Viagem[];
 }
 
 type Tab = 'pontualidade' | 'velocidade' | 'antt' | 'avarias' | 'paradas' | 'transito' | 'quilometragem';
@@ -122,7 +121,7 @@ function PontualidadeTab({ motoristas, ocorrencias }: { motoristas: Motorista[];
         </div>
       )}
       <div className="flex justify-end">
-        <button onClick={handleExport} disabled={!metricas.ocorrencias} className="flex items-center gap-2 bg-pink-600 hover:bg-pink-700 text-white px-6 py-3 rounded-xl font-bold transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
+        <button onClick={handleExport} disabled={!metricas.ocorrencias} className="flex items-center gap-2 bg-brand-500 hover:bg-pink-700 text-white px-6 py-3 rounded-xl font-bold transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
           <FileDown size={20} /> Exportar CSV
         </button>
       </div>
@@ -131,7 +130,7 @@ function PontualidadeTab({ motoristas, ocorrencias }: { motoristas: Motorista[];
 }
 
 // ── Velocidade ────────────────────────────────────────────────────────────────
-function VelocidadeTab({ motoristas, excessos }: { motoristas: Motorista[]; excessos: ExcessoVelocidade[] }) {
+function VelocidadeTab({ excessos }: { excessos: ExcessoVelocidade[] }) {
   const [dataInicio, setDataInicio] = useState('2026-01-01');
   const [dataFim, setDataFim] = useState('2026-12-31');
 
@@ -181,7 +180,7 @@ function VelocidadeTab({ motoristas, excessos }: { motoristas: Motorista[]; exce
         ))}
       </div>
       <div className="flex justify-end">
-        <button onClick={handleExport} disabled={!filtered.length} className="flex items-center gap-2 bg-pink-600 hover:bg-pink-700 text-white px-6 py-3 rounded-xl font-bold transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
+        <button onClick={handleExport} disabled={!filtered.length} className="flex items-center gap-2 bg-brand-500 hover:bg-pink-700 text-white px-6 py-3 rounded-xl font-bold transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
           <FileDown size={20} /> Exportar CSV
         </button>
       </div>
@@ -190,7 +189,7 @@ function VelocidadeTab({ motoristas, excessos }: { motoristas: Motorista[]; exce
 }
 
 // ── ANTT ──────────────────────────────────────────────────────────────────────
-function AnttTab({ motoristas, multas }: { motoristas: Motorista[]; multas: MultaANTT[] }) {
+function AnttTab({ multas }: { multas: MultaANTT[] }) {
   const [dataInicio, setDataInicio] = useState('2026-01-01');
   const [dataFim, setDataFim] = useState('2026-12-31');
   const [empresa, setEmpresa] = useState('Todas');
@@ -242,7 +241,7 @@ function AnttTab({ motoristas, multas }: { motoristas: Motorista[]; multas: Mult
         ))}
       </div>
       <div className="flex justify-end">
-        <button onClick={handleExport} disabled={!filtered.length} className="flex items-center gap-2 bg-pink-600 hover:bg-pink-700 text-white px-6 py-3 rounded-xl font-bold transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
+        <button onClick={handleExport} disabled={!filtered.length} className="flex items-center gap-2 bg-brand-500 hover:bg-pink-700 text-white px-6 py-3 rounded-xl font-bold transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
           <FileDown size={20} /> Exportar CSV
         </button>
       </div>
@@ -301,7 +300,7 @@ function AvariasTab({ avarias }: { avarias: Avaria[] }) {
         ))}
       </div>
       <div className="flex justify-end">
-        <button onClick={handleExport} disabled={!filtered.length} className="flex items-center gap-2 bg-pink-600 hover:bg-pink-700 text-white px-6 py-3 rounded-xl font-bold transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
+        <button onClick={handleExport} disabled={!filtered.length} className="flex items-center gap-2 bg-brand-500 hover:bg-pink-700 text-white px-6 py-3 rounded-xl font-bold transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
           <FileDown size={20} /> Exportar CSV
         </button>
       </div>
@@ -358,7 +357,7 @@ function ParadasTab({ paradas }: { paradas: ParadaIndevida[] }) {
         ))}
       </div>
       <div className="flex justify-end">
-        <button onClick={handleExport} disabled={!filtered.length} className="flex items-center gap-2 bg-pink-600 hover:bg-pink-700 text-white px-6 py-3 rounded-xl font-bold transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
+        <button onClick={handleExport} disabled={!filtered.length} className="flex items-center gap-2 bg-brand-500 hover:bg-pink-700 text-white px-6 py-3 rounded-xl font-bold transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
           <FileDown size={20} /> Exportar CSV
         </button>
       </div>
@@ -437,7 +436,7 @@ function TransitoTab({ motoristas, multas }: { motoristas: Motorista[]; multas: 
         ))}
       </div>
       <div className="flex justify-end">
-        <button onClick={handleExport} disabled={!filtered.length} className="flex items-center gap-2 bg-pink-600 hover:bg-pink-700 text-white px-6 py-3 rounded-xl font-bold transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
+        <button onClick={handleExport} disabled={!filtered.length} className="flex items-center gap-2 bg-brand-500 hover:bg-pink-700 text-white px-6 py-3 rounded-xl font-bold transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
           <FileDown size={20} /> Exportar CSV
         </button>
       </div>
@@ -446,50 +445,11 @@ function TransitoTab({ motoristas, multas }: { motoristas: Motorista[]; multas: 
 }
 
 // ── Quilometragem Operacional ─────────────────────────────────────────────────
-const CHART_COLORS = ['#0f172a', '#1e40af', '#0369a1', '#0891b2', '#0d9488', '#059669', '#16a34a', '#ca8a04', '#dc2626', '#9333ea'];
 const fmtKmR = (v: number) => `${v.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} km`;
 
-function MiniBar({ title, data, yAxisWidth = 80, valueFormatter, valueLabel = 'KM' }: {
-  title: string;
-  data: { name: string; value: number; fullName?: string; media?: number }[];
-  yAxisWidth?: number;
-  valueFormatter?: (v: number) => string;
-  valueLabel?: string;
-}) {
-  return (
-    <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-      <h4 className="text-xs font-black text-slate-600 uppercase tracking-tighter mb-3">{title}</h4>
-      {data.length > 0 ? (
-        <div className="h-56">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={data} layout="vertical" margin={{ left: 8 }}>
-              <XAxis type="number" hide />
-              <YAxis dataKey="name" type="category" tick={{ fontSize: 9 }} width={yAxisWidth} interval={0} axisLine={false} />
-              <Tooltip
-                formatter={(v: number) => [valueFormatter ? valueFormatter(v) : fmtKmR(v), valueLabel]}
-                labelFormatter={(label: string, payload: any[]) => {
-                  const e = payload?.[0]?.payload;
-                  let lbl = (e?.fullName && e.fullName !== label) ? `${e.fullName}` : label;
-                  if (e?.media !== undefined) lbl += ` — Média: ${fmtKmR(e.media)}/dia`;
-                  return lbl;
-                }}
-              />
-              <Bar dataKey="value" radius={[0, 4, 4, 0]}>
-                {data.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      ) : <p className="text-xs text-slate-400 text-center py-8">Sem dados</p>}
-    </div>
-  );
-}
-
-function QuilometragemTab({ registros, linhas, viagens }: { registros: RegistroOciosidade[]; linhas: RegistroLinha[]; viagens: Viagem[] }) {
+function QuilometragemTab({ registros, linhas }: { registros: RegistroOciosidade[]; linhas: RegistroLinha[] }) {
   const [dataInicio, setDataInicio] = useState('2026-01-01');
   const [dataFim, setDataFim] = useState('2026-12-31');
-
-  const viagensMap = useMemo(() => new Map(viagens.map(v => [v.numeroLinha.trim(), v.nomeLinha])), [viagens]);
 
   const filtered = useMemo(() => {
     const start = new Date(dataInicio + 'T00:00:00');
@@ -511,55 +471,6 @@ function QuilometragemTab({ registros, linhas, viagens }: { registros: RegistroO
     const pctOcio = totalKm > 0 ? (totalOcio / totalKm) * 100 : 0;
     return { veiculos: new Set(filtered.map(r => r.prefixo)).size, totalOp, totalOcio, totalKm, pctOp, pctOcio, linhas: linhas.length };
   }, [filtered, linhas]);
-
-  const topVeiculosOp = useMemo(() => {
-    const acc: Record<string, number> = {};
-    filtered.forEach(r => { acc[r.prefixo] = (acc[r.prefixo] || 0) + r.operacionalKm; });
-    return Object.entries(acc).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value).slice(0, 10);
-  }, [filtered]);
-
-  const topVeiculosOcio = useMemo(() => {
-    const acc: Record<string, number> = {};
-    filtered.forEach(r => { acc[r.prefixo] = (acc[r.prefixo] || 0) + r.ociosaKm; });
-    return Object.entries(acc).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value).slice(0, 10);
-  }, [filtered]);
-
-  const veiculosMais = useMemo(() => {
-    const dias: Record<string, number> = {};
-    const km: Record<string, number> = {};
-    filtered.forEach(r => {
-      if (r.operacionalKm > 0 || r.totalKm > 0) {
-        dias[r.prefixo] = (dias[r.prefixo] || 0) + 1;
-        km[r.prefixo] = (km[r.prefixo] || 0) + r.totalKm;
-      }
-    });
-    return Object.entries(dias)
-      .map(([name, d]) => ({ name, value: d, media: km[name] / d }))
-      .sort((a, b) => b.value - a.value || b.media - a.media)
-      .slice(0, 10);
-  }, [filtered]);
-
-  const veiculosMenos = useMemo(() => {
-    const dias: Record<string, number> = {};
-    const km: Record<string, number> = {};
-    filtered.forEach(r => { if (!(r.prefixo in dias)) { dias[r.prefixo] = 0; km[r.prefixo] = 0; } });
-    filtered.forEach(r => {
-      if (r.operacionalKm > 0 || r.totalKm > 0) { dias[r.prefixo]++; km[r.prefixo] += r.totalKm; }
-    });
-    return Object.entries(dias)
-      .map(([name, d]) => ({ name, value: d, media: d > 0 ? km[name] / d : 0 }))
-      .sort((a, b) => a.value - b.value || b.media - a.media)
-      .slice(0, 10);
-  }, [filtered]);
-
-  const topLinhasKm = useMemo(() => {
-    const truncate = (s: string) => s.length > 22 ? s.slice(0, 21) + '…' : s;
-    return [...linhas].filter(l => l.km > 0).sort((a, b) => b.km - a.km).slice(0, 10)
-      .map(l => {
-        const nome = viagensMap.get(l.numeroLinha) || l.numeroLinha;
-        return { name: truncate(nome), fullName: nome, value: l.km };
-      });
-  }, [linhas, viagensMap]);
 
   const handleExport = () => {
     if (!filtered.length) return;
@@ -595,24 +506,8 @@ function QuilometragemTab({ registros, linhas, viagens }: { registros: RegistroO
         ))}
       </div>
 
-      {filtered.length > 0 && (
-        <>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <MiniBar title="Top 10 Veículos — Mais KM Operacional" data={topVeiculosOp} />
-            <MiniBar title="Top 10 Veículos — Mais KM Ociosa" data={topVeiculosOcio} />
-          </div>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <MiniBar title="Veículos Mais Utilizados (Dias em Operação)" data={veiculosMais} valueFormatter={v => `${v} ${v === 1 ? 'dia' : 'dias'}`} valueLabel="Dias" />
-            <MiniBar title="Veículos Menos Utilizados (Dias em Operação)" data={veiculosMenos} valueFormatter={v => `${v} ${v === 1 ? 'dia' : 'dias'}`} valueLabel="Dias" />
-          </div>
-          {topLinhasKm.length > 0 && (
-            <MiniBar title="Top 10 Linhas — Mais KM Rodados" data={topLinhasKm} yAxisWidth={130} />
-          )}
-        </>
-      )}
-
       <div className="flex justify-end">
-        <button onClick={handleExport} disabled={!filtered.length} className="flex items-center gap-2 bg-pink-600 hover:bg-pink-700 text-white px-6 py-3 rounded-xl font-bold transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
+        <button onClick={handleExport} disabled={!filtered.length} className="flex items-center gap-2 bg-brand-500 hover:bg-pink-700 text-white px-6 py-3 rounded-xl font-bold transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
           <FileDown size={20} /> Exportar CSV
         </button>
       </div>
@@ -621,7 +516,7 @@ function QuilometragemTab({ registros, linhas, viagens }: { registros: RegistroO
 }
 
 // ── Main ──────────────────────────────────────────────────────────────────────
-export default function ReportsScreen({ motoristas, ocorrencias, excessos = [], multasAntt = [], avarias = [], paradas = [], multasTransito = [], registrosOciosidade = [], registrosLinhas = [], viagens = [] }: ReportsScreenProps) {
+export default function ReportsScreen({ motoristas, ocorrencias, excessos = [], multasAntt = [], avarias = [], paradas = [], multasTransito = [], registrosOciosidade = [], registrosLinhas = [] }: ReportsScreenProps) {
   const [activeTab, setActiveTab] = useState<Tab>('pontualidade');
 
   return (
@@ -644,12 +539,12 @@ export default function ReportsScreen({ motoristas, ocorrencias, excessos = [], 
       </div>
 
       {activeTab === 'pontualidade' && <PontualidadeTab motoristas={motoristas} ocorrencias={ocorrencias} />}
-      {activeTab === 'velocidade' && <VelocidadeTab motoristas={motoristas} excessos={excessos} />}
-      {activeTab === 'antt' && <AnttTab motoristas={motoristas} multas={multasAntt} />}
+      {activeTab === 'velocidade' && <VelocidadeTab excessos={excessos} />}
+      {activeTab === 'antt' && <AnttTab multas={multasAntt} />}
       {activeTab === 'avarias' && <AvariasTab avarias={avarias} />}
       {activeTab === 'paradas' && <ParadasTab paradas={paradas} />}
       {activeTab === 'transito' && <TransitoTab motoristas={motoristas} multas={multasTransito} />}
-      {activeTab === 'quilometragem' && <QuilometragemTab registros={registrosOciosidade} linhas={registrosLinhas} viagens={viagens} />}
+      {activeTab === 'quilometragem' && <QuilometragemTab registros={registrosOciosidade} linhas={registrosLinhas} />}
     </div>
   );
 }

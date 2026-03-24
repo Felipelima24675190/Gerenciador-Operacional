@@ -8,29 +8,33 @@ interface HeaderProps {
 
 export default function Header({ title, user }: HeaderProps) {
   return (
-    <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 sticky top-0 z-10">
-      <h2 className="text-xl font-bold text-slate-800">{title}</h2>
-      
-      <div className="flex items-center gap-6">
+    <header className="h-16 bg-white border-b border-gray-100 shadow-sm flex items-center justify-between px-6 sticky top-0 z-10">
+      <div>
+        <h2 className="text-lg font-bold text-brand-800">{title}</h2>
+      </div>
+
+      <div className="flex items-center gap-5">
         <div className="relative">
-          <input 
-            type="text" 
-            placeholder="Buscar motorista..." 
-            className="pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 w-64 bg-slate-50"
+          <input
+            type="text"
+            placeholder="Buscar motorista..."
+            className="pl-9 pr-4 py-2 border border-gray-200 rounded-button text-sm focus:outline-none focus:ring-2 focus:ring-brand-400 focus:border-brand-400 w-60 bg-slate-50 placeholder:text-slate-400"
           />
-          <Search className="absolute left-3 top-2.5 text-gray-400" size={18} />
+          <Search className="absolute left-3 top-2.5 text-slate-400" size={16} />
         </div>
-        
-        <button className="relative text-gray-500 hover:text-slate-800 transition-colors">
-          <Bell size={24} />
-          <span className="absolute top-0 right-0 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"></span>
+
+        <button className="relative text-slate-400 hover:text-brand-600 transition-colors p-1.5 rounded-lg hover:bg-brand-50">
+          <Bell size={20} />
+          <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
         </button>
-        
-        <div className="flex items-center gap-2 cursor-pointer border-l pl-6 border-gray-200">
-          <UserCircle size={32} className="text-slate-700" />
+
+        <div className="flex items-center gap-2.5 border-l pl-5 border-gray-200">
+          <div className="w-8 h-8 bg-brand-500 rounded-lg flex items-center justify-center text-white font-bold text-xs">
+            {user.nome.charAt(0)}
+          </div>
           <div className="text-sm">
             <p className="font-semibold text-slate-800 leading-tight">{user.nome}</p>
-            <p className="text-xs text-gray-500 leading-tight uppercase font-bold tracking-tighter">{user.titulo || user.role}</p>
+            <p className="text-[10px] text-slate-400 leading-tight uppercase font-bold tracking-wider">{user.titulo || user.role}</p>
           </div>
         </div>
       </div>

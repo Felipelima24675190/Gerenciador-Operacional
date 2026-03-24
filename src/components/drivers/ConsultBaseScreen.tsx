@@ -1,9 +1,10 @@
 import { useState, useMemo, type Dispatch, type SetStateAction } from 'react';
-import { Search, Filter, X, Plus, Trash2, ClipboardList } from 'lucide-react';
+import { Search, Filter, X, Plus, Trash2, ClipboardList, Pencil, Save } from 'lucide-react';
 import { Motorista, StatusMotorista, EventoMotorista, TipoEventoMotorista, UserRole } from '../../types';
 import { BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Bar } from 'recharts';
 
 const FILIAL_SIGLAS: Record<string, string> = {
+  'RECIFE': 'REC',
   'ARCOVERDE': 'ACV',
   'PETROLINA': 'PNZ',
   'CARUARU': 'CAUA',
@@ -14,6 +15,7 @@ const FILIAL_SIGLAS: Record<string, string> = {
   'BALSAS': 'BLA',
   'MACEIÓ': 'MCZ',
   'CAMPINA GRANDE': 'CGE',
+  'TERESINA': 'THE',
 };
 
 interface ConsultBaseScreenProps {
@@ -157,13 +159,35 @@ function DriverHistoryModal({
   );
 }
 
-export default function ConsultBaseScreen({ motoristas, eventosMotorista = [], setEventosMotorista }: ConsultBaseScreenProps) {
+export default function ConsultBaseScreen({ motoristas, setMotoristas, userRole, eventosMotorista = [], setEventosMotorista }: ConsultBaseScreenProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusMotorista | 'Todos'>('Todos');
   const [filialFilter, setFilialFilter] = useState('Todos');
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedHistorico, setSelectedHistorico] = useState<Motorista | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editData, setEditData] = useState<Partial<Motorista>>({});
   const itemsPerPage = 15;
+
+  const isAdmin = userRole === 'admin';
+
+  const handleStartEdit = (m: Motorista) => {
+    setEditingId(m.matricula);
+    setEditData({ nome: m.nome, filial: m.filial, area: m.area, status: m.status });
+  };
+
+  const handleSaveEdit = (matricula: string) => {
+    if (!setMotoristas) return;
+    setMotoristas(prev => prev.map(m => m.matricula === matricula ? { ...m, ...editData } as Motorista : m));
+    setEditingId(null);
+    setEditData({});
+  };
+
+  const handleDelete = (matricula: string, nome: string) => {
+    if (!setMotoristas) return;
+    if (!confirm(`Excluir motorista ${nome} (${matricula})?`)) return;
+    setMotoristas(prev => prev.filter(m => m.matricula !== matricula));
+  };
 
   const filiais = useMemo(() => ['Todos', ...Array.from(new Set(motoristas.map(m => m.filial)))], [motoristas]);
 
@@ -244,7 +268,7 @@ export default function ConsultBaseScreen({ motoristas, eventosMotorista = [], s
                 placeholder="Buscar por nome ou matrícula..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500 bg-slate-50"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-400 bg-slate-50"
               />
           </div>
 
@@ -253,7 +277,7 @@ export default function ConsultBaseScreen({ motoristas, eventosMotorista = [], s
             <select
               value={filialFilter}
               onChange={(e) => setFilialFilter(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500 bg-white w-full"
+              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-400 bg-white w-full"
             >
               {filiais.map(f => <option key={f} value={f}>{f === 'Todos' ? 'Todas as Filiais' : f}</option>)}
             </select>
@@ -264,7 +288,7 @@ export default function ConsultBaseScreen({ motoristas, eventosMotorista = [], s
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as StatusMotorista | 'Todos')}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500 bg-white w-full"
+              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-400 bg-white w-full"
             >
               <option value="Todos">Todos os Status</option>
               <option value="ATIVO - EM OPERAÇÃO">ATIVO - EM OPERAÇÃO</option>
@@ -285,19 +309,37 @@ export default function ConsultBaseScreen({ motoristas, eventosMotorista = [], s
                 <th className="py-3 px-6 font-semibold w-32">Área</th>
                 <th className="py-3 px-6 font-semibold w-48">Status</th>
                 <th className="py-3 px-6 font-semibold w-24">Histórico</th>
+                {isAdmin && setMotoristas && <th className="py-3 px-6 font-semibold w-28">Ações</th>}
               </tr>
             </thead>
             <tbody>
-              {paginatedMotoristas.map((motorista, index) => (
+              {paginatedMotoristas.map((motorista, index) => {
+                const isEditing = editingId === motorista.matricula;
+                return (
                 <tr key={`${motorista.matricula}-${index}`} className="border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors">
                   <td className="py-3 px-6 font-medium text-slate-800">{motorista.matricula}</td>
-                  <td className="py-3 px-6 text-slate-600">{motorista.nome}</td>
-                  <td className="py-3 px-6 text-slate-600">{motorista.filial}</td>
-                  <td className="py-3 px-6 text-slate-600">{motorista.area}</td>
+                  <td className="py-3 px-6 text-slate-600">
+                    {isEditing ? <input value={editData.nome || ''} onChange={e => setEditData(p => ({ ...p, nome: e.target.value }))} className="w-full border rounded px-2 py-1 text-sm" /> : motorista.nome}
+                  </td>
+                  <td className="py-3 px-6 text-slate-600">
+                    {isEditing ? <input value={editData.filial || ''} onChange={e => setEditData(p => ({ ...p, filial: e.target.value }))} className="w-full border rounded px-2 py-1 text-sm" /> : motorista.filial}
+                  </td>
+                  <td className="py-3 px-6 text-slate-600">
+                    {isEditing ? <input value={editData.area || ''} onChange={e => setEditData(p => ({ ...p, area: e.target.value }))} className="w-full border rounded px-2 py-1 text-sm" /> : motorista.area}
+                  </td>
                   <td className="py-3 px-6">
-                    <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider ${getStatusColor(motorista.status)}`}>
-                      {motorista.status}
-                    </span>
+                    {isEditing ? (
+                      <select value={editData.status || ''} onChange={e => setEditData(p => ({ ...p, status: e.target.value as StatusMotorista }))} className="border rounded px-2 py-1 text-xs bg-white">
+                        <option value="ATIVO - EM OPERAÇÃO">ATIVO - EM OPERAÇÃO</option>
+                        <option value="DESLIGADO">DESLIGADO</option>
+                        <option value="INSS">INSS</option>
+                        <option value="INSTRUTOR">INSTRUTOR</option>
+                      </select>
+                    ) : (
+                      <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider ${getStatusColor(motorista.status)}`}>
+                        {motorista.status}
+                      </span>
+                    )}
                   </td>
                   <td className="py-3 px-6">
                     <button
@@ -307,11 +349,37 @@ export default function ConsultBaseScreen({ motoristas, eventosMotorista = [], s
                       <ClipboardList size={12} /> Ver
                     </button>
                   </td>
+                  {isAdmin && setMotoristas && (
+                    <td className="py-3 px-6">
+                      <div className="flex items-center gap-1">
+                        {isEditing ? (
+                          <>
+                            <button onClick={() => handleSaveEdit(motorista.matricula)} className="p-1.5 text-emerald-600 border border-emerald-200 rounded-lg hover:bg-emerald-50" title="Salvar">
+                              <Save size={13} />
+                            </button>
+                            <button onClick={() => setEditingId(null)} className="p-1.5 text-slate-400 border border-slate-200 rounded-lg hover:bg-slate-50" title="Cancelar">
+                              <X size={13} />
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <button onClick={() => handleStartEdit(motorista)} className="p-1.5 text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-50" title="Editar">
+                              <Pencil size={13} />
+                            </button>
+                            <button onClick={() => handleDelete(motorista.matricula, motorista.nome)} className="p-1.5 text-red-500 border border-red-200 rounded-lg hover:bg-red-50" title="Excluir">
+                              <Trash2 size={13} />
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </td>
+                  )}
                 </tr>
-              ))}
+                );
+              })}
               {filteredMotoristas.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="py-8 text-center text-gray-500">Nenhum motorista encontrado.</td>
+                  <td colSpan={isAdmin && setMotoristas ? 7 : 6} className="py-8 text-center text-gray-500">Nenhum motorista encontrado.</td>
                 </tr>
               )}
             </tbody>

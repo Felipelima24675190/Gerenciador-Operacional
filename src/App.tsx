@@ -9,7 +9,9 @@ import ConsultLinesScreen from './components/lines/ConsultLinesScreen';
 import ImportOccurrencesScreen from './components/dashboard/ImportOccurrencesScreen';
 import ReportsScreen from './components/reports/ReportsScreen';
 import { mockMotoristas, mockViagens, mockOcorrencias, mockMultas } from './mockData';
-import { Motorista, Viagem, Ocorrencia, User, MultaANTT, AnttCodeDescription, ExcessoVelocidade, ParadaIndevida, Veiculo, Avaria, ResumoAvaria, MultaTransito, RegistroOciosidade, RegistroLinha, OciosidadeMotorista, Monitriip, EventoMotorista } from './types';
+import { Motorista, Viagem, Ocorrencia, User, MultaANTT, AnttCodeDescription, ExcessoVelocidade, ParadaIndevida, Veiculo, Avaria, ResumoAvaria, MultaTransito, RegistroOciosidade, RegistroLinha, OciosidadeMotorista, Monitriip, EventoMotorista, LinhaAbreviacao } from './types';
+import DashboardOperacionalScreen from './components/dashboard/DashboardOperacionalScreen';
+import LineDictionaryScreen, { DEFAULT_ENTRIES as DEFAULT_DICIONARIO } from './components/lines/LineDictionaryScreen';
 import ImportTransitScreen from './components/transit/ImportTransitScreen';
 import ViewTransitScreen from './components/transit/ViewTransitScreen';
 import ImportOciosoScreen from './components/idle/ImportOciosoScreen';
@@ -37,7 +39,7 @@ import { isSupabaseConfigured } from './lib/supabase';
 import { Loader2, Cloud, HardDrive } from 'lucide-react';
 
 function App() {
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [activeTab, setActiveTab] = useState('dashboard-operacional');
 
   // ─── Session auth (localStorage only — not data, just login state) ─────────
   const [currentUser, setCurrentUser] = useState<User | null>(() => {
@@ -55,7 +57,7 @@ function App() {
 
   const handleLogout = () => {
     setCurrentUser(null);
-    setActiveTab('dashboard');
+    setActiveTab('dashboard-operacional');
   };
 
   // ─── Persisted data (Supabase + localStorage cache) ────────────────────────
@@ -78,6 +80,7 @@ function App() {
   const [ociosidadesMotorista, setOciosidadesMotorista]           = usePersistedState<OciosidadeMotorista>('ociosidades_motorista', 'ociosidadesMotoristaData');
   const [monitriips, setMonitriips]                               = usePersistedState<Monitriip>('monitriips', 'monitriipsData');
   const [eventosMotorista, setEventosMotorista]                   = usePersistedState<EventoMotorista>('eventos_motorista', 'eventosMotoristaData');
+  const [dicionarioLinhas, setDicionarioLinhas]                   = usePersistedState<LinhaAbreviacao>('dicionario_linhas', 'dicionarioLinhasData', DEFAULT_DICIONARIO);
 
   // ─── Render ────────────────────────────────────────────────────────────────
   const renderContent = () => {
@@ -117,7 +120,7 @@ function App() {
       case 'consult-speed-driver':
         return <ConsultSpeedDriverScreen motoristas={motoristas} excessos={excessosVelocidade} />;
       case 'reports':
-        return <ReportsScreen motoristas={motoristas} ocorrencias={ocorrencias} excessos={excessosVelocidade} multasAntt={multasAntt} avarias={avarias} paradas={paradasIndevidas} multasTransito={multasTransito} registrosOciosidade={registrosOciosidade} registrosLinhas={registrosLinhas} viagens={viagens} />;
+        return <ReportsScreen motoristas={motoristas} ocorrencias={ocorrencias} excessos={excessosVelocidade} multasAntt={multasAntt} avarias={avarias} paradas={paradasIndevidas} multasTransito={multasTransito} registrosOciosidade={registrosOciosidade} registrosLinhas={registrosLinhas} />;
       case 'manual-driver':
         return <ManualDriverScreen setMotoristas={setMotoristas} />;
       case 'users':
@@ -141,7 +144,11 @@ function App() {
       case 'import-monitriip':
         return <ImportMonitriipScreen monitriips={monitriips} setMonitriips={setMonitriips} userRole={currentUser.role} />;
       case 'view-monitriip':
-        return <ViewMonitriipScreen monitriips={monitriips} />;
+        return <ViewMonitriipScreen monitriips={monitriips} viagens={viagens} />;
+      case 'dashboard-operacional':
+        return <DashboardOperacionalScreen ocorrencias={ocorrencias} excessos={excessosVelocidade} multasAntt={multasAntt} multasTransito={multasTransito} avarias={avarias} paradas={paradasIndevidas} monitriips={monitriips} />;
+      case 'line-dictionary':
+        return <LineDictionaryScreen dicionario={dicionarioLinhas} setDicionario={setDicionarioLinhas} viagens={viagens} userRole={currentUser.role} />;
       default:
         return (
           <div className="flex items-center justify-center h-full">
@@ -182,6 +189,8 @@ function App() {
       case 'view-ociosidade-motorista': return 'Consultar Ociosidade de Motoristas';
       case 'import-monitriip': return 'Importar Dados Monitriip';
       case 'view-monitriip': return 'Consultar Monitriip';
+      case 'dashboard-operacional': return 'Dashboard Operacional';
+      case 'line-dictionary': return 'Dicionário de Linhas';
       default: return 'Pontualidade Viação';
     }
   };
@@ -189,8 +198,8 @@ function App() {
   // ─── Loading screen (while users load from Supabase for login validation) ──
   if (usersLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 flex flex-col items-center justify-center gap-4">
-        <Loader2 className="animate-spin text-blue-400" size={48} />
+      <div className="min-h-screen bg-gradient-to-br from-brand-900 via-brand-800 to-brand-600 flex flex-col items-center justify-center gap-4">
+        <Loader2 className="animate-spin text-brand-300" size={48} />
         <p className="text-slate-300 font-bold text-sm uppercase tracking-widest">Carregando dados...</p>
         <div className="flex items-center gap-2 mt-2">
           {isSupabaseConfigured

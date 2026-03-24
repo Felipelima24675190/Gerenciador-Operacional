@@ -54,7 +54,7 @@ export default function ManualDriverScreen({ onSave }: ManualDriverScreenProps) 
                 type="text" 
                 value={formData.matricula}
                 onChange={e => setFormData({...formData, matricula: e.target.value})}
-                className="w-full px-4 py-2.5 bg-slate-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500 outline-none transition-all font-bold text-slate-700"
+                className="w-full px-4 py-2.5 bg-slate-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-400 outline-none transition-all font-bold text-slate-700"
                 placeholder="Ex: 26646"
               />
             </div>
@@ -65,7 +65,7 @@ export default function ManualDriverScreen({ onSave }: ManualDriverScreenProps) 
                 type="text" 
                 value={formData.nome}
                 onChange={e => setFormData({...formData, nome: e.target.value})}
-                className="w-full px-4 py-2.5 bg-slate-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500 outline-none transition-all font-bold text-slate-700"
+                className="w-full px-4 py-2.5 bg-slate-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-400 outline-none transition-all font-bold text-slate-700"
                 placeholder="Ex: João da Silva"
               />
             </div>
@@ -76,7 +76,7 @@ export default function ManualDriverScreen({ onSave }: ManualDriverScreenProps) 
                 type="text" 
                 value={formData.filial}
                 onChange={e => setFormData({...formData, filial: e.target.value})}
-                className="w-full px-4 py-2.5 bg-slate-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500 outline-none transition-all font-bold text-slate-700"
+                className="w-full px-4 py-2.5 bg-slate-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-400 outline-none transition-all font-bold text-slate-700"
                 placeholder="Ex: CARUARU"
               />
             </div>
@@ -87,7 +87,7 @@ export default function ManualDriverScreen({ onSave }: ManualDriverScreenProps) 
                 type="text" 
                 value={formData.area}
                 onChange={e => setFormData({...formData, area: e.target.value})}
-                className="w-full px-4 py-2.5 bg-slate-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500 outline-none transition-all font-bold text-slate-700"
+                className="w-full px-4 py-2.5 bg-slate-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-400 outline-none transition-all font-bold text-slate-700"
                 placeholder="Ex: Manutenção"
               />
             </div>
@@ -96,7 +96,7 @@ export default function ManualDriverScreen({ onSave }: ManualDriverScreenProps) 
               <select 
                 value={formData.status}
                 onChange={e => setFormData({...formData, status: e.target.value as StatusMotorista})}
-                className="w-full px-4 py-2.5 bg-slate-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500 outline-none transition-all font-bold text-slate-700"
+                className="w-full px-4 py-2.5 bg-slate-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-400 outline-none transition-all font-bold text-slate-700"
               >
                 <option value="ATIVO - EM OPERAÇÃO">ATIVO - EM OPERAÇÃO</option>
                 <option value="DESLIGADO">DESLIGADO</option>
@@ -123,7 +123,7 @@ export default function ManualDriverScreen({ onSave }: ManualDriverScreenProps) 
               </button>
               <button 
                 type="submit"
-                className="px-8 py-2.5 rounded-xl bg-red-600 text-white font-bold hover:bg-red-700 shadow-lg shadow-red-200 transition-all flex items-center gap-2"
+                className="px-8 py-2.5 rounded-xl bg-brand-500 text-white font-bold hover:bg-red-700 shadow-lg shadow-red-200 transition-all flex items-center gap-2"
               >
                 <Save size={18} /> Salvar Motorista
               </button>
