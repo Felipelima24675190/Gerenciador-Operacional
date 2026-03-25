@@ -128,7 +128,9 @@ export default function AcidentesScreen({ acidentes, setAcidentes, avarias, moto
     if (!vinculoSearch.trim()) return avarias.slice(0, 20);
     const q = vinculoSearch.toLowerCase();
     return avarias.filter(a =>
-      a.veiculo.toLowerCase().includes(q) || a.descricaoAvaria.toLowerCase().includes(q) || a.data.toLowerCase().includes(q)
+      (a.veiculo || '').toLowerCase().includes(q) ||
+      (a.descricaoAvaria || '').toLowerCase().includes(q) ||
+      (a.data || '').toLowerCase().includes(q)
     ).slice(0, 20);
   }, [avarias, vinculoSearch]);
 
@@ -324,7 +326,7 @@ export default function AcidentesScreen({ acidentes, setAcidentes, avarias, moto
                         <Link2 size={14} className="text-brand-500" />
                         <div className="flex-1 text-xs">
                           <span className="font-bold text-brand-600">Avaria #{avariaVinculada.id.substring(0, 8)}</span>
-                          <span className="text-slate-500 ml-2">{avariaVinculada.data} - {avariaVinculada.veiculo} - {avariaVinculada.descricaoAvaria.substring(0, 50)}</span>
+                          <span className="text-slate-500 ml-2">{avariaVinculada.data || '-'} - {avariaVinculada.veiculo || '-'} - {(avariaVinculada.descricaoAvaria || '').substring(0, 50)}</span>
                         </div>
                         {isAdmin && (
                           <button onClick={() => desvincularAvaria(acidente.id)} className="text-[10px] text-red-500 font-bold hover:text-red-700">Desvincular</button>
@@ -348,9 +350,9 @@ export default function AcidentesScreen({ acidentes, setAcidentes, avarias, moto
                                   onClick={() => vincularAvaria(acidente.id, av.id)}
                                   className="flex items-center gap-2 px-2 py-1.5 text-xs hover:bg-brand-50 rounded cursor-pointer transition-colors"
                                 >
-                                  <span className="font-bold text-slate-700">{av.veiculo}</span>
-                                  <span className="text-slate-400">{av.data}</span>
-                                  <span className="text-slate-500 truncate flex-1">{av.descricaoAvaria.substring(0, 40)}</span>
+                                  <span className="font-bold text-slate-700">{av.veiculo || '-'}</span>
+                                  <span className="text-slate-400">{av.data || '-'}</span>
+                                  <span className="text-slate-500 truncate flex-1">{(av.descricaoAvaria || '').substring(0, 40)}</span>
                                 </div>
                               ))}
                               {avariasFiltered.length === 0 && <p className="text-[10px] text-slate-400 text-center py-2">Nenhuma avaria encontrada</p>}
