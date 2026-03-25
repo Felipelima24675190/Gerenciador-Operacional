@@ -132,6 +132,38 @@ export default function ImportAnttScreen({ multas, setMultas, userRole, anttCode
     }
   };
 
+  // Parse a CSV/TXT line respecting quoted fields
+  const parseCsvLine = (line: string, sep: string): string[] => {
+    const result: string[] = [];
+    let current = '';
+    let inQuotes = false;
+
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (ch === '"') {
+        if (inQuotes && i + 1 < line.length && line[i + 1] === '"') {
+          current += '"';
+          i++; // skip escaped quote
+        } else {
+          inQuotes = !inQuotes;
+        }
+      } else if (ch === sep && !inQuotes) {
+        result.push(current.trim());
+        current = '';
+      } else {
+        current += ch;
+      }
+    }
+    result.push(current.trim());
+    return result;
+  };
+
+  // Parse Brazilian currency "R$ 2.046,16" -> 2046.16
+  const parseBRCurrency = (str: string): number => {
+    const cleaned = str.replace(/[R$\s]/g, '').replace(/\./g, '').replace(',', '.');
+    return parseFloat(cleaned) || 0;
+  };
+
   const handleDropCodeFile = (e: React.DragEvent) => {
     e.preventDefault();
     setIsCodeDragging(false);
@@ -145,28 +177,32 @@ export default function ImportAnttScreen({ multas, setMultas, userRole, anttCode
           const lines = text.split('\n');
           const newCodeDescriptions: AnttCodeDescription[] = [];
 
+          // Detect separator from first line
+          const headerLine = lines.find(l => l.trim()) || '';
+          const sep = headerLine.includes(';') ? ';' : (headerLine.includes('\t') ? '\t' : ',');
+
           for (let i = 0; i < lines.length; i++) {
             const line = lines[i].trim();
             if (!line) continue;
 
-            const parts = line.split(/[,;]/).map(p => p.trim());
+            const parts = parseCsvLine(line, sep);
 
-            // Assuming header "COD,DESCRIÇÃO" or similar - skip it
-            if (parts[0].toLowerCase() === 'cod' || parts[0].toLowerCase().includes('código')) continue;
+            // Skip header
+            if (parts[0].toLowerCase() === 'cod' || parts[0].toLowerCase().includes('código') || parts[0].toLowerCase() === 'codigo') continue;
 
-            // Expected: COD, DESCRIÇÃO, VALOR (valor is optional)
+            // Expected: CÓDIGO;DESCRIÇÃO;VALOR
             if (parts.length >= 2) {
-              const valorStr = parts.length >= 3 ? parts[2].replace(/[^\d.,]/g, '').replace(',', '.') : '0';
+              const valor = parts.length >= 3 ? parseBRCurrency(parts[2]) : 0;
               newCodeDescriptions.push({
                 codigo: parts[0],
                 descricao: parts[1],
-                valor: parseFloat(valorStr) || 0,
+                valor,
               });
             }
           }
 
           if (newCodeDescriptions.length > 0) {
-            setAnttCodeDescriptions(newCodeDescriptions); // Update the state
+            setAnttCodeDescriptions(newCodeDescriptions);
             setCodeStats({
               total: newCodeDescriptions.length,
             });

@@ -25,7 +25,7 @@ export default function ViewAnttScreen({ multas, anttCodeDescriptions, motorista
 
   const setoresUnicos = useMemo(() => ['Todos', 'OPERACAO', 'MANUTENCAO', 'COMERCIAL', 'ATRASO', 'RH'], []);
   const motoristaMap = useMemo(() => new Map(motoristas.map(m => [m.matricula, m])), [motoristas]);
-  const codeDescriptionMap = useMemo(() => new Map(anttCodeDescriptions.map(item => [item.codigo, item.descricao])), [anttCodeDescriptions]);
+  const codeDescriptionMap = useMemo(() => new Map(anttCodeDescriptions.map(item => [item.codigo, item])), [anttCodeDescriptions]);
 
   const filteredMultas = useMemo(() => {
     const startDate = new Date(dataInicio);
@@ -47,25 +47,41 @@ export default function ViewAnttScreen({ multas, anttCodeDescriptions, motorista
     });
   }, [multas, empresaFilter, dataInicio, dataFim, setorFilter, codigoFilter]);
 
+  const getValorMulta = (m: MultaANTT) => {
+    const codeInfo = codeDescriptionMap.get(m.codigoInfracao);
+    return codeInfo?.valor && codeInfo.valor > 0 ? codeInfo.valor : m.valor;
+  };
+
   const kpis = useMemo(() => {
     const totalMultas = filteredMultas.length;
-    const totalValor = filteredMultas.reduce((acc, curr) => acc + curr.valor, 0);
+    const totalValor = filteredMultas.reduce((acc, curr) => acc + getValorMulta(curr), 0);
     const progressoMultas = filteredMultas.filter(m => m.empresa === 'PROGRESSO');
     const cruzeiroMultas = filteredMultas.filter(m => m.empresa === 'CRUZEIRO');
     return {
       totalValor,
-      valorProgresso: progressoMultas.reduce((acc, curr) => acc + curr.valor, 0),
-      valorCruzeiro: cruzeiroMultas.reduce((acc, curr) => acc + curr.valor, 0),
+      valorProgresso: progressoMultas.reduce((acc, curr) => acc + getValorMulta(curr), 0),
+      valorCruzeiro: cruzeiroMultas.reduce((acc, curr) => acc + getValorMulta(curr), 0),
       totalMultas,
       totalProgresso: progressoMultas.length,
       totalCruzeiro: cruzeiroMultas.length,
     };
-  }, [filteredMultas]);
+  }, [filteredMultas, codeDescriptionMap]);
 
   const chartSetor = useMemo(() => {
     const counts: Record<string, number> = {};
-    filteredMultas.forEach(m => counts[m.setor] = (counts[m.setor] || 0) + 1);
-    return Object.entries(counts).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
+    filteredMultas.forEach(m => {
+      const setor = m.setor && m.setor.trim() ? m.setor.trim() : 'SEM SETOR';
+      counts[setor] = (counts[setor] || 0) + 1;
+    });
+    const sorted = Object.entries(counts).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
+    // Group slices beyond top 6 into "Outros"
+    if (sorted.length > 6) {
+      const top = sorted.slice(0, 6);
+      const outrosVal = sorted.slice(6).reduce((acc, s) => acc + s.value, 0);
+      if (outrosVal > 0) top.push({ name: 'Outros', value: outrosVal });
+      return top;
+    }
+    return sorted;
   }, [filteredMultas]);
 
   const chartCodigo = useMemo(() => {
@@ -116,7 +132,7 @@ export default function ViewAnttScreen({ multas, anttCodeDescriptions, motorista
     return filteredMultas.filter(m =>
       m.autoInfracao.toLowerCase().includes(q) ||
       m.codigoInfracao.toLowerCase().includes(q) ||
-      (codeDescriptionMap.get(m.codigoInfracao) || m.descricaoInfracao).toLowerCase().includes(q)
+      (codeDescriptionMap.get(m.codigoInfracao)?.descricao || m.descricaoInfracao).toLowerCase().includes(q)
     );
   }, [filteredMultas, searchTable, codeDescriptionMap]);
 
@@ -192,7 +208,21 @@ export default function ViewAnttScreen({ multas, anttCodeDescriptions, motorista
           <div className="h-56">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
-                <Pie data={chartSetor} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={65} innerRadius={25} label={({ name, percent }: any) => `${name} (${(percent * 100).toFixed(1)}%)`} labelLine={true} fontSize={9}>
+                <Pie
+                  data={chartSetor}
+                  dataKey="value"
+                  nameKey="name"
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={60}
+                  innerRadius={20}
+                  label={({ name, percent }: any) => {
+                    const label = name.length > 12 ? name.substring(0, 12) + '..' : name;
+                    return `${label} ${(percent * 100).toFixed(1)}%`;
+                  }}
+                  labelLine={true}
+                  fontSize={8}
+                >
                   {chartSetor.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                 </Pie>
                 <Tooltip formatter={(value: number) => [value, 'Multas']} />
@@ -277,17 +307,21 @@ export default function ViewAnttScreen({ multas, anttCodeDescriptions, motorista
               </tr>
             </thead>
             <tbody>
-              {tableFiltered.slice(0, 200).map(m => (
-                <tr key={m.id} className="border-b border-gray-50 hover:bg-slate-50 transition-colors">
-                  <td className="px-3 py-2 font-mono text-[10px]">{m.dataHora}</td>
-                  <td className="px-3 py-2 font-bold">{m.autoInfracao}</td>
-                  <td className="px-3 py-2 font-mono">{m.codigoInfracao}</td>
-                  <td className="px-3 py-2 text-slate-600">{codeDescriptionMap.get(m.codigoInfracao) || m.descricaoInfracao}</td>
-                  <td className="px-3 py-2"><span className="px-1.5 py-0.5 bg-slate-100 rounded text-[9px] font-bold">{m.setor}</span></td>
-                  <td className="px-3 py-2">{m.terminal}</td>
-                  <td className="px-3 py-2 text-right font-bold">{formatCurrency(m.valor)}</td>
-                </tr>
-              ))}
+              {tableFiltered.slice(0, 200).map(m => {
+                const codeInfo = codeDescriptionMap.get(m.codigoInfracao);
+                const valorExibido = codeInfo?.valor && codeInfo.valor > 0 ? codeInfo.valor : m.valor;
+                return (
+                  <tr key={m.id} className="border-b border-gray-50 hover:bg-slate-50 transition-colors">
+                    <td className="px-3 py-2 font-mono text-[10px]">{m.dataHora}</td>
+                    <td className="px-3 py-2 font-bold">{m.autoInfracao}</td>
+                    <td className="px-3 py-2 font-mono">{m.codigoInfracao}</td>
+                    <td className="px-3 py-2 text-slate-600">{codeInfo?.descricao || m.descricaoInfracao}</td>
+                    <td className="px-3 py-2"><span className="px-1.5 py-0.5 bg-slate-100 rounded text-[9px] font-bold">{m.setor}</span></td>
+                    <td className="px-3 py-2">{m.terminal}</td>
+                    <td className="px-3 py-2 text-right font-bold">{formatCurrency(valorExibido)}</td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
