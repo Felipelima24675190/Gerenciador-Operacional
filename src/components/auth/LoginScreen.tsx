@@ -43,8 +43,8 @@ export default function LoginScreen({ onLogin, users }: LoginScreenProps) {
             <div className="w-16 h-16 bg-brand-400 rounded-2xl flex items-center justify-center mx-auto mb-5 shadow-xl shadow-brand-900/40 rotate-6">
               <ShieldCheck size={32} className="text-white" />
             </div>
-            <h1 className="text-2xl font-black tracking-tight leading-tight">Operacao Progresso</h1>
-            <p className="text-brand-300 text-xs font-bold uppercase tracking-[0.2em] mt-2">Gerenciador Operacional</p>
+            <h1 className="text-2xl font-black tracking-tight leading-tight">Viação Progresso</h1>
+            <p className="text-brand-300 text-xs font-bold uppercase tracking-[0.2em] mt-2">Gerenciamento Operacional</p>
           </div>
         </div>
 

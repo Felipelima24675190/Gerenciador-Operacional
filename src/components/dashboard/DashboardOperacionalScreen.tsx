@@ -182,8 +182,7 @@ export default function DashboardOperacionalScreen({
       </div>
 
       {/* KPI Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <KpiCard label="Total Viagens" current={cur.totalViagens} prev={prev.totalViagens} />
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         <KpiCard label="Atrasos na Partida" current={cur.atrasosInicio} prev={prev.atrasosInicio} />
         <KpiCard label="% Atraso" current={cur.atrasosPerc} prev={prev.atrasosPerc} unit="%" />
         <KpiCard label="Excessos de Velocidade" current={cur.excessos} prev={prev.excessos} />

@@ -190,9 +190,13 @@ const VehicleDetailModal = ({
 export default function ConsultVehiclesScreen({ veiculos, multasAntt, avarias, multasTransito = [], registrosOciosidade = [], motoristas = [] }: ConsultVehiclesScreenProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [empresaFilter, setEmpresaFilter] = useState('Todas');
+  const [statusFilter, setStatusFilter] = useState('Todos');
+  const [tipoFilter, setTipoFilter] = useState('Todos');
   const [selectedVehicle, setSelectedVehicle] = useState<Veiculo | null>(null);
 
   const empresas = useMemo(() => ['Todas', ...Array.from(new Set(veiculos.map(v => v.empresa)))], [veiculos]);
+  const statuses = useMemo(() => ['Todos', ...Array.from(new Set(veiculos.map(v => v.status)))], [veiculos]);
+  const tipos = useMemo(() => ['Todos', ...Array.from(new Set(veiculos.map(v => v.tipo)))], [veiculos]);
 
   const dashboardData = useMemo(() => {
     const totalAtivos = veiculos.filter(v => v.status === 'ATIVO').length;
@@ -205,14 +209,16 @@ export default function ConsultVehiclesScreen({ veiculos, multasAntt, avarias, m
   const filteredVehicles = useMemo(() => {
     return veiculos.filter(v => {
       const matchEmpresa = empresaFilter === 'Todas' || v.empresa === empresaFilter;
+      const matchStatus = statusFilter === 'Todos' || v.status === statusFilter;
+      const matchTipo = tipoFilter === 'Todos' || v.tipo === tipoFilter;
       const matchSearch = searchTerm === '' ||
         v.prefixo.toLowerCase().includes(searchTerm.toLowerCase()) ||
         v.placa.toLowerCase().includes(searchTerm.toLowerCase()) ||
         v.modelo.toLowerCase().includes(searchTerm.toLowerCase()) ||
         v.chassi.toLowerCase().includes(searchTerm.toLowerCase());
-      return matchEmpresa && matchSearch;
+      return matchEmpresa && matchSearch && matchStatus && matchTipo;
     });
-  }, [veiculos, searchTerm, empresaFilter]);
+  }, [veiculos, searchTerm, empresaFilter, statusFilter, tipoFilter]);
 
   return (
     <div className="space-y-4">
@@ -227,7 +233,7 @@ export default function ConsultVehiclesScreen({ veiculos, multasAntt, avarias, m
         </div>
       </div>
       <div className="bg-white p-4 rounded-xl border shadow-sm">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
           <div className="relative md:col-span-2">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <input
@@ -239,12 +245,18 @@ export default function ConsultVehiclesScreen({ veiculos, multasAntt, avarias, m
             />
           </div>
           <div>
-            <select
-              value={empresaFilter}
-              onChange={e => setEmpresaFilter(e.target.value)}
-              className="w-full border rounded-lg text-sm py-2 px-3"
-            >
+            <select value={empresaFilter} onChange={e => setEmpresaFilter(e.target.value)} className="w-full border rounded-lg text-sm py-2 px-3">
               {empresas.map(e => <option key={e} value={e}>{e}</option>)}
+            </select>
+          </div>
+          <div>
+            <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="w-full border rounded-lg text-sm py-2 px-3">
+              {statuses.map(s => <option key={s} value={s}>{s === 'Todos' ? 'Status: Todos' : s}</option>)}
+            </select>
+          </div>
+          <div>
+            <select value={tipoFilter} onChange={e => setTipoFilter(e.target.value)} className="w-full border rounded-lg text-sm py-2 px-3">
+              {tipos.map(t => <option key={t} value={t}>{t === 'Todos' ? 'Tipo: Todos' : t}</option>)}
             </select>
           </div>
         </div>

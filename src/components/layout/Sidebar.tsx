@@ -69,8 +69,8 @@ export default function Sidebar({ activeTab, onTabChange, user, onLogout }: Side
         <div className="flex items-center gap-3">
           <img src="/progresso-logo.png" alt="Progresso" className="w-11 h-11 object-contain rounded-xl border border-white/20 bg-white/10 p-0.5" loading="lazy" onError={(e) => { const target = e.currentTarget as HTMLImageElement; target.src = '/fallback-logo.png'; target.style.objectFit = 'contain'; }} />
           <div>
-            <p className="text-sm font-black leading-tight">Gerenciador</p>
-            <p className="text-[11px] font-bold text-white/60 leading-tight">Operacao Progresso</p>
+            <p className="text-sm font-black leading-tight">Gerenciamento</p>
+            <p className="text-[11px] font-bold text-white/60 leading-tight">Viação Progresso</p>
           </div>
         </div>
       </div>
@@ -88,21 +88,6 @@ export default function Sidebar({ activeTab, onTabChange, user, onLogout }: Side
             onClick={() => onTabChange('dashboard-operacional')}
           >
             <LayoutDashboard size={18} /> Dashboard Operacional
-          </button>
-        </div>
-
-        {/* Dicionario de Linha - Standalone */}
-        <div>
-          <button
-            className={twMerge(clsx(
-              "w-full flex items-center gap-3 px-4 py-3 text-[13px] font-bold rounded-xl transition-all duration-200",
-              activeTab === 'line-dictionary'
-                ? "bg-brand-400 text-white shadow-lg shadow-brand-900/40"
-                : "bg-white/5 text-white/80 hover:bg-white/10 hover:text-white border border-white/10"
-            ))}
-            onClick={() => onTabChange('line-dictionary')}
-          >
-            <BookOpen size={18} /> Dicionario de Linha
           </button>
         </div>
 
@@ -164,6 +149,9 @@ export default function Sidebar({ activeTab, onTabChange, user, onLogout }: Side
               )}
               <button className={menuButtonClass(activeTab === 'view-antt')} onClick={() => onTabChange('view-antt')}>
                 <FileWarning size={17} /> Consultar Multas
+              </button>
+              <button className={menuButtonClass(activeTab === 'antt-codes')} onClick={() => onTabChange('antt-codes')}>
+                <BookOpen size={17} /> Consultar Codigos
               </button>
             </div>
           )}

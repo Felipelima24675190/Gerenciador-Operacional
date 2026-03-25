@@ -15,7 +15,9 @@
       "Bash(node -e \"const l = require\\(''C:/Users/luis.lima/Downloads/App Atrasos/node_modules/lucide-react''\\); console.log\\(''CarFront:'', !!l.CarFront, ''Radio:'', !!l.Radio\\);\")",
       "Bash(node --input-type=module --eval \"import { CarFront, Radio } from ''./node_modules/lucide-react/dist/lucide-react.js''; console.log\\(''CarFront:'', !!CarFront, ''Radio:'', !!Radio\\);\")",
       "Bash(python -c \":*)",
-      "Bash(npx vite:*)"
+      "Bash(npx vite:*)",
+      "Bash(find C:Usersluis.limaDownloads -maxdepth 1 -type f \\\\\\(-name *.png -o -name *.jpg -o -name *.jpeg -o -name *.webp \\\\\\))",
+      "Bash(find C:Usersluis.limaDownloads -maxdepth 1 -type f \\\\\\(-name *progresso* -o -name *logo* -o -name *bus* -o -name *onibus* \\\\\\) -iname *.jpg -o -iname *.png -o -iname *.jpeg)"
     ]
   }
 }

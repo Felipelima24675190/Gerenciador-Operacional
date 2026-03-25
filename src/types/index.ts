@@ -261,3 +261,11 @@ export interface LinhaAbreviacao {
   sigla: string;
   nomeCompleto: string;
 }
+
+export interface AppNotification {
+  id: string;
+  tabela: string;
+  descricao: string;
+  data: string;
+  lida: Record<string, boolean>; // userId -> true if read
+}

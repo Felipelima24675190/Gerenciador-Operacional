@@ -151,11 +151,15 @@ export default function ViewSpeedScreen({ excessos, motoristas }: ViewSpeedScree
 
        <div className="bg-white p-6 rounded-xl border shadow-sm">
         <h4 className="font-bold mb-4">Top 10 - Linhas com Mais Excessos</h4>
-         <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={rankings.topLinhas} layout="vertical" margin={{ left: 200 }}>
+         <ResponsiveContainer width="100%" height={Math.max(300, rankings.topLinhas.length * 40)}>
+            <BarChart data={rankings.topLinhas} layout="vertical" margin={{ left: 10, right: 50 }}>
               <XAxis type="number" hide />
-              <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} width={200} interval={0} />
-              <Bar dataKey="count" fill="#3b82f6" label={{ position: 'right' }} />
+              <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} width={260} interval={0} tick={({ x, y, payload }: any) => {
+                const label = payload.value.length > 35 ? payload.value.substring(0, 35) + '...' : payload.value;
+                return <text x={x} y={y} dy={4} textAnchor="end" fontSize={10} fill="#334155">{label}</text>;
+              }} />
+              <Tooltip />
+              <Bar dataKey="count" fill="#3b82f6" label={{ position: 'right', fontSize: 11 }} barSize={22} radius={[0, 4, 4, 0]} />
             </BarChart>
           </ResponsiveContainer>
       </div>

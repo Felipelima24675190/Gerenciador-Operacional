@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, SetStateAction } from 'react';
 import Layout from './components/layout/Layout';
 import DashboardScreen from './components/dashboard/DashboardScreen';
 import ImportDriversScreen from './components/drivers/ImportDriversScreen';
@@ -9,9 +9,10 @@ import ConsultLinesScreen from './components/lines/ConsultLinesScreen';
 import ImportOccurrencesScreen from './components/dashboard/ImportOccurrencesScreen';
 import ReportsScreen from './components/reports/ReportsScreen';
 import { mockMotoristas, mockViagens, mockOcorrencias, mockMultas } from './mockData';
-import { Motorista, Viagem, Ocorrencia, User, MultaANTT, AnttCodeDescription, ExcessoVelocidade, ParadaIndevida, Veiculo, Avaria, ResumoAvaria, MultaTransito, RegistroOciosidade, RegistroLinha, OciosidadeMotorista, Monitriip, EventoMotorista, LinhaAbreviacao } from './types';
+import { Motorista, Viagem, Ocorrencia, User, MultaANTT, AnttCodeDescription, ExcessoVelocidade, ParadaIndevida, Veiculo, Avaria, ResumoAvaria, MultaTransito, RegistroOciosidade, RegistroLinha, OciosidadeMotorista, Monitriip, EventoMotorista, LinhaAbreviacao, AppNotification } from './types';
 import DashboardOperacionalScreen from './components/dashboard/DashboardOperacionalScreen';
 import LineDictionaryScreen, { DEFAULT_ENTRIES as DEFAULT_DICIONARIO } from './components/lines/LineDictionaryScreen';
+import AnttCodesScreen from './components/antt/AnttCodesScreen';
 import ImportTransitScreen from './components/transit/ImportTransitScreen';
 import ViewTransitScreen from './components/transit/ViewTransitScreen';
 import ImportOciosoScreen from './components/idle/ImportOciosoScreen';
@@ -37,9 +38,11 @@ import ConsultAvariasScreen from './components/avarias/ConsultAvariasScreen';
 import { usePersistedState } from './hooks/usePersistedState';
 import { isSupabaseConfigured } from './lib/supabase';
 import { Loader2, Cloud, HardDrive } from 'lucide-react';
+import SplashScreen from './components/auth/SplashScreen';
 
 function App() {
   const [activeTab, setActiveTab] = useState('dashboard-operacional');
+  const [showSplash, setShowSplash] = useState(false);
 
   // ─── Session auth (localStorage only — not data, just login state) ─────────
   const [currentUser, setCurrentUser] = useState<User | null>(() => {
@@ -55,10 +58,29 @@ function App() {
     }
   }, [currentUser]);
 
+  const handleLogin = (user: User) => {
+    setCurrentUser(user);
+    setShowSplash(true);
+  };
+
   const handleLogout = () => {
     setCurrentUser(null);
     setActiveTab('dashboard-operacional');
   };
+
+  // ─── Notifications ──────────────────────────────────────────────────────────
+  const [notifications, setNotifications] = usePersistedState<AppNotification>('app_notifications', 'notificationsData');
+
+  const addNotification = useCallback((tabela: string, descricao: string) => {
+    const n: AppNotification = {
+      id: crypto.randomUUID(),
+      tabela,
+      descricao,
+      data: new Date().toLocaleString('pt-BR'),
+      lida: {},
+    };
+    setNotifications(prev => [n, ...prev].slice(0, 50));
+  }, [setNotifications]);
 
   // ─── Persisted data (Supabase + localStorage cache) ────────────────────────
   const defaultUsers: User[] = [{ id: '1', username: 'admin', password: '123', nome: 'Admin Master', role: 'admin', titulo: 'Administrador' }];
@@ -82,6 +104,16 @@ function App() {
   const [eventosMotorista, setEventosMotorista]                   = usePersistedState<EventoMotorista>('eventos_motorista', 'eventosMotoristaData');
   const [dicionarioLinhas, setDicionarioLinhas]                   = usePersistedState<LinhaAbreviacao>('dicionario_linhas', 'dicionarioLinhasData', DEFAULT_DICIONARIO);
 
+  // ─── Notifying wrappers ────────────────────────────────────────────────────
+  const setOcorrenciasN = useCallback((a: SetStateAction<Ocorrencia[]>) => { setOcorrencias(a); addNotification('Ocorrencias', 'Dados de pontualidade atualizados'); }, [setOcorrencias, addNotification]);
+  const setMultasAnttN = useCallback((a: SetStateAction<MultaANTT[]>) => { setMultasAntt(a); addNotification('Multas ANTT', 'Multas ANTT atualizadas'); }, [setMultasAntt, addNotification]);
+  const setMultasTransitoN = useCallback((a: SetStateAction<MultaTransito[]>) => { setMultasTransito(a); addNotification('Multas Transito', 'Multas de transito atualizadas'); }, [setMultasTransito, addNotification]);
+  const setExcessosN = useCallback((a: SetStateAction<ExcessoVelocidade[]>) => { setExcessosVelocidade(a); addNotification('Velocidade', 'Excessos de velocidade atualizados'); }, [setExcessosVelocidade, addNotification]);
+  const setAvariasN = useCallback((a: SetStateAction<Avaria[]>) => { setAvarias(a); addNotification('Avarias', 'Avarias atualizadas'); }, [setAvarias, addNotification]);
+  const setMotoristasN = useCallback((a: SetStateAction<Motorista[]>) => { setMotoristas(a); addNotification('Motoristas', 'Base de motoristas atualizada'); }, [setMotoristas, addNotification]);
+  const setVeiculosN = useCallback((a: SetStateAction<Veiculo[]>) => { setVeiculos(a); addNotification('Veiculos', 'Base de veiculos atualizada'); }, [setVeiculos, addNotification]);
+  const setMonitriipsN = useCallback((a: SetStateAction<Monitriip[]>) => { setMonitriips(a); addNotification('Monitriip', 'Dados Monitriip atualizados'); }, [setMonitriips, addNotification]);
+
   // ─── Render ────────────────────────────────────────────────────────────────
   const renderContent = () => {
     if (!currentUser) return null;
@@ -90,9 +122,9 @@ function App() {
       case 'dashboard':
         return <DashboardScreen motoristas={motoristas} ocorrencias={ocorrencias} viagens={viagens} setOcorrencias={setOcorrencias} userRole={currentUser.role} />;
       case 'import-occurrences':
-        return <ImportOccurrencesScreen ocorrencias={ocorrencias} setOcorrencias={setOcorrencias} motoristas={motoristas} viagens={viagens} userRole={currentUser.role} />;
+        return <ImportOccurrencesScreen ocorrencias={ocorrencias} setOcorrencias={setOcorrenciasN} motoristas={motoristas} viagens={viagens} userRole={currentUser.role} />;
       case 'import-drivers':
-        return <ImportDriversScreen motoristas={motoristas} setMotoristas={setMotoristas} userRole={currentUser.role} onNavigate={setActiveTab} />;
+        return <ImportDriversScreen motoristas={motoristas} setMotoristas={setMotoristasN} userRole={currentUser.role} onNavigate={setActiveTab} />;
       case 'consult-base':
         return <ConsultBaseScreen motoristas={motoristas} setMotoristas={setMotoristas} userRole={currentUser.role} eventosMotorista={eventosMotorista} setEventosMotorista={setEventosMotorista} />;
       case 'consult-driver':
@@ -102,7 +134,7 @@ function App() {
       case 'consult-lines':
         return <ConsultLinesScreen viagens={viagens} setViagens={setViagens} userRole={currentUser.role} />;
       case 'import-vehicles':
-        return <ImportVehiclesScreen setVeiculos={setVeiculos} userRole={currentUser.role} />;
+        return <ImportVehiclesScreen setVeiculos={setVeiculosN} userRole={currentUser.role} />;
       case 'consult-vehicles':
         return <ConsultVehiclesScreen veiculos={veiculos} multasAntt={multasAntt} avarias={avarias} multasTransito={multasTransito} registrosOciosidade={registrosOciosidade} motoristas={motoristas} />;
       case 'import-stops':
@@ -110,11 +142,11 @@ function App() {
       case 'view-stops':
         return <ViewStopsScreen paradas={paradasIndevidas} userRole={currentUser.role} />;
       case 'create-avaria':
-        return <ImportAvariasScreen setAvarias={setAvarias} motoristas={motoristas} userRole={currentUser.role} />;
+        return <ImportAvariasScreen setAvarias={setAvariasN} motoristas={motoristas} userRole={currentUser.role} />;
       case 'view-avaria':
         return <ConsultAvariasScreen avarias={avarias} setAvarias={setAvarias} motoristas={motoristas} resumos={resumosAvaria} setResumos={setResumosAvaria} />;
       case 'import-speed':
-        return <ImportSpeedScreen setExcessos={setExcessosVelocidade} userRole={currentUser.role} />;
+        return <ImportSpeedScreen setExcessos={setExcessosN} userRole={currentUser.role} />;
       case 'view-speed':
         return <ViewSpeedScreen excessos={excessosVelocidade} motoristas={motoristas} userRole={currentUser.role} />;
       case 'consult-speed-driver':
@@ -122,15 +154,17 @@ function App() {
       case 'reports':
         return <ReportsScreen motoristas={motoristas} ocorrencias={ocorrencias} excessos={excessosVelocidade} multasAntt={multasAntt} avarias={avarias} paradas={paradasIndevidas} multasTransito={multasTransito} registrosOciosidade={registrosOciosidade} registrosLinhas={registrosLinhas} />;
       case 'manual-driver':
-        return <ManualDriverScreen setMotoristas={setMotoristas} />;
+        return <ManualDriverScreen setMotoristas={setMotoristasN} />;
       case 'users':
         return <UserManagementScreen users={users} setUsers={setUsers} />;
       case 'import-antt':
-        return <ImportAnttScreen multas={multasAntt} setMultas={setMultasAntt} userRole={currentUser.role} anttCodeDescriptions={anttCodeDescriptions} setAnttCodeDescriptions={setAnttCodeDescriptions} />;
+        return <ImportAnttScreen multas={multasAntt} setMultas={setMultasAnttN} userRole={currentUser.role} anttCodeDescriptions={anttCodeDescriptions} setAnttCodeDescriptions={setAnttCodeDescriptions} />;
       case 'view-antt':
         return <ViewAnttScreen multas={multasAntt} anttCodeDescriptions={anttCodeDescriptions} motoristas={motoristas} />;
+      case 'antt-codes':
+        return <AnttCodesScreen anttCodeDescriptions={anttCodeDescriptions} setAnttCodeDescriptions={setAnttCodeDescriptions} userRole={currentUser.role} />;
       case 'import-transit':
-        return <ImportTransitScreen multas={multasTransito} setMultas={setMultasTransito} motoristas={motoristas} userRole={currentUser.role} />;
+        return <ImportTransitScreen multas={multasTransito} setMultas={setMultasTransitoN} motoristas={motoristas} userRole={currentUser.role} />;
       case 'view-transit':
         return <ViewTransitScreen multas={multasTransito} motoristas={motoristas} />;
       case 'import-ocioso':
@@ -142,7 +176,7 @@ function App() {
       case 'view-ociosidade-motorista':
         return <ViewOciosidadeMotoristaScreen ociosidades={ociosidadesMotorista} motoristas={motoristas} viagens={viagens} />;
       case 'import-monitriip':
-        return <ImportMonitriipScreen monitriips={monitriips} setMonitriips={setMonitriips} userRole={currentUser.role} />;
+        return <ImportMonitriipScreen monitriips={monitriips} setMonitriips={setMonitriipsN} userRole={currentUser.role} />;
       case 'view-monitriip':
         return <ViewMonitriipScreen monitriips={monitriips} viagens={viagens} />;
       case 'dashboard-operacional':
@@ -181,6 +215,7 @@ function App() {
       case 'consult-speed-driver': return 'Histórico de Velocidade por Motorista';
       case 'import-antt': return 'Importar Multas ANTT';
       case 'view-antt': return 'Consultar Multas ANTT';
+      case 'antt-codes': return 'Consultar Códigos ANTT';
       case 'import-transit': return 'Importar Multas de Trânsito';
       case 'view-transit': return 'Consultar Multas de Trânsito';
       case 'import-ocioso': return 'Importar Quilometragem Operacional';
@@ -212,7 +247,11 @@ function App() {
   }
 
   if (!currentUser) {
-    return <LoginScreen onLogin={setCurrentUser} users={users} />;
+    return <LoginScreen onLogin={handleLogin} users={users} />;
+  }
+
+  if (showSplash) {
+    return <SplashScreen onFinish={() => setShowSplash(false)} />;
   }
 
   return (
@@ -222,6 +261,8 @@ function App() {
       title={getPageTitle()}
       user={currentUser}
       onLogout={handleLogout}
+      notifications={notifications}
+      setNotifications={setNotifications}
     >
       {renderContent()}
     </Layout>
