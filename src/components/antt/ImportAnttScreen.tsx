@@ -95,7 +95,9 @@ export default function ImportAnttScreen({ multas, setMultas, userRole, anttCode
     const reader = new FileReader();
     reader.onload = (event) => {
       const text = event.target?.result as string;
-      const lines = text.split('\n').filter(l => l.trim());
+      // Normalize line endings and remove BOM
+      const cleaned = text.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+      const lines = cleaned.split('\n').filter(l => l.trim());
       if (lines.length < 2) {
         setUploadStatus('error');
         setErrorMsg('Arquivo vazio ou sem dados.');
@@ -103,12 +105,12 @@ export default function ImportAnttScreen({ multas, setMultas, userRole, anttCode
         return;
       }
 
-      // Detect separator from header
+      // Detect separator from header line
       const headerLine = lines[0];
       const sep = headerLine.includes('\t') ? '\t' : ';';
 
-      // Parse header to build column map
-      const headers = headerLine.split(sep);
+      // Parse header using quoted-field-aware parser
+      const headers = parseCsvLine(headerLine, sep);
       const colMap: Record<string, number> = {};
       headers.forEach((h, i) => {
         const field = identifyColumn(h);
@@ -117,36 +119,33 @@ export default function ImportAnttScreen({ multas, setMultas, userRole, anttCode
         }
       });
 
-      // Also try to identify "codigo" column if not found yet
-      // Sometimes the header just says "CÓDIGO" without "INFRAÇÃO"
+      // Extra pass: catch "CÓDIGO" header without "INFRAÇÃO"
       if (!('codigo' in colMap)) {
         headers.forEach((h, i) => {
           const norm = normalizeHeader(h);
-          if ((norm === 'CODIGO' || norm === 'COD') && !(i in Object.values(colMap))) {
+          if (norm === 'CODIGO' || norm === 'COD') {
             colMap['codigo'] = i;
           }
         });
       }
 
-      // Validate we have minimum required columns
+      // Validate minimum required columns
       const requiredFields = ['data', 'codigo'];
       const missing = requiredFields.filter(f => !(f in colMap));
       if (missing.length > 0) {
-        // Fallback: try positional mapping (original hardcoded order)
-        // PLACA, ORDEM, EMPRESA, LINHA, MATRÍCULA, DATA, LOCAL, HORA, CÓDIGO, DESCRIÇÃO, AUTO, SETOR
-        if (headers.length >= 12) {
-          colMap['placa'] = 0;
-          colMap['ordem'] = 1;
-          colMap['empresa'] = 2;
-          colMap['linha'] = 3;
-          colMap['matricula'] = 4;
-          colMap['data'] = 5;
-          colMap['local'] = 6;
-          colMap['hora'] = 7;
-          colMap['codigo'] = 8;
-          colMap['descricao'] = 9;
-          colMap['auto'] = 10;
-          colMap['setor'] = 11;
+        // Fallback positional mapping (sem PLACA): ORDEM, EMPRESA, LINHA, MATRÍCULA, DATA, LOCAL, HORA, CÓDIGO, DESCRIÇÃO, AUTO, SETOR
+        if (headers.length >= 11) {
+          colMap['ordem']     = 0;
+          colMap['empresa']   = 1;
+          colMap['linha']     = 2;
+          colMap['matricula'] = 3;
+          colMap['data']      = 4;
+          colMap['local']     = 5;
+          colMap['hora']      = 6;
+          colMap['codigo']    = 7;
+          colMap['descricao'] = 8;
+          colMap['auto']      = 9;
+          colMap['setor']     = 10;
         } else {
           setUploadStatus('error');
           setErrorMsg(`Colunas obrigatórias não encontradas: ${missing.join(', ')}. Verifique o cabeçalho do arquivo.`);
@@ -158,7 +157,7 @@ export default function ImportAnttScreen({ multas, setMultas, userRole, anttCode
       const get = (parts: string[], field: string): string => {
         const idx = colMap[field];
         if (idx === undefined || idx >= parts.length) return '';
-        return parts[idx].trim();
+        return (parts[idx] || '').trim();
       };
 
       const novasMultas: MultaANTT[] = [];
@@ -168,44 +167,44 @@ export default function ImportAnttScreen({ multas, setMultas, userRole, anttCode
         const line = lines[i].trim();
         if (!line) continue;
 
-        const parts = line.split(sep);
+        // Use quoted-field-aware parser so descriptions with `;` don't shift columns
+        const parts = parseCsvLine(line, sep);
 
-        // Skip if looks like another header row
-        const firstCol = parts[0]?.trim().toLowerCase() || '';
-        if (firstCol === 'placa' || firstCol.includes('código') || firstCol.includes('codigo')) continue;
+        // Skip repeated header rows
+        const firstColNorm = normalizeHeader(parts[0] || '');
+        if (firstColNorm === 'PLACA' || firstColNorm === 'CODIGO' || firstColNorm === 'DATA') continue;
 
-        const placa = get(parts, 'placa');
-        const empresa = get(parts, 'empresa').toUpperCase();
-        const matricula = get(parts, 'matricula');
-        const data = get(parts, 'data');
-        const local = get(parts, 'local');
-        const hora = get(parts, 'hora');
+        const empresa        = get(parts, 'empresa').toUpperCase();
+        const matricula      = get(parts, 'matricula');
+        const data           = get(parts, 'data');
+        const local          = get(parts, 'local');
+        const hora           = get(parts, 'hora');
         const codigoInfracao = get(parts, 'codigo');
         const descricaoInfracao = get(parts, 'descricao');
-        const autoInfracao = get(parts, 'auto');
-        const setorRaw = get(parts, 'setor');
-        const setor = normalizeSetor(setorRaw);
+        const autoInfracao   = get(parts, 'auto');
+        const setorRaw       = get(parts, 'setor');
+        const setor          = normalizeSetor(setorRaw);
 
-        // Build dataHora
         const dataHora = hora ? `${data} ${hora}` : data;
 
-        if (!codigoInfracao && !data) continue; // skip empty rows
+        // Skip rows with no useful data at all
+        if (!codigoInfracao && !data) continue;
 
-        // Value from code descriptions or imported value
+        // Lookup value from code descriptions base
         const codeDesc = codeDescMap.get(codigoInfracao);
-        const valorMulta = codeDesc?.valor || 0;
+        const valorMulta = codeDesc?.valor ?? 0;
 
         novasMultas.push({
           id: crypto.randomUUID(),
-          placaVeiculo: placa,
-          empresa: empresa,
+          placaVeiculo: '',          // placa removed from import; looked up from vehicle base
+          empresa,
           matriculaMotorista: matricula,
-          dataHora: dataHora,
+          dataHora,
           terminal: local,
-          codigoInfracao: codigoInfracao,
-          descricaoInfracao: descricaoInfracao,
-          autoInfracao: autoInfracao,
-          setor: setor,
+          codigoInfracao,
+          descricaoInfracao,
+          autoInfracao,
+          setor,
           valor: valorMulta,
           status: 'Aguardando',
         });
@@ -224,7 +223,7 @@ export default function ImportAnttScreen({ multas, setMultas, userRole, anttCode
       }
       setTimeout(() => setUploadStatus('idle'), 10000);
     };
-    reader.readAsText(file);
+    reader.readAsText(file, 'UTF-8');
   };
 
   // Parse a CSV/TXT line respecting quoted fields
@@ -333,8 +332,9 @@ export default function ImportAnttScreen({ multas, setMultas, userRole, anttCode
         <div className="mb-6">
           <h3 className="text-xl font-bold text-slate-800">Importar Multas ANTT</h3>
           <p className="text-sm text-gray-500 mt-2">
-            Selecione o arquivo CSV/TXT com os autos de infração. O sistema detecta automaticamente as colunas pelo cabeçalho.
-            Colunas esperadas: PLACA, ORDEM, EMPRESA, LINHA, MATRÍCULA, DATA, LOCAL, HORA, CÓDIGO, DESCRIÇÃO, AUTO, SETOR.
+            Selecione o arquivo CSV/TXT com os autos de infração. O sistema detecta as colunas automaticamente pelo cabeçalho.
+            Colunas esperadas: <span className="font-semibold text-slate-600">ORDEM · EMPRESA · LINHA · MATRÍCULA · DATA · LOCAL · HORA · CÓDIGO · DESCRIÇÃO · AUTO · SETOR</span>.
+            Campos AUTO e MATRÍCULA são opcionais. A placa é consultada na base de veículos.
           </p>
         </div>
 

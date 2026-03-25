@@ -23,8 +23,9 @@ const normalizeSetor = (s: string): string => {
   if (upper.includes('COMER')) return 'COMERCIAL';
   if (upper.includes('ATRASO')) return 'ATRASO';
   if (upper === 'RH') return 'RH';
-  // If not a known setor, classify as "OUTROS"
-  return upper || 'SEM SETOR';
+  if (upper === 'SEM SETOR') return 'SEM SETOR';
+  // Anything unrecognised → SEM SETOR (prevents city/month names polluting pie chart)
+  return 'SEM SETOR';
 };
 
 // Parse date string in DD/MM/YYYY or DD/MM/YYYY HH:MM format
@@ -77,23 +78,22 @@ export default function ViewAnttScreen({ multas, anttCodeDescriptions, motorista
     });
   }, [multas, empresaFilter, dataInicio, dataFim, setorFilter, codigoFilter]);
 
-  const getValorMulta = (m: MultaANTT) => {
-    const codeInfo = codeDescriptionMap.get(m.codigoInfracao);
-    return codeInfo?.valor && codeInfo.valor > 0 ? codeInfo.valor : (m.valor || 0);
-  };
-
   const kpis = useMemo(() => {
+    const getValor = (m: MultaANTT) => {
+      const codeInfo = codeDescriptionMap.get(m.codigoInfracao);
+      return codeInfo?.valor && codeInfo.valor > 0 ? codeInfo.valor : (m.valor || 0);
+    };
     const totalMultas = filteredMultas.length;
-    const totalValor = filteredMultas.reduce((acc, curr) => acc + getValorMulta(curr), 0);
+    const totalValor = filteredMultas.reduce((acc, curr) => acc + getValor(curr), 0);
     const progressoMultas = filteredMultas.filter(m => (m.empresa || '').toUpperCase().includes('PROGRESSO'));
-    const cruzeiroMultas = filteredMultas.filter(m => (m.empresa || '').toUpperCase().includes('CRUZEIRO'));
+    const cruzeiroMultas  = filteredMultas.filter(m => (m.empresa || '').toUpperCase().includes('CRUZEIRO'));
     return {
       totalValor,
-      valorProgresso: progressoMultas.reduce((acc, curr) => acc + getValorMulta(curr), 0),
-      valorCruzeiro: cruzeiroMultas.reduce((acc, curr) => acc + getValorMulta(curr), 0),
+      valorProgresso: progressoMultas.reduce((acc, curr) => acc + getValor(curr), 0),
+      valorCruzeiro:  cruzeiroMultas.reduce((acc, curr) => acc + getValor(curr), 0),
       totalMultas,
       totalProgresso: progressoMultas.length,
-      totalCruzeiro: cruzeiroMultas.length,
+      totalCruzeiro:  cruzeiroMultas.length,
     };
   }, [filteredMultas, codeDescriptionMap]);
 
@@ -147,21 +147,30 @@ export default function ViewAnttScreen({ multas, anttCodeDescriptions, motorista
   }, [filteredMultas, motoristaMap]);
 
   const chartDataMensal = useMemo(() => {
-    const currentYear = new Date().getFullYear();
-    const previousYear = currentYear - 1;
     const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
     const monthlyCounts: Record<string, { Atual: number; Anterior: number }> = {};
     months.forEach(month => { monthlyCounts[month] = { Atual: 0, Anterior: 0 }; });
 
-    // Use filteredMultas (respecting filters) for monthly chart
-    filteredMultas.forEach(m => {
+    // Derive "Atual" year from the selected start date so chart always matches the filter window
+    const filterYear = dataInicio ? parseInt(dataInicio.split('-')[0]) : new Date().getFullYear();
+    const previousYear = filterYear - 1;
+
+    // Use ALL multas (not filtered by date) grouped by empresa/setor/codigo filters only
+    const baseMultas = multas.filter(m => {
+      const matchEmpresa = empresaFilter === 'Todas' || (m.empresa || '').toUpperCase() === empresaFilter;
+      const matchSetor   = setorFilter   === 'Todos'  || normalizeSetor(m.setor) === setorFilter;
+      const matchCodigo  = !codigoFilter || (m.codigoInfracao || '').includes(codigoFilter);
+      return matchEmpresa && matchSetor && matchCodigo;
+    });
+
+    baseMultas.forEach(m => {
       const d = parseDateBR(m.dataHora);
       if (!d) return;
-      if (d.getFullYear() === currentYear) monthlyCounts[months[d.getMonth()]].Atual++;
+      if (d.getFullYear() === filterYear)    monthlyCounts[months[d.getMonth()]].Atual++;
       else if (d.getFullYear() === previousYear) monthlyCounts[months[d.getMonth()]].Anterior++;
     });
     return months.map(month => ({ name: month, ...monthlyCounts[month] }));
-  }, [filteredMultas]);
+  }, [multas, empresaFilter, setorFilter, codigoFilter, dataInicio]);
 
   const tableFiltered = useMemo(() => {
     if (!searchTable.trim()) return filteredMultas;
@@ -348,7 +357,7 @@ export default function ViewAnttScreen({ multas, anttCodeDescriptions, motorista
             </thead>
             <tbody>
               {tableFiltered.slice(0, 200).map(m => {
-                const codeInfo = codeDescriptionMap.get(m.codigoInfracao);
+                const codeInfo    = codeDescriptionMap.get(m.codigoInfracao);
                 const valorExibido = codeInfo?.valor && codeInfo.valor > 0 ? codeInfo.valor : (m.valor || 0);
                 return (
                   <tr key={m.id} className="border-b border-gray-50 hover:bg-slate-50 transition-colors">
