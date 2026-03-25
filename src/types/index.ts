@@ -169,25 +169,25 @@ export interface AnttCodeDescription {
 
 export interface ManutencaoVeiculo {
   id: string;
-  prefixo: string;
-  placa: string;
-  motivo: string;
-  dataEntrada: string;       // DD/MM/YYYY
-  previsaoSaida: string;     // DD/MM/YYYY
-  status: 'Na Oficina' | 'Liberado';
-  dataSaida?: string;        // DD/MM/YYYY (preenchido ao sair)
-  observacao?: string;
+  prefixo: string;           // VEICULO (prefixo)
+  retidoDesde: string;       // RETIDO DESDE (DD/MM/YYYY)
+  kmAtual: number;           // KM ATUAL
+  descricaoServico: string;  // DESCRIÇÃO DE SERVIÇOS
+  statusManutencao: string;  // STATUS (texto livre da planilha)
+  local: string;             // LOCAL
+  previsaoLiberacao: string; // PREV. LIB. (DD/MM/YYYY)
 }
 
 export interface HistoricoManutencao {
   id: string;
   prefixo: string;
-  placa: string;
-  motivo: string;
+  descricaoServico: string;
   dataEntrada: string;
   dataSaida: string;
   tempoOficinaHoras: number;
-  previsaoSaida: string;
+  previsaoLiberacao: string;
+  local: string;
+  kmAtual: number;
 }
 
 export interface AcidenteFoto {

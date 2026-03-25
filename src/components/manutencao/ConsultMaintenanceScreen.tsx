@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { ManutencaoVeiculo, HistoricoManutencao } from '../../types';
+import { ManutencaoVeiculo, HistoricoManutencao, Veiculo } from '../../types';
 import { Search, Wrench, Clock, TrendingUp } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -9,35 +9,45 @@ import {
 interface ConsultMaintenanceScreenProps {
   manutencoes: ManutencaoVeiculo[];
   historicoManutencao: HistoricoManutencao[];
+  veiculos: Veiculo[];
 }
 
 const COLORS = ['#0e4f8f', '#3d7fd2', '#1a6abf', '#6b9ede', '#0b3f72', '#9fbfea', '#082f55', '#c5daf3'];
 
-export default function ConsultMaintenanceScreen({ manutencoes, historicoManutencao }: ConsultMaintenanceScreenProps) {
+export default function ConsultMaintenanceScreen({ manutencoes, historicoManutencao, veiculos }: ConsultMaintenanceScreenProps) {
   const [search, setSearch] = useState('');
   const [tabView, setTabView] = useState<'atual' | 'historico'>('atual');
 
   const hoje = new Date();
+  const veiculoMap = useMemo(() => new Map(veiculos.map(v => [v.prefixo, v])), [veiculos]);
+
+  const getPlaca = (prefixo: string) => veiculoMap.get(prefixo)?.placa || '-';
 
   const filteredAtual = useMemo(() => {
     if (!search.trim()) return manutencoes;
     const q = search.toLowerCase();
     return manutencoes.filter(m =>
-      m.prefixo.toLowerCase().includes(q) || m.placa.toLowerCase().includes(q) || m.motivo.toLowerCase().includes(q)
+      m.prefixo.toLowerCase().includes(q) ||
+      (getPlaca(m.prefixo)).toLowerCase().includes(q) ||
+      m.descricaoServico.toLowerCase().includes(q) ||
+      m.local.toLowerCase().includes(q)
     );
-  }, [manutencoes, search]);
+  }, [manutencoes, search, veiculoMap]);
 
   const filteredHistorico = useMemo(() => {
     if (!search.trim()) return historicoManutencao;
     const q = search.toLowerCase();
     return historicoManutencao.filter(h =>
-      h.prefixo.toLowerCase().includes(q) || h.placa.toLowerCase().includes(q) || h.motivo.toLowerCase().includes(q)
+      h.prefixo.toLowerCase().includes(q) ||
+      (getPlaca(h.prefixo)).toLowerCase().includes(q) ||
+      h.descricaoServico.toLowerCase().includes(q) ||
+      h.local.toLowerCase().includes(q)
     );
-  }, [historicoManutencao, search]);
+  }, [historicoManutencao, search, veiculoMap]);
 
   // KPIs
   const kpis = useMemo(() => {
-    const naOficina = manutencoes.filter(m => m.status === 'Na Oficina').length;
+    const naOficina = manutencoes.length;
     const totalHistorico = historicoManutencao.length;
     const avgTempo = totalHistorico > 0
       ? Math.round(historicoManutencao.reduce((acc, h) => acc + h.tempoOficinaHoras, 0) / totalHistorico)
@@ -45,11 +55,10 @@ export default function ConsultMaintenanceScreen({ manutencoes, historicoManuten
     return { naOficina, totalHistorico, avgTempo };
   }, [manutencoes, historicoManutencao]);
 
-  // Top veiculos mais frequentes (historico)
+  // Top veiculos mais frequentes (historico + atuais)
   const topVeiculos = useMemo(() => {
     const counts: Record<string, number> = {};
     historicoManutencao.forEach(h => { counts[h.prefixo] = (counts[h.prefixo] || 0) + 1; });
-    // Also count current
     manutencoes.forEach(m => { counts[m.prefixo] = (counts[m.prefixo] || 0) + 1; });
     return Object.entries(counts)
       .map(([name, count]) => ({ name, count }))
@@ -57,11 +66,12 @@ export default function ConsultMaintenanceScreen({ manutencoes, historicoManuten
       .slice(0, 10);
   }, [historicoManutencao, manutencoes]);
 
-  // Motivos distribution
+  // Motivos distribution (using descricaoServico)
   const motivoChart = useMemo(() => {
     const counts: Record<string, number> = {};
-    [...manutencoes.map(m => m.motivo), ...historicoManutencao.map(h => h.motivo)].forEach(motivo => {
-      counts[motivo] = (counts[motivo] || 0) + 1;
+    [...manutencoes.map(m => m.descricaoServico), ...historicoManutencao.map(h => h.descricaoServico)].forEach(desc => {
+      const label = desc.length > 30 ? desc.substring(0, 30) + '...' : desc;
+      counts[label] = (counts[label] || 0) + 1;
     });
     return Object.entries(counts)
       .map(([name, value]) => ({ name, value }))
@@ -76,8 +86,8 @@ export default function ConsultMaintenanceScreen({ manutencoes, historicoManuten
     } catch { return new Date(); }
   };
 
-  const diasNaOficina = (dataEntrada: string) => {
-    const entrada = parseDateBR(dataEntrada);
+  const diasNaOficina = (retidoDesde: string) => {
+    const entrada = parseDateBR(retidoDesde);
     return Math.max(0, Math.round((hoje.getTime() - entrada.getTime()) / (1000 * 60 * 60 * 24)));
   };
 
@@ -125,7 +135,7 @@ export default function ConsultMaintenanceScreen({ manutencoes, historicoManuten
         </div>
 
         <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-          <h4 className="text-[10px] font-black text-slate-600 uppercase text-center mb-3">Distribuicao por Motivo</h4>
+          <h4 className="text-[10px] font-black text-slate-600 uppercase text-center mb-3">Distribuicao por Servico</h4>
           <div className="h-56">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
@@ -156,7 +166,7 @@ export default function ConsultMaintenanceScreen({ manutencoes, historicoManuten
             <Search className="absolute left-3 top-2 text-slate-400" size={14} />
             <input
               type="text"
-              placeholder="Buscar prefixo, placa ou motivo..."
+              placeholder="Buscar prefixo, placa, servico ou local..."
               value={search}
               onChange={e => setSearch(e.target.value)}
               className="w-full pl-9 pr-4 py-2 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-400"
@@ -169,31 +179,35 @@ export default function ConsultMaintenanceScreen({ manutencoes, historicoManuten
             <table className="w-full text-xs text-left">
               <thead className="bg-slate-800 text-white text-[10px] uppercase sticky top-0 z-10">
                 <tr>
-                  <th className="px-3 py-2">Prefixo</th>
+                  <th className="px-3 py-2">Veiculo</th>
                   <th className="px-3 py-2">Placa</th>
-                  <th className="px-3 py-2">Motivo</th>
-                  <th className="px-3 py-2">Data Entrada</th>
-                  <th className="px-3 py-2">Previsao Saida</th>
-                  <th className="px-3 py-2">Dias na Oficina</th>
-                  <th className="px-3 py-2">Observacao</th>
+                  <th className="px-3 py-2">Retido Desde</th>
+                  <th className="px-3 py-2">KM Atual</th>
+                  <th className="px-3 py-2">Descricao Servico</th>
+                  <th className="px-3 py-2">Status</th>
+                  <th className="px-3 py-2">Local</th>
+                  <th className="px-3 py-2">Prev. Lib.</th>
+                  <th className="px-3 py-2">Dias</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredAtual.length === 0 && (
-                  <tr><td colSpan={7} className="px-3 py-8 text-center text-slate-400">Nenhum veiculo na oficina</td></tr>
+                  <tr><td colSpan={9} className="px-3 py-8 text-center text-slate-400">Nenhum veiculo na oficina</td></tr>
                 )}
                 {filteredAtual.map(m => {
-                  const dias = diasNaOficina(m.dataEntrada);
-                  const atrasado = parseDateBR(m.previsaoSaida) < hoje;
+                  const dias = diasNaOficina(m.retidoDesde);
+                  const atrasado = m.previsaoLiberacao ? parseDateBR(m.previsaoLiberacao) < hoje : false;
                   return (
                     <tr key={m.id} className="border-b border-gray-50 hover:bg-slate-50 transition-colors">
                       <td className="px-3 py-2 font-bold text-slate-700">{m.prefixo}</td>
-                      <td className="px-3 py-2 font-mono text-[10px]">{m.placa}</td>
-                      <td className="px-3 py-2">{m.motivo}</td>
-                      <td className="px-3 py-2 font-mono text-[10px]">{m.dataEntrada}</td>
-                      <td className={`px-3 py-2 font-mono text-[10px] ${atrasado ? 'text-red-600 font-bold' : ''}`}>{m.previsaoSaida}{atrasado && ' (ATRASADO)'}</td>
+                      <td className="px-3 py-2 font-mono text-[10px]">{getPlaca(m.prefixo)}</td>
+                      <td className="px-3 py-2 font-mono text-[10px]">{m.retidoDesde}</td>
+                      <td className="px-3 py-2 text-right">{m.kmAtual.toLocaleString('pt-BR')}</td>
+                      <td className="px-3 py-2 text-slate-600 max-w-[200px] truncate" title={m.descricaoServico}>{m.descricaoServico}</td>
+                      <td className="px-3 py-2"><span className="px-1.5 py-0.5 bg-slate-100 rounded text-[9px] font-bold">{m.statusManutencao}</span></td>
+                      <td className="px-3 py-2">{m.local}</td>
+                      <td className={`px-3 py-2 font-mono text-[10px] ${atrasado ? 'text-red-600 font-bold' : ''}`}>{m.previsaoLiberacao}{atrasado && ' ⚠'}</td>
                       <td className="px-3 py-2 font-bold">{dias}d</td>
-                      <td className="px-3 py-2 text-slate-500 truncate max-w-[150px]">{m.observacao}</td>
                     </tr>
                   );
                 })}
@@ -203,27 +217,29 @@ export default function ConsultMaintenanceScreen({ manutencoes, historicoManuten
             <table className="w-full text-xs text-left">
               <thead className="bg-slate-800 text-white text-[10px] uppercase sticky top-0 z-10">
                 <tr>
-                  <th className="px-3 py-2">Prefixo</th>
+                  <th className="px-3 py-2">Veiculo</th>
                   <th className="px-3 py-2">Placa</th>
-                  <th className="px-3 py-2">Motivo</th>
+                  <th className="px-3 py-2">Servico</th>
                   <th className="px-3 py-2">Entrada</th>
                   <th className="px-3 py-2">Saida</th>
                   <th className="px-3 py-2">Previsao</th>
+                  <th className="px-3 py-2">Local</th>
                   <th className="px-3 py-2">Tempo (h)</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredHistorico.length === 0 && (
-                  <tr><td colSpan={7} className="px-3 py-8 text-center text-slate-400">Nenhum registro no historico</td></tr>
+                  <tr><td colSpan={8} className="px-3 py-8 text-center text-slate-400">Nenhum registro no historico</td></tr>
                 )}
                 {filteredHistorico.map(h => (
                   <tr key={h.id} className="border-b border-gray-50 hover:bg-slate-50 transition-colors">
                     <td className="px-3 py-2 font-bold text-slate-700">{h.prefixo}</td>
-                    <td className="px-3 py-2 font-mono text-[10px]">{h.placa}</td>
-                    <td className="px-3 py-2">{h.motivo}</td>
+                    <td className="px-3 py-2 font-mono text-[10px]">{getPlaca(h.prefixo)}</td>
+                    <td className="px-3 py-2 text-slate-600 max-w-[200px] truncate" title={h.descricaoServico}>{h.descricaoServico}</td>
                     <td className="px-3 py-2 font-mono text-[10px]">{h.dataEntrada}</td>
                     <td className="px-3 py-2 font-mono text-[10px]">{h.dataSaida}</td>
-                    <td className="px-3 py-2 font-mono text-[10px]">{h.previsaoSaida}</td>
+                    <td className="px-3 py-2 font-mono text-[10px]">{h.previsaoLiberacao}</td>
+                    <td className="px-3 py-2">{h.local}</td>
                     <td className="px-3 py-2 font-bold">{h.tempoOficinaHoras}h</td>
                   </tr>
                 ))}

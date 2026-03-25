@@ -1,19 +1,22 @@
-import { useState, Dispatch, SetStateAction } from 'react';
+import { useState, useMemo, Dispatch, SetStateAction } from 'react';
 import { UploadCloud, CheckCircle, AlertTriangle, Trash2 } from 'lucide-react';
-import { ManutencaoVeiculo, HistoricoManutencao, UserRole } from '../../types';
+import { ManutencaoVeiculo, HistoricoManutencao, UserRole, Veiculo } from '../../types';
 
 interface ImportMaintenanceScreenProps {
   manutencoes: ManutencaoVeiculo[];
   setManutencoes: Dispatch<SetStateAction<ManutencaoVeiculo[]>>;
   historicoManutencao: HistoricoManutencao[];
   setHistoricoManutencao: Dispatch<SetStateAction<HistoricoManutencao[]>>;
+  veiculos: Veiculo[];
   userRole: UserRole;
 }
 
-export default function ImportMaintenanceScreen({ manutencoes, setManutencoes, setHistoricoManutencao, userRole }: ImportMaintenanceScreenProps) {
+export default function ImportMaintenanceScreen({ manutencoes, setManutencoes, setHistoricoManutencao, veiculos, userRole }: ImportMaintenanceScreenProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [stats, setStats] = useState<{ total: number; novos: number; liberados: number } | null>(null);
+
+  const veiculoMap = useMemo(() => new Map(veiculos.map(v => [v.prefixo, v])), [veiculos]);
 
   if (userRole !== 'admin') {
     return (
@@ -68,19 +71,19 @@ export default function ImportMaintenanceScreen({ manutencoes, setManutencoes, s
         const parts = trimmed.split(sep).map(p => p.trim());
 
         // Skip header
-        if (parts[0].toLowerCase() === 'prefixo' || parts[0].toLowerCase() === 'placa') continue;
+        if (parts[0].toLowerCase() === 'veiculo' || parts[0].toLowerCase() === 'prefixo') continue;
 
-        // Expected: PREFIXO, PLACA, MOTIVO, DATA_ENTRADA, PREVISAO_SAIDA, OBSERVACAO
-        if (parts.length >= 5) {
+        // Expected: VEICULO, RETIDO DESDE, KM ATUAL, DESCRIÇÃO DE SERVIÇOS, STATUS, LOCAL, PREV. LIB.
+        if (parts.length >= 7) {
           novosVeiculos.push({
             id: crypto.randomUUID(),
             prefixo: parts[0],
-            placa: parts[1],
-            motivo: parts[2],
-            dataEntrada: parts[3],
-            previsaoSaida: parts[4],
-            status: 'Na Oficina',
-            observacao: parts[5] || '',
+            retidoDesde: parts[1],
+            kmAtual: parseFloat(parts[2].replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
+            descricaoServico: parts[3],
+            statusManutencao: parts[4],
+            local: parts[5],
+            previsaoLiberacao: parts[6],
           });
         }
       }
@@ -93,18 +96,19 @@ export default function ImportMaintenanceScreen({ manutencoes, setManutencoes, s
 
         const novoHistorico: HistoricoManutencao[] = [];
         for (const prev of manutencoes) {
-          if (prev.status === 'Na Oficina' && !novoPrefixos.has(prev.prefixo)) {
+          if (!novoPrefixos.has(prev.prefixo)) {
             // Vehicle was released
             liberados++;
             novoHistorico.push({
               id: crypto.randomUUID(),
               prefixo: prev.prefixo,
-              placa: prev.placa,
-              motivo: prev.motivo,
-              dataEntrada: prev.dataEntrada,
+              descricaoServico: prev.descricaoServico,
+              dataEntrada: prev.retidoDesde,
               dataSaida: hoje,
-              tempoOficinaHoras: diffHours(prev.dataEntrada, hoje),
-              previsaoSaida: prev.previsaoSaida,
+              tempoOficinaHoras: diffHours(prev.retidoDesde, hoje),
+              previsaoLiberacao: prev.previsaoLiberacao,
+              local: prev.local,
+              kmAtual: prev.kmAtual,
             });
           }
         }
@@ -137,8 +141,9 @@ export default function ImportMaintenanceScreen({ manutencoes, setManutencoes, s
         <div className="mb-6">
           <h3 className="text-xl font-bold text-slate-800">Importar Status de Manutencao Atual</h3>
           <p className="text-sm text-gray-500 mt-2">
-            Selecione o arquivo CSV/TXT com os veiculos atualmente em manutencao. Colunas: PREFIXO, PLACA, MOTIVO, DATA_ENTRADA (DD/MM/YYYY), PREVISAO_SAIDA (DD/MM/YYYY), OBSERVACAO.
+            Selecione o arquivo CSV/TXT com os veiculos atualmente em manutencao. Colunas esperadas: <strong>VEICULO, RETIDO DESDE, KM ATUAL, DESCRIÇÃO DE SERVIÇOS, STATUS, LOCAL, PREV. LIB.</strong>
           </p>
+          <p className="text-xs text-slate-400 mt-1">A placa do veiculo sera obtida automaticamente a partir da Base de Veiculos.</p>
           <p className="text-xs text-amber-600 mt-2 font-semibold">
             Ao importar uma nova planilha, veiculos que estavam na lista anterior e nao aparecem mais serao automaticamente registrados como liberados no historico.
           </p>
@@ -189,7 +194,7 @@ export default function ImportMaintenanceScreen({ manutencoes, setManutencoes, s
                 <AlertTriangle size={32} />
               </div>
               <p className="font-semibold text-red-600">Erro na leitura do arquivo</p>
-              <p className="text-sm text-red-500 mt-1">Verifique o formato das colunas.</p>
+              <p className="text-sm text-red-500 mt-1">Verifique o formato das colunas (VEICULO, RETIDO DESDE, KM ATUAL, DESCRIÇÃO, STATUS, LOCAL, PREV. LIB.).</p>
             </>
           )}
         </div>
@@ -198,7 +203,10 @@ export default function ImportMaintenanceScreen({ manutencoes, setManutencoes, s
       {manutencoes.length > 0 && (
         <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
           <div className="flex items-center justify-between">
-            <h4 className="text-lg font-bold text-slate-800">Veiculos na Oficina ({manutencoes.length})</h4>
+            <div>
+              <h4 className="text-lg font-bold text-slate-800">Veiculos na Oficina ({manutencoes.length})</h4>
+              <p className="text-xs text-slate-400 mt-0.5">{veiculos.length > 0 ? `${veiculoMap.size} veiculos na base para cruzamento de placa` : 'Nenhuma base de veiculos importada'}</p>
+            </div>
             <button
               onClick={handleLimpar}
               className="flex items-center gap-2 px-4 py-2 bg-white border border-red-500 text-red-600 text-sm font-bold rounded-lg hover:bg-red-50 transition-colors"

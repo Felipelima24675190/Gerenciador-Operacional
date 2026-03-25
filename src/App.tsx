@@ -192,9 +192,9 @@ function App() {
       case 'line-dictionary':
         return <LineDictionaryScreen dicionario={dicionarioLinhas} setDicionario={setDicionarioLinhas} viagens={viagens} userRole={currentUser.role} />;
       case 'import-manutencao':
-        return <ImportMaintenanceScreen manutencoes={manutencoes} setManutencoes={setManutencoesN} historicoManutencao={historicoManutencao} setHistoricoManutencao={setHistoricoManutencao} userRole={currentUser.role} />;
+        return <ImportMaintenanceScreen manutencoes={manutencoes} setManutencoes={setManutencoesN} historicoManutencao={historicoManutencao} setHistoricoManutencao={setHistoricoManutencao} veiculos={veiculos} userRole={currentUser.role} />;
       case 'view-manutencao':
-        return <ConsultMaintenanceScreen manutencoes={manutencoes} historicoManutencao={historicoManutencao} />;
+        return <ConsultMaintenanceScreen manutencoes={manutencoes} historicoManutencao={historicoManutencao} veiculos={veiculos} />;
       case 'acidentes':
         return <AcidentesScreen acidentes={acidentes} setAcidentes={setAcidentesN} avarias={avarias} motoristas={motoristas} userRole={currentUser.role} />;
       default:
