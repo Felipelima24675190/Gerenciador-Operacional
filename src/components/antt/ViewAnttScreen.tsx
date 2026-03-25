@@ -1,7 +1,7 @@
 ﻿import { useMemo, useState } from 'react';
 import { MultaANTT, AnttCodeDescription, Motorista } from '../../types';
 import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer
 } from 'recharts';
 import { Search } from 'lucide-react';
 

@@ -3,10 +3,14 @@ import { UploadCloud } from 'lucide-react';
 import { Motorista } from '../../types';
 
 interface ImportDriversScreenProps {
-  onImport: (data: Motorista[]) => void;
+  motoristas: Motorista[];
+  setMotoristas: React.Dispatch<React.SetStateAction<Motorista[]>>;
+  userRole: string;
+  onNavigate: React.Dispatch<React.SetStateAction<string>>;
 }
 
-export default function ImportDriversScreen({ onImport }: ImportDriversScreenProps) {
+export default function ImportDriversScreen({ setMotoristas }: ImportDriversScreenProps) {
+  const onImport = (data: Motorista[]) => setMotoristas(prev => [...prev, ...data]);
   const [error, setError] = useState<string | null>(null);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {

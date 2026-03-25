@@ -1,4 +1,4 @@
-import { Bell, Search, UserCircle } from 'lucide-react';
+import { Bell, Search } from 'lucide-react';
 import { User } from '../../types';
 
 interface HeaderProps {

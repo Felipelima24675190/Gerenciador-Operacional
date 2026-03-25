@@ -1,12 +1,13 @@
-import { useState, FormEvent } from 'react';
+import React, { useState, FormEvent } from 'react';
 import { UserPlus, Save, X, CheckCircle2 } from 'lucide-react';
 import { Motorista, StatusMotorista } from '../../types';
 
 interface ManualDriverScreenProps {
-  onSave: (newDriver: Motorista) => void;
+  setMotoristas: React.Dispatch<React.SetStateAction<Motorista[]>>;
 }
 
-export default function ManualDriverScreen({ onSave }: ManualDriverScreenProps) {
+export default function ManualDriverScreen({ setMotoristas }: ManualDriverScreenProps) {
+  const onSave = (newDriver: Motorista) => setMotoristas(prev => [...prev, newDriver]);
   const [formData, setFormData] = useState<Omit<Motorista, 'id'>>({
     matricula: '',
     nome: '',
@@ -123,7 +124,7 @@ export default function ManualDriverScreen({ onSave }: ManualDriverScreenProps) 
               </button>
               <button 
                 type="submit"
-                className="px-8 py-2.5 rounded-xl bg-brand-500 text-white font-bold hover:bg-red-700 shadow-lg shadow-red-200 transition-all flex items-center gap-2"
+                className="px-8 py-2.5 rounded-xl bg-brand-500 text-white font-bold hover:bg-brand-600 shadow-lg shadow-brand-200 transition-all flex items-center gap-2"
               >
                 <Save size={18} /> Salvar Motorista
               </button>

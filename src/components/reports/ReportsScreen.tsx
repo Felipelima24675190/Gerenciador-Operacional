@@ -121,7 +121,7 @@ function PontualidadeTab({ motoristas, ocorrencias }: { motoristas: Motorista[];
         </div>
       )}
       <div className="flex justify-end">
-        <button onClick={handleExport} disabled={!metricas.ocorrencias} className="flex items-center gap-2 bg-brand-500 hover:bg-pink-700 text-white px-6 py-3 rounded-xl font-bold transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
+        <button onClick={handleExport} disabled={!metricas.ocorrencias} className="flex items-center gap-2 bg-brand-500 hover:bg-brand-600 text-white px-6 py-3 rounded-xl font-bold transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
           <FileDown size={20} /> Exportar CSV
         </button>
       </div>
@@ -180,7 +180,7 @@ function VelocidadeTab({ excessos }: { excessos: ExcessoVelocidade[] }) {
         ))}
       </div>
       <div className="flex justify-end">
-        <button onClick={handleExport} disabled={!filtered.length} className="flex items-center gap-2 bg-brand-500 hover:bg-pink-700 text-white px-6 py-3 rounded-xl font-bold transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
+        <button onClick={handleExport} disabled={!filtered.length} className="flex items-center gap-2 bg-brand-500 hover:bg-brand-600 text-white px-6 py-3 rounded-xl font-bold transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
           <FileDown size={20} /> Exportar CSV
         </button>
       </div>
@@ -241,7 +241,7 @@ function AnttTab({ multas }: { multas: MultaANTT[] }) {
         ))}
       </div>
       <div className="flex justify-end">
-        <button onClick={handleExport} disabled={!filtered.length} className="flex items-center gap-2 bg-brand-500 hover:bg-pink-700 text-white px-6 py-3 rounded-xl font-bold transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
+        <button onClick={handleExport} disabled={!filtered.length} className="flex items-center gap-2 bg-brand-500 hover:bg-brand-600 text-white px-6 py-3 rounded-xl font-bold transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
           <FileDown size={20} /> Exportar CSV
         </button>
       </div>
@@ -300,7 +300,7 @@ function AvariasTab({ avarias }: { avarias: Avaria[] }) {
         ))}
       </div>
       <div className="flex justify-end">
-        <button onClick={handleExport} disabled={!filtered.length} className="flex items-center gap-2 bg-brand-500 hover:bg-pink-700 text-white px-6 py-3 rounded-xl font-bold transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
+        <button onClick={handleExport} disabled={!filtered.length} className="flex items-center gap-2 bg-brand-500 hover:bg-brand-600 text-white px-6 py-3 rounded-xl font-bold transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
           <FileDown size={20} /> Exportar CSV
         </button>
       </div>
@@ -357,7 +357,7 @@ function ParadasTab({ paradas }: { paradas: ParadaIndevida[] }) {
         ))}
       </div>
       <div className="flex justify-end">
-        <button onClick={handleExport} disabled={!filtered.length} className="flex items-center gap-2 bg-brand-500 hover:bg-pink-700 text-white px-6 py-3 rounded-xl font-bold transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
+        <button onClick={handleExport} disabled={!filtered.length} className="flex items-center gap-2 bg-brand-500 hover:bg-brand-600 text-white px-6 py-3 rounded-xl font-bold transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
           <FileDown size={20} /> Exportar CSV
         </button>
       </div>
@@ -436,7 +436,7 @@ function TransitoTab({ motoristas, multas }: { motoristas: Motorista[]; multas: 
         ))}
       </div>
       <div className="flex justify-end">
-        <button onClick={handleExport} disabled={!filtered.length} className="flex items-center gap-2 bg-brand-500 hover:bg-pink-700 text-white px-6 py-3 rounded-xl font-bold transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
+        <button onClick={handleExport} disabled={!filtered.length} className="flex items-center gap-2 bg-brand-500 hover:bg-brand-600 text-white px-6 py-3 rounded-xl font-bold transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
           <FileDown size={20} /> Exportar CSV
         </button>
       </div>
@@ -507,7 +507,7 @@ function QuilometragemTab({ registros, linhas }: { registros: RegistroOciosidade
       </div>
 
       <div className="flex justify-end">
-        <button onClick={handleExport} disabled={!filtered.length} className="flex items-center gap-2 bg-brand-500 hover:bg-pink-700 text-white px-6 py-3 rounded-xl font-bold transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
+        <button onClick={handleExport} disabled={!filtered.length} className="flex items-center gap-2 bg-brand-500 hover:bg-brand-600 text-white px-6 py-3 rounded-xl font-bold transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
           <FileDown size={20} /> Exportar CSV
         </button>
       </div>
