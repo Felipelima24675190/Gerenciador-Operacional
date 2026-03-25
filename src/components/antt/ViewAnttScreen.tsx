@@ -188,14 +188,14 @@ export default function ViewAnttScreen({ multas, anttCodeDescriptions, motorista
         </div>
 
         <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-          <h4 className="text-[10px] font-black text-slate-600 uppercase text-center mb-3">Por Setor (Pizza)</h4>
+          <h4 className="text-[10px] font-black text-slate-600 uppercase text-center mb-3">Distribuicao por Setor</h4>
           <div className="h-56">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
-                <Pie data={chartSetor} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={70} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false} fontSize={9}>
+                <Pie data={chartSetor} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={65} innerRadius={25} label={({ name, percent }: any) => `${name} (${(percent * 100).toFixed(1)}%)`} labelLine={true} fontSize={9}>
                   {chartSetor.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                 </Pie>
-                <Tooltip />
+                <Tooltip formatter={(value: number) => [value, 'Multas']} />
               </PieChart>
             </ResponsiveContainer>
           </div>

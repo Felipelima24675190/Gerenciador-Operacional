@@ -13,6 +13,7 @@ export default function AnttCodesScreen({ anttCodeDescriptions, setAnttCodeDescr
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editCodigo, setEditCodigo] = useState('');
   const [editDescricao, setEditDescricao] = useState('');
+  const [editValor, setEditValor] = useState(0);
 
   const isAdmin = userRole === 'admin';
 
@@ -28,12 +29,13 @@ export default function AnttCodesScreen({ anttCodeDescriptions, setAnttCodeDescr
     setEditingId(item.codigo);
     setEditCodigo(item.codigo);
     setEditDescricao(item.descricao);
+    setEditValor(item.valor || 0);
   };
 
   const saveEdit = () => {
     if (!editingId) return;
     setAnttCodeDescriptions(prev => prev.map(c =>
-      c.codigo === editingId ? { codigo: editCodigo, descricao: editDescricao } : c
+      c.codigo === editingId ? { codigo: editCodigo, descricao: editDescricao, valor: editValor } : c
     ));
     setEditingId(null);
   };
@@ -65,12 +67,13 @@ export default function AnttCodesScreen({ anttCodeDescriptions, setAnttCodeDescr
             <tr>
               <th className="px-4 py-3 w-36">Codigo</th>
               <th className="px-4 py-3">Descricao</th>
+              <th className="px-4 py-3 w-36 text-right">Valor (R$)</th>
               {isAdmin && <th className="px-4 py-3 w-28 text-right">Acoes</th>}
             </tr>
           </thead>
           <tbody>
             {filtered.length === 0 && (
-              <tr><td colSpan={3} className="px-4 py-8 text-center text-slate-400">Nenhum codigo encontrado</td></tr>
+              <tr><td colSpan={4} className="px-4 py-8 text-center text-slate-400">Nenhum codigo encontrado</td></tr>
             )}
             {filtered.map(c => (
               <tr key={c.codigo} className="border-b border-gray-100 hover:bg-slate-50 transition-colors">
@@ -82,6 +85,9 @@ export default function AnttCodesScreen({ anttCodeDescriptions, setAnttCodeDescr
                     <td className="px-4 py-2">
                       <input value={editDescricao} onChange={e => setEditDescricao(e.target.value)} className="w-full px-2 py-1 border rounded text-xs" />
                     </td>
+                    <td className="px-4 py-2">
+                      <input type="number" step="0.01" value={editValor} onChange={e => setEditValor(parseFloat(e.target.value) || 0)} className="w-full px-2 py-1 border rounded text-xs text-right" />
+                    </td>
                     <td className="px-4 py-2 text-right space-x-1">
                       <button onClick={saveEdit} className="p-1.5 text-emerald-600 border border-emerald-200 rounded-lg hover:bg-emerald-50"><Save size={14} /></button>
                       <button onClick={() => setEditingId(null)} className="p-1.5 text-slate-500 border border-slate-200 rounded-lg hover:bg-slate-50"><X size={14} /></button>
@@ -91,6 +97,7 @@ export default function AnttCodesScreen({ anttCodeDescriptions, setAnttCodeDescr
                   <>
                     <td className="px-4 py-3 font-mono font-bold text-slate-700">{c.codigo}</td>
                     <td className="px-4 py-3 text-slate-600">{c.descricao}</td>
+                    <td className="px-4 py-3 text-right font-bold text-slate-700">{(c.valor || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
                     {isAdmin && (
                       <td className="px-4 py-3 text-right space-x-1">
                         <button onClick={() => startEdit(c)} className="p-1.5 text-brand-500 border border-brand-200 rounded-lg hover:bg-brand-50"><Pencil size={14} /></button>

@@ -164,6 +164,53 @@ export interface OcorrenciaCalculada extends Ocorrencia {
 export interface AnttCodeDescription {
   codigo: string;
   descricao: string;
+  valor: number;
+}
+
+export interface ManutencaoVeiculo {
+  id: string;
+  prefixo: string;
+  placa: string;
+  motivo: string;
+  dataEntrada: string;       // DD/MM/YYYY
+  previsaoSaida: string;     // DD/MM/YYYY
+  status: 'Na Oficina' | 'Liberado';
+  dataSaida?: string;        // DD/MM/YYYY (preenchido ao sair)
+  observacao?: string;
+}
+
+export interface HistoricoManutencao {
+  id: string;
+  prefixo: string;
+  placa: string;
+  motivo: string;
+  dataEntrada: string;
+  dataSaida: string;
+  tempoOficinaHoras: number;
+  previsaoSaida: string;
+}
+
+export interface AcidenteFoto {
+  id: string;
+  url: string;        // base64 data URL
+  descricao: string;  // description of what the photo shows
+}
+
+export interface Acidente {
+  id: string;
+  data: string;              // DD/MM/YYYY
+  hora: string;
+  prefixoVeiculo: string;
+  placaVeiculo: string;
+  matriculaMotorista: string;
+  local: string;
+  descricao: string;
+  tipoAcidente: string;      // Colisão, Tombamento, Atropelamento, etc.
+  gravidade: 'Leve' | 'Moderado' | 'Grave';
+  fotos: AcidenteFoto[];
+  avariaVinculadaId?: string; // ID da avaria vinculada
+  valorEstimado: number;
+  status: 'Em Análise' | 'Concluído' | 'Pendente Seguro';
 }
 
 export interface ResumoAvaria {

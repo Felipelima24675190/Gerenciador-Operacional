@@ -9,7 +9,7 @@ import ConsultLinesScreen from './components/lines/ConsultLinesScreen';
 import ImportOccurrencesScreen from './components/dashboard/ImportOccurrencesScreen';
 import ReportsScreen from './components/reports/ReportsScreen';
 import { mockMotoristas, mockViagens, mockOcorrencias, mockMultas } from './mockData';
-import { Motorista, Viagem, Ocorrencia, User, MultaANTT, AnttCodeDescription, ExcessoVelocidade, ParadaIndevida, Veiculo, Avaria, ResumoAvaria, MultaTransito, RegistroOciosidade, RegistroLinha, OciosidadeMotorista, Monitriip, EventoMotorista, LinhaAbreviacao, AppNotification } from './types';
+import { Motorista, Viagem, Ocorrencia, User, MultaANTT, AnttCodeDescription, ExcessoVelocidade, ParadaIndevida, Veiculo, Avaria, ResumoAvaria, MultaTransito, RegistroOciosidade, RegistroLinha, OciosidadeMotorista, Monitriip, EventoMotorista, LinhaAbreviacao, AppNotification, ManutencaoVeiculo, HistoricoManutencao, Acidente } from './types';
 import DashboardOperacionalScreen from './components/dashboard/DashboardOperacionalScreen';
 import LineDictionaryScreen, { DEFAULT_ENTRIES as DEFAULT_DICIONARIO } from './components/lines/LineDictionaryScreen';
 import AnttCodesScreen from './components/antt/AnttCodesScreen';
@@ -39,6 +39,9 @@ import { usePersistedState } from './hooks/usePersistedState';
 import { isSupabaseConfigured } from './lib/supabase';
 import { Loader2, Cloud, HardDrive } from 'lucide-react';
 import SplashScreen from './components/auth/SplashScreen';
+import ImportMaintenanceScreen from './components/manutencao/ImportMaintenanceScreen';
+import ConsultMaintenanceScreen from './components/manutencao/ConsultMaintenanceScreen';
+import AcidentesScreen from './components/avarias/AcidentesScreen';
 
 function App() {
   const [activeTab, setActiveTab] = useState('dashboard-operacional');
@@ -103,6 +106,9 @@ function App() {
   const [monitriips, setMonitriips]                               = usePersistedState<Monitriip>('monitriips', 'monitriipsData');
   const [eventosMotorista, setEventosMotorista]                   = usePersistedState<EventoMotorista>('eventos_motorista', 'eventosMotoristaData');
   const [dicionarioLinhas, setDicionarioLinhas]                   = usePersistedState<LinhaAbreviacao>('dicionario_linhas', 'dicionarioLinhasData', DEFAULT_DICIONARIO);
+  const [manutencoes, setManutencoes]                             = usePersistedState<ManutencaoVeiculo>('manutencoes', 'manutencoesData');
+  const [historicoManutencao, setHistoricoManutencao]             = usePersistedState<HistoricoManutencao>('historico_manutencao', 'historicoManutencaoData');
+  const [acidentes, setAcidentes]                                 = usePersistedState<Acidente>('acidentes', 'acidentesData');
 
   // ─── Notifying wrappers ────────────────────────────────────────────────────
   const setOcorrenciasN = useCallback((a: SetStateAction<Ocorrencia[]>) => { setOcorrencias(a); addNotification('Ocorrencias', 'Dados de pontualidade atualizados'); }, [setOcorrencias, addNotification]);
@@ -113,6 +119,8 @@ function App() {
   const setMotoristasN = useCallback((a: SetStateAction<Motorista[]>) => { setMotoristas(a); addNotification('Motoristas', 'Base de motoristas atualizada'); }, [setMotoristas, addNotification]);
   const setVeiculosN = useCallback((a: SetStateAction<Veiculo[]>) => { setVeiculos(a); addNotification('Veiculos', 'Base de veiculos atualizada'); }, [setVeiculos, addNotification]);
   const setMonitriipsN = useCallback((a: SetStateAction<Monitriip[]>) => { setMonitriips(a); addNotification('Monitriip', 'Dados Monitriip atualizados'); }, [setMonitriips, addNotification]);
+  const setManutencoesN = useCallback((a: SetStateAction<ManutencaoVeiculo[]>) => { setManutencoes(a); addNotification('Manutencao', 'Status de manutencao atualizado'); }, [setManutencoes, addNotification]);
+  const setAcidentesN = useCallback((a: SetStateAction<Acidente[]>) => { setAcidentes(a); addNotification('Acidentes', 'Registro de acidentes atualizado'); }, [setAcidentes, addNotification]);
 
   // ─── Render ────────────────────────────────────────────────────────────────
   const renderContent = () => {
@@ -183,6 +191,12 @@ function App() {
         return <DashboardOperacionalScreen ocorrencias={ocorrencias} excessos={excessosVelocidade} multasAntt={multasAntt} multasTransito={multasTransito} avarias={avarias} paradas={paradasIndevidas} monitriips={monitriips} />;
       case 'line-dictionary':
         return <LineDictionaryScreen dicionario={dicionarioLinhas} setDicionario={setDicionarioLinhas} viagens={viagens} userRole={currentUser.role} />;
+      case 'import-manutencao':
+        return <ImportMaintenanceScreen manutencoes={manutencoes} setManutencoes={setManutencoesN} historicoManutencao={historicoManutencao} setHistoricoManutencao={setHistoricoManutencao} userRole={currentUser.role} />;
+      case 'view-manutencao':
+        return <ConsultMaintenanceScreen manutencoes={manutencoes} historicoManutencao={historicoManutencao} />;
+      case 'acidentes':
+        return <AcidentesScreen acidentes={acidentes} setAcidentes={setAcidentesN} avarias={avarias} motoristas={motoristas} userRole={currentUser.role} />;
       default:
         return (
           <div className="flex items-center justify-center h-full">
@@ -226,6 +240,9 @@ function App() {
       case 'view-monitriip': return 'Consultar Monitriip';
       case 'dashboard-operacional': return 'Dashboard Operacional';
       case 'line-dictionary': return 'Dicionário de Linhas';
+      case 'import-manutencao': return 'Importar Status de Manutenção';
+      case 'view-manutencao': return 'Consultar Veículos na Oficina';
+      case 'acidentes': return 'Acidentes e Sinistros';
       default: return 'Pontualidade Viação';
     }
   };

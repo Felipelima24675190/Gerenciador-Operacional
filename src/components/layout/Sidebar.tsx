@@ -21,6 +21,8 @@ import {
   RadioTower,
   LayoutDashboard,
   BookOpen,
+  Wrench,
+  ShieldAlert,
 } from 'lucide-react';
 import { twMerge } from 'tailwind-merge';
 import { clsx } from 'clsx';
@@ -46,6 +48,7 @@ export default function Sidebar({ activeTab, onTabChange, user, onLogout }: Side
   const [quilometragemOpen, setQuilometragemOpen] = useState(false);
   const [ociosidadeMotoOpen, setOciosidadeMotoOpen] = useState(false);
   const [monitriipOpen, setMonitriipOpen] = useState(false);
+  const [manutencaoOpen, setManutencaoOpen] = useState(false);
   const [relatoriosOpen, setRelatoriosOpen] = useState(false);
   const [configOpen, setConfigOpen] = useState(false);
 
@@ -210,6 +213,9 @@ export default function Sidebar({ activeTab, onTabChange, user, onLogout }: Side
               <button className={menuButtonClass(activeTab === 'view-avaria')} onClick={() => onTabChange('view-avaria')}>
                 <AlertTriangle size={17} /> Consultar Avarias
               </button>
+              <button className={menuButtonClass(activeTab === 'acidentes')} onClick={() => onTabChange('acidentes')}>
+                <ShieldAlert size={17} /> Acidentes
+              </button>
             </div>
           )}
         </div>
@@ -266,6 +272,25 @@ export default function Sidebar({ activeTab, onTabChange, user, onLogout }: Side
               )}
               <button className={menuButtonClass(activeTab === 'view-monitriip')} onClick={() => onTabChange('view-monitriip')}>
                 <RadioTower size={17} /> Consultar Monitriip
+              </button>
+            </div>
+          )}
+        </div>
+
+        <div>
+          <button onClick={() => setManutencaoOpen(!manutencaoOpen)} className={sectionHeaderClass}>
+            <span>Manutencao</span>
+            {manutencaoOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+          </button>
+          {manutencaoOpen && (
+            <div className="mt-1.5 space-y-0.5 flex flex-col sidebar-collapse-enter">
+              {isAdmin && (
+                <button className={menuButtonClass(activeTab === 'import-manutencao')} onClick={() => onTabChange('import-manutencao')}>
+                  <UploadCloud size={17} /> Importar Status
+                </button>
+              )}
+              <button className={menuButtonClass(activeTab === 'view-manutencao')} onClick={() => onTabChange('view-manutencao')}>
+                <Wrench size={17} /> Consultar Veiculos
               </button>
             </div>
           )}

@@ -91,6 +91,10 @@ export default function ImportAnttScreen({ multas, setMultas, userRole, anttCode
 
               const dataHora = `${data} ${hora}`; // Formato "DD/MM/YYYY HH:MM"
 
+              // Use valor from code descriptions if available
+              const codeDesc = anttCodeDescriptions.find(cd => cd.codigo === codigoInfracao);
+              const valorMulta = codeDesc?.valor || 0;
+
               novasMultas.push({
                 id: crypto.randomUUID(),
                 placaVeiculo: placa,
@@ -102,7 +106,7 @@ export default function ImportAnttScreen({ multas, setMultas, userRole, anttCode
                 descricaoInfracao: descricaoInfracao,
                 autoInfracao: autoInfracao,
                 setor: setor,
-                valor: 0, 
+                valor: valorMulta,
                 status: 'Aguardando'
               });
             }
@@ -112,7 +116,7 @@ export default function ImportAnttScreen({ multas, setMultas, userRole, anttCode
             setMultas(novasMultas);
             setStats({
               total: novasMultas.length,
-              valor: 0 // Valor não está presente no novo formato
+              valor: novasMultas.reduce((acc, m) => acc + m.valor, 0)
             });
             setUploadStatus('success');
           } else {
@@ -150,11 +154,13 @@ export default function ImportAnttScreen({ multas, setMultas, userRole, anttCode
             // Assuming header "COD,DESCRIÇÃO" or similar - skip it
             if (parts[0].toLowerCase() === 'cod' || parts[0].toLowerCase().includes('código')) continue;
 
-            // Expected: COD, DESCRIÇÃO
+            // Expected: COD, DESCRIÇÃO, VALOR (valor is optional)
             if (parts.length >= 2) {
+              const valorStr = parts.length >= 3 ? parts[2].replace(/[^\d.,]/g, '').replace(',', '.') : '0';
               newCodeDescriptions.push({
                 codigo: parts[0],
                 descricao: parts[1],
+                valor: parseFloat(valorStr) || 0,
               });
             }
           }
@@ -271,7 +277,7 @@ export default function ImportAnttScreen({ multas, setMultas, userRole, anttCode
         <div className="mb-6">
           <h3 className="text-xl font-bold text-slate-800">Importar Códigos de Multas ANTT</h3>
           <p className="text-sm text-gray-500 mt-2">
-            Selecione o arquivo CSV/TXT com os códigos de infração e suas descrições. Colunas: COD, DESCRIÇÃO.
+            Selecione o arquivo CSV/TXT com os códigos de infração e suas descrições. Colunas: COD, DESCRIÇÃO, VALOR.
           </p>
         </div>
 
@@ -312,7 +318,7 @@ export default function ImportAnttScreen({ multas, setMultas, userRole, anttCode
                 <AlertTriangle size={32} />
               </div>
               <p className="font-semibold text-red-600">Erro na leitura do arquivo de códigos</p>
-              <p className="text-sm text-red-500 mt-1">Verifique o formato das colunas do CSV (COD, DESCRIÇÃO).</p>
+              <p className="text-sm text-red-500 mt-1">Verifique o formato das colunas do CSV (COD, DESCRIÇÃO, VALOR).</p>
             </>
           )}
         </div>
