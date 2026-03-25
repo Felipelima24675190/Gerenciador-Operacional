@@ -14,8 +14,8 @@ export default function ImportAnttScreen({ multas, setMultas, userRole, anttCode
   const [isDragging, setIsDragging] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [stats, setStats] = useState<{ total: number, valor: number } | null>(null);
+  const [errorMsg, setErrorMsg] = useState('');
 
-  // NEW: State for importing code descriptions
   const [isCodeDragging, setIsCodeDragging] = useState(false);
   const [codeUploadStatus, setCodeUploadStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [codeStats, setCodeStats] = useState<{ total: number } | null>(null);
@@ -32,104 +32,199 @@ export default function ImportAnttScreen({ multas, setMultas, userRole, anttCode
     );
   }
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
+  const handleDragOver = (e: React.DragEvent) => { e.preventDefault(); setIsDragging(true); };
+  const handleDragLeave = (e: React.DragEvent) => { e.preventDefault(); setIsDragging(false); };
+
+  // Normalize header names to identify columns
+  const normalizeHeader = (h: string): string => {
+    const s = h.trim().toUpperCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // remove accents
+      .replace(/[^A-Z0-9 ]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+    return s;
   };
 
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
+  // Map normalized header to field name
+  const identifyColumn = (header: string): string | null => {
+    const h = normalizeHeader(header);
+    if (h === 'PLACA' || h.includes('PLACA')) return 'placa';
+    if (h === 'ORDEM' || h.includes('ORDEM')) return 'ordem';
+    if (h === 'EMPRESA' || h.includes('EMPRESA')) return 'empresa';
+    if (h === 'LINHA' || h.includes('LINHA')) return 'linha';
+    if (h.includes('MATRICULA') || h.includes('MOTORISTA')) return 'matricula';
+    if (h === 'MES' || h === 'MESANO' || h === 'MES ANO' || h.includes('MES REF')) return 'mes'; // skip
+    if (h === 'DATA' || h.includes('DATA')) return 'data';
+    if (h === 'LOCAL' || h.includes('LOCAL') || h.includes('FILIAL') || h.includes('TERMINAL')) return 'local';
+    if (h === 'HORA' || h.includes('HORA') || h.includes('HORARIO')) return 'hora';
+    if (h.includes('CODIGO') || h.includes('COD') && h.includes('INFR')) return 'codigo';
+    if (h.includes('DESCRICAO') || h.includes('DESC')) return 'descricao';
+    if (h.includes('AUTO') || h.includes('N DO AUTO') || h.includes('NUMERO AUTO')) return 'auto';
+    if (h.includes('SETOR') || h.includes('RESPONSAVEL')) return 'setor';
+    if (h.includes('VALOR')) return 'valor';
+    return null;
+  };
+
+  // Normalize setor to standard categories
+  const normalizeSetor = (raw: string): string => {
+    const s = raw.trim().toUpperCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    if (s.includes('OPERA')) return 'OPERAÇÃO';
+    if (s.includes('MANUT')) return 'MANUTENÇÃO';
+    if (s.includes('COMER')) return 'COMERCIAL';
+    if (s.includes('ATRASO')) return 'ATRASO';
+    if (s === 'RH') return 'RH';
+    return raw.trim().toUpperCase() || 'SEM SETOR';
   };
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
-    
     const file = e.dataTransfer.files[0];
-    if (file) {
-      if (file.name.endsWith('.txt') || file.name.endsWith('.csv')) {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          const text = event.target?.result as string;
-          const lines = text.split('\n');
-          const novasMultas: MultaANTT[] = [];
+    if (file) processMultasFile(file);
+  };
 
-          // Detect separator from header line
-          const headerLine = lines.find(l => l.trim()) || '';
-          const sep = headerLine.includes('\t') ? '\t' : ';';
+  const processMultasFile = (file: File) => {
+    if (!file.name.endsWith('.txt') && !file.name.endsWith('.csv')) {
+      setUploadStatus('error');
+      setErrorMsg('Formato de arquivo não suportado. Use .csv ou .txt');
+      setTimeout(() => setUploadStatus('idle'), 3000);
+      return;
+    }
 
-          for (let i = 0; i < lines.length; i++) {
-            const line = lines[i].trim();
-            if (!line) continue;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const text = event.target?.result as string;
+      const lines = text.split('\n').filter(l => l.trim());
+      if (lines.length < 2) {
+        setUploadStatus('error');
+        setErrorMsg('Arquivo vazio ou sem dados.');
+        setTimeout(() => setUploadStatus('idle'), 5000);
+        return;
+      }
 
-            const parts = line.split(sep);
-            
-            // Ignorar cabeçalho, verificando a primeira coluna
-            if (parts[0].trim().toLowerCase() === 'placa') continue;
+      // Detect separator from header
+      const headerLine = lines[0];
+      const sep = headerLine.includes('\t') ? '\t' : ';';
 
-            // Verificar se temos o número mínimo de colunas esperadas
-            if (parts.length >= 12) { // 12 colunas: PLACA, ORDEM, EMPRESA, LINHA, MATRÍCULA, DATA, LOCAL, HORA, CÓDIGO, DESCRIÇÃO, AUTO, SETOR
-              const placa = parts[0].trim();
-              const empresa = parts[2].trim();
-              const matriculaMotorista = parts[4].trim();
-              const data = parts[5].trim();
-              const local = parts[6].trim();
-              const hora = parts[7].trim();
-              const codigoInfracao = parts[8].trim();
-              const descricaoInfracao = parts[9].trim();
-              const autoInfracao = parts[10].trim();
-              
-              // Padronizar o Setor para UPPERCASE
-              let setor = parts[11].trim().toUpperCase();
-              // Corrigir possíveis variações para as categorias padrão
-              if (setor.includes('OPERA')) setor = 'OPERAÇÃO';
-              else if (setor.includes('MANUT')) setor = 'MANUTENÇÃO';
-              else if (setor.includes('COMER')) setor = 'COMERCIAL';
-              else if (setor.includes('ATRASO')) setor = 'ATRASO';
-              else if (setor === 'RH') setor = 'RH';
+      // Parse header to build column map
+      const headers = headerLine.split(sep);
+      const colMap: Record<string, number> = {};
+      headers.forEach((h, i) => {
+        const field = identifyColumn(h);
+        if (field && !(field in colMap)) {
+          colMap[field] = i;
+        }
+      });
 
-              const dataHora = `${data} ${hora}`; // Formato "DD/MM/YYYY HH:MM"
-
-              // Use valor from code descriptions if available
-              const codeDesc = anttCodeDescriptions.find(cd => cd.codigo === codigoInfracao);
-              const valorMulta = codeDesc?.valor || 0;
-
-              novasMultas.push({
-                id: crypto.randomUUID(),
-                placaVeiculo: placa,
-                empresa: empresa,
-                matriculaMotorista: matriculaMotorista,
-                dataHora: dataHora,
-                terminal: local, // Mapeando LOCAL para terminal
-                codigoInfracao: codigoInfracao,
-                descricaoInfracao: descricaoInfracao,
-                autoInfracao: autoInfracao,
-                setor: setor,
-                valor: valorMulta,
-                status: 'Aguardando'
-              });
-            }
+      // Also try to identify "codigo" column if not found yet
+      // Sometimes the header just says "CÓDIGO" without "INFRAÇÃO"
+      if (!('codigo' in colMap)) {
+        headers.forEach((h, i) => {
+          const norm = normalizeHeader(h);
+          if ((norm === 'CODIGO' || norm === 'COD') && !(i in Object.values(colMap))) {
+            colMap['codigo'] = i;
           }
-          
-          if (novasMultas.length > 0) {
-            setMultas(novasMultas);
-            setStats({
-              total: novasMultas.length,
-              valor: novasMultas.reduce((acc, m) => acc + m.valor, 0)
-            });
-            setUploadStatus('success');
-          } else {
-            setUploadStatus('error');
-          }
-          setTimeout(() => setUploadStatus('idle'), 10000);
-        };
-        reader.readAsText(file);
+        });
+      }
+
+      // Validate we have minimum required columns
+      const requiredFields = ['data', 'codigo'];
+      const missing = requiredFields.filter(f => !(f in colMap));
+      if (missing.length > 0) {
+        // Fallback: try positional mapping (original hardcoded order)
+        // PLACA, ORDEM, EMPRESA, LINHA, MATRÍCULA, DATA, LOCAL, HORA, CÓDIGO, DESCRIÇÃO, AUTO, SETOR
+        if (headers.length >= 12) {
+          colMap['placa'] = 0;
+          colMap['ordem'] = 1;
+          colMap['empresa'] = 2;
+          colMap['linha'] = 3;
+          colMap['matricula'] = 4;
+          colMap['data'] = 5;
+          colMap['local'] = 6;
+          colMap['hora'] = 7;
+          colMap['codigo'] = 8;
+          colMap['descricao'] = 9;
+          colMap['auto'] = 10;
+          colMap['setor'] = 11;
+        } else {
+          setUploadStatus('error');
+          setErrorMsg(`Colunas obrigatórias não encontradas: ${missing.join(', ')}. Verifique o cabeçalho do arquivo.`);
+          setTimeout(() => setUploadStatus('idle'), 8000);
+          return;
+        }
+      }
+
+      const get = (parts: string[], field: string): string => {
+        const idx = colMap[field];
+        if (idx === undefined || idx >= parts.length) return '';
+        return parts[idx].trim();
+      };
+
+      const novasMultas: MultaANTT[] = [];
+      const codeDescMap = new Map(anttCodeDescriptions.map(c => [c.codigo, c]));
+
+      for (let i = 1; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (!line) continue;
+
+        const parts = line.split(sep);
+
+        // Skip if looks like another header row
+        const firstCol = parts[0]?.trim().toLowerCase() || '';
+        if (firstCol === 'placa' || firstCol.includes('código') || firstCol.includes('codigo')) continue;
+
+        const placa = get(parts, 'placa');
+        const empresa = get(parts, 'empresa').toUpperCase();
+        const matricula = get(parts, 'matricula');
+        const data = get(parts, 'data');
+        const local = get(parts, 'local');
+        const hora = get(parts, 'hora');
+        const codigoInfracao = get(parts, 'codigo');
+        const descricaoInfracao = get(parts, 'descricao');
+        const autoInfracao = get(parts, 'auto');
+        const setorRaw = get(parts, 'setor');
+        const setor = normalizeSetor(setorRaw);
+
+        // Build dataHora
+        const dataHora = hora ? `${data} ${hora}` : data;
+
+        if (!codigoInfracao && !data) continue; // skip empty rows
+
+        // Value from code descriptions or imported value
+        const codeDesc = codeDescMap.get(codigoInfracao);
+        const valorMulta = codeDesc?.valor || 0;
+
+        novasMultas.push({
+          id: crypto.randomUUID(),
+          placaVeiculo: placa,
+          empresa: empresa,
+          matriculaMotorista: matricula,
+          dataHora: dataHora,
+          terminal: local,
+          codigoInfracao: codigoInfracao,
+          descricaoInfracao: descricaoInfracao,
+          autoInfracao: autoInfracao,
+          setor: setor,
+          valor: valorMulta,
+          status: 'Aguardando',
+        });
+      }
+
+      if (novasMultas.length > 0) {
+        setMultas(novasMultas);
+        setStats({
+          total: novasMultas.length,
+          valor: novasMultas.reduce((acc, m) => acc + m.valor, 0),
+        });
+        setUploadStatus('success');
       } else {
         setUploadStatus('error');
-        setTimeout(() => setUploadStatus('idle'), 3000);
+        setErrorMsg('Nenhum registro válido encontrado no arquivo.');
       }
-    }
+      setTimeout(() => setUploadStatus('idle'), 10000);
+    };
+    reader.readAsText(file);
   };
 
   // Parse a CSV/TXT line respecting quoted fields
@@ -137,13 +232,12 @@ export default function ImportAnttScreen({ multas, setMultas, userRole, anttCode
     const result: string[] = [];
     let current = '';
     let inQuotes = false;
-
     for (let i = 0; i < line.length; i++) {
       const ch = line[i];
       if (ch === '"') {
         if (inQuotes && i + 1 < line.length && line[i + 1] === '"') {
           current += '"';
-          i++; // skip escaped quote
+          i++;
         } else {
           inQuotes = !inQuotes;
         }
@@ -167,57 +261,56 @@ export default function ImportAnttScreen({ multas, setMultas, userRole, anttCode
   const handleDropCodeFile = (e: React.DragEvent) => {
     e.preventDefault();
     setIsCodeDragging(false);
-
     const file = e.dataTransfer.files[0];
-    if (file) {
-      if (file.name.endsWith('.txt') || file.name.endsWith('.csv')) {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          const text = event.target?.result as string;
-          const lines = text.split('\n');
-          const newCodeDescriptions: AnttCodeDescription[] = [];
+    if (file) processCodeFile(file);
+  };
 
-          // Detect separator from first line
-          const headerLine = lines.find(l => l.trim()) || '';
-          const sep = headerLine.includes(';') ? ';' : (headerLine.includes('\t') ? '\t' : ',');
+  const processCodeFile = (file: File) => {
+    if (!file.name.endsWith('.txt') && !file.name.endsWith('.csv')) {
+      setCodeUploadStatus('error');
+      setTimeout(() => setCodeUploadStatus('idle'), 3000);
+      return;
+    }
 
-          for (let i = 0; i < lines.length; i++) {
-            const line = lines[i].trim();
-            if (!line) continue;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const text = event.target?.result as string;
+      const lines = text.split('\n');
+      const newCodeDescriptions: AnttCodeDescription[] = [];
 
-            const parts = parseCsvLine(line, sep);
+      // Detect separator - prefer ; then tab then ,
+      const headerLine = lines.find(l => l.trim()) || '';
+      const sep = headerLine.includes(';') ? ';' : (headerLine.includes('\t') ? '\t' : ',');
 
-            // Skip header
-            if (parts[0].toLowerCase() === 'cod' || parts[0].toLowerCase().includes('código') || parts[0].toLowerCase() === 'codigo') continue;
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (!line) continue;
 
-            // Expected: CÓDIGO;DESCRIÇÃO;VALOR
-            if (parts.length >= 2) {
-              const valor = parts.length >= 3 ? parseBRCurrency(parts[2]) : 0;
-              newCodeDescriptions.push({
-                codigo: parts[0],
-                descricao: parts[1],
-                valor,
-              });
-            }
-          }
+        const parts = parseCsvLine(line, sep);
 
-          if (newCodeDescriptions.length > 0) {
-            setAnttCodeDescriptions(newCodeDescriptions);
-            setCodeStats({
-              total: newCodeDescriptions.length,
-            });
-            setCodeUploadStatus('success');
-          } else {
-            setCodeUploadStatus('error');
-          }
-          setTimeout(() => setCodeUploadStatus('idle'), 10000);
-        };
-        reader.readAsText(file);
+        // Skip header
+        if (parts[0].toLowerCase() === 'cod' || parts[0].toLowerCase().includes('código') || parts[0].toLowerCase() === 'codigo') continue;
+
+        if (parts.length >= 2) {
+          const valor = parts.length >= 3 ? parseBRCurrency(parts[2]) : 0;
+          newCodeDescriptions.push({
+            codigo: parts[0].trim(),
+            descricao: parts[1].trim(),
+            valor,
+          });
+        }
+      }
+
+      if (newCodeDescriptions.length > 0) {
+        setAnttCodeDescriptions(newCodeDescriptions);
+        setCodeStats({ total: newCodeDescriptions.length });
+        setCodeUploadStatus('success');
       } else {
         setCodeUploadStatus('error');
-        setTimeout(() => setCodeUploadStatus('idle'), 3000);
       }
-    }
+      setTimeout(() => setCodeUploadStatus('idle'), 10000);
+    };
+    reader.readAsText(file);
   };
 
   const handleLimparTodos = () => {
@@ -240,23 +333,27 @@ export default function ImportAnttScreen({ multas, setMultas, userRole, anttCode
         <div className="mb-6">
           <h3 className="text-xl font-bold text-slate-800">Importar Multas ANTT</h3>
           <p className="text-sm text-gray-500 mt-2">
-            Selecione o arquivo CSV/TXT com os autos de infração. Colunas esperadas (separadas por TAB): PLACA, ORDEM, EMPRESA, LINHA, MATRÍCULA DO MOTORISTA, DATA, LOCAL, HORA, CÓDIGO INFRAÇÃO, DESCRIÇÃO DO FISCAL, Nº DO AUTO DE INFRAÇÃO, SETOR RESPONSÁVEL.
+            Selecione o arquivo CSV/TXT com os autos de infração. O sistema detecta automaticamente as colunas pelo cabeçalho.
+            Colunas esperadas: PLACA, ORDEM, EMPRESA, LINHA, MATRÍCULA, DATA, LOCAL, HORA, CÓDIGO, DESCRIÇÃO, AUTO, SETOR.
           </p>
         </div>
 
-        <div 
+        <label
           className={`border-2 border-dashed rounded-xl p-10 flex flex-col items-center justify-center transition-colors cursor-pointer
-            ${isDragging ? 'border-brand-blue bg-blue-50' : 'border-gray-300 bg-gray-50 hover:bg-gray-100'}`}
+            ${isDragging ? 'border-brand-500 bg-blue-50' : 'border-gray-300 bg-gray-50 hover:bg-gray-100'}`}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
         >
+          <input type="file" accept=".csv,.txt" className="hidden" onChange={ev => { const f = ev.target.files?.[0]; if (f) processMultasFile(f); }} />
+
           {uploadStatus === 'idle' && (
             <>
               <div className="p-4 bg-white shadow-sm border border-gray-200 rounded-full mb-4 text-slate-700">
                 <UploadCloud size={32} />
               </div>
               <p className="font-semibold text-slate-700">Clique ou arraste o arquivo aqui</p>
+              <p className="text-xs text-gray-400 mt-1">.CSV ou .TXT separado por TAB ou ;</p>
             </>
           )}
 
@@ -287,17 +384,17 @@ export default function ImportAnttScreen({ multas, setMultas, userRole, anttCode
                 <AlertTriangle size={32} />
               </div>
               <p className="font-semibold text-red-600">Erro na leitura do arquivo</p>
-              <p className="text-sm text-red-500 mt-1">Verifique o formato das colunas do CSV.</p>
+              <p className="text-sm text-red-500 mt-1">{errorMsg || 'Verifique o formato das colunas do CSV.'}</p>
             </>
           )}
-        </div>
+        </label>
       </div>
 
       {multas.length > 0 && (
         <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
           <div className="flex items-center justify-between">
             <h4 className="text-lg font-bold text-slate-800">Base Ativa ({multas.length} registros)</h4>
-            <button 
+            <button
               onClick={handleLimparTodos}
               className="flex items-center gap-2 px-4 py-2 bg-white border border-red-500 text-red-600 text-sm font-bold rounded-lg hover:bg-red-50 transition-colors"
             >
@@ -308,28 +405,31 @@ export default function ImportAnttScreen({ multas, setMultas, userRole, anttCode
         </div>
       )}
 
-      {/* NEW: Importar Código de Multas ANTT */}
+      {/* Importar Código de Multas ANTT */}
       <div className="bg-white p-8 rounded-xl border border-gray-200 shadow-sm text-center">
         <div className="mb-6">
           <h3 className="text-xl font-bold text-slate-800">Importar Códigos de Multas ANTT</h3>
           <p className="text-sm text-gray-500 mt-2">
-            Selecione o arquivo CSV/TXT com os códigos de infração e suas descrições. Colunas: COD, DESCRIÇÃO, VALOR.
+            Selecione o arquivo CSV/TXT com os códigos de infração e suas descrições. Colunas: CÓDIGO; DESCRIÇÃO; VALOR.
           </p>
         </div>
 
-        <div
+        <label
           className={`border-2 border-dashed rounded-xl p-10 flex flex-col items-center justify-center transition-colors cursor-pointer
-            ${isCodeDragging ? 'border-brand-blue bg-blue-50' : 'border-gray-300 bg-gray-50 hover:bg-gray-100'}`}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
+            ${isCodeDragging ? 'border-brand-500 bg-blue-50' : 'border-gray-300 bg-gray-50 hover:bg-gray-100'}`}
+          onDragOver={(e) => { e.preventDefault(); setIsCodeDragging(true); }}
+          onDragLeave={(e) => { e.preventDefault(); setIsCodeDragging(false); }}
           onDrop={handleDropCodeFile}
         >
+          <input type="file" accept=".csv,.txt" className="hidden" onChange={ev => { const f = ev.target.files?.[0]; if (f) processCodeFile(f); }} />
+
           {codeUploadStatus === 'idle' && (
             <>
               <div className="p-4 bg-white shadow-sm border border-gray-200 rounded-full mb-4 text-slate-700">
                 <UploadCloud size={32} />
               </div>
               <p className="font-semibold text-slate-700">Clique ou arraste o arquivo aqui</p>
+              <p className="text-xs text-gray-400 mt-1">.CSV ou .TXT separado por ;</p>
             </>
           )}
 
@@ -354,10 +454,10 @@ export default function ImportAnttScreen({ multas, setMultas, userRole, anttCode
                 <AlertTriangle size={32} />
               </div>
               <p className="font-semibold text-red-600">Erro na leitura do arquivo de códigos</p>
-              <p className="text-sm text-red-500 mt-1">Verifique o formato das colunas do CSV (COD, DESCRIÇÃO, VALOR).</p>
+              <p className="text-sm text-red-500 mt-1">Verifique o formato das colunas do CSV (CÓDIGO; DESCRIÇÃO; VALOR).</p>
             </>
           )}
-        </div>
+        </label>
       </div>
 
       {anttCodeDescriptions.length > 0 && (

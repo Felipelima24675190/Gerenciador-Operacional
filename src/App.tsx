@@ -42,6 +42,7 @@ import SplashScreen from './components/auth/SplashScreen';
 import ImportMaintenanceScreen from './components/manutencao/ImportMaintenanceScreen';
 import ConsultMaintenanceScreen from './components/manutencao/ConsultMaintenanceScreen';
 import AcidentesScreen from './components/avarias/AcidentesScreen';
+import ScoreMotoristasScreen from './components/drivers/ScoreMotoristasScreen';
 
 function App() {
   const [activeTab, setActiveTab] = useState('dashboard-operacional');
@@ -197,6 +198,8 @@ function App() {
         return <ConsultMaintenanceScreen manutencoes={manutencoes} historicoManutencao={historicoManutencao} veiculos={veiculos} />;
       case 'acidentes':
         return <AcidentesScreen acidentes={acidentes} setAcidentes={setAcidentesN} avarias={avarias} motoristas={motoristas} userRole={currentUser.role} />;
+      case 'score-motoristas':
+        return <ScoreMotoristasScreen motoristas={motoristas} ocorrencias={ocorrencias} excessos={excessosVelocidade} avarias={avarias} acidentes={acidentes} eventosMotorista={eventosMotorista} />;
       default:
         return (
           <div className="flex items-center justify-center h-full">
@@ -243,6 +246,7 @@ function App() {
       case 'import-manutencao': return 'Importar Status de Manutenção';
       case 'view-manutencao': return 'Consultar Veículos na Oficina';
       case 'acidentes': return 'Acidentes e Sinistros';
+      case 'score-motoristas': return 'Score de Motoristas';
       default: return 'Pontualidade Viação';
     }
   };

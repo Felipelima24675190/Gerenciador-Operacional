@@ -13,7 +13,32 @@ interface ViewAnttScreenProps {
 }
 
 const COLORS = ['#0e4f8f', '#3d7fd2', '#1a6abf', '#6b9ede', '#0b3f72', '#9fbfea', '#082f55', '#c5daf3', '#051e38', '#e8f1fb'];
-const formatCurrency = (value: number) => `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}`;
+const formatCurrency = (value: number) => `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+const normalizeSetor = (s: string): string => {
+  if (!s || !s.trim()) return 'SEM SETOR';
+  const upper = s.trim().toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  if (upper.includes('OPERA')) return 'OPERAÇÃO';
+  if (upper.includes('MANUT')) return 'MANUTENÇÃO';
+  if (upper.includes('COMER')) return 'COMERCIAL';
+  if (upper.includes('ATRASO')) return 'ATRASO';
+  if (upper === 'RH') return 'RH';
+  // If not a known setor, classify as "OUTROS"
+  return upper || 'SEM SETOR';
+};
+
+// Parse date string in DD/MM/YYYY or DD/MM/YYYY HH:MM format
+function parseDateBR(dateStr: string): Date | null {
+  if (!dateStr) return null;
+  try {
+    const datePart = dateStr.split(' ')[0];
+    const parts = datePart.split('/');
+    if (parts.length < 3) return null;
+    const [day, month, year] = parts.map(Number);
+    if (!day || !month || !year || year < 2000) return null;
+    return new Date(year, month - 1, day);
+  } catch { return null; }
+}
 
 export default function ViewAnttScreen({ multas, anttCodeDescriptions, motoristas }: ViewAnttScreenProps) {
   const [dataInicio, setDataInicio] = useState('2026-03-01');
@@ -23,40 +48,45 @@ export default function ViewAnttScreen({ multas, anttCodeDescriptions, motorista
   const [codigoFilter, setCodigoFilter] = useState('');
   const [searchTable, setSearchTable] = useState('');
 
-  const setoresUnicos = useMemo(() => ['Todos', 'OPERACAO', 'MANUTENCAO', 'COMERCIAL', 'ATRASO', 'RH'], []);
+  const setoresUnicos = useMemo(() => ['Todos', 'OPERAÇÃO', 'MANUTENÇÃO', 'COMERCIAL', 'ATRASO', 'RH', 'SEM SETOR'], []);
   const motoristaMap = useMemo(() => new Map(motoristas.map(m => [m.matricula, m])), [motoristas]);
   const codeDescriptionMap = useMemo(() => new Map(anttCodeDescriptions.map(item => [item.codigo, item])), [anttCodeDescriptions]);
 
+  // Detect unique empresas in data
+  const empresasDisponiveis = useMemo(() => {
+    const set = new Set<string>();
+    multas.forEach(m => { if (m.empresa) set.add(m.empresa.toUpperCase()); });
+    return Array.from(set).sort();
+  }, [multas]);
+
   const filteredMultas = useMemo(() => {
-    const startDate = new Date(dataInicio);
-    const endDate = new Date(dataFim);
-    endDate.setHours(23, 59, 59, 999);
+    const startDate = new Date(dataInicio + 'T00:00:00');
+    const endDate = new Date(dataFim + 'T23:59:59');
 
     return multas.filter(m => {
-      const matchEmpresa = empresaFilter === 'Todas' || m.empresa === empresaFilter;
-      const matchSetor = setorFilter === 'Todos' || m.setor === setorFilter;
-      const matchCodigo = !codigoFilter || m.codigoInfracao.includes(codigoFilter);
+      const matchEmpresa = empresaFilter === 'Todas' || (m.empresa || '').toUpperCase() === empresaFilter;
+      const normalizedSetor = normalizeSetor(m.setor);
+      const matchSetor = setorFilter === 'Todos' || normalizedSetor === setorFilter;
+      const matchCodigo = !codigoFilter || (m.codigoInfracao || '').includes(codigoFilter);
 
-      try {
-        const [datePart] = m.dataHora.split(' ');
-        const [day, month, year] = datePart.split('/').map(Number);
-        const multaDate = new Date(year, month - 1, day);
-        const matchDate = multaDate >= startDate && multaDate <= endDate;
-        return matchEmpresa && matchDate && matchSetor && matchCodigo;
-      } catch { return false; }
+      const multaDate = parseDateBR(m.dataHora);
+      if (!multaDate) return false;
+      const matchDate = multaDate >= startDate && multaDate <= endDate;
+
+      return matchEmpresa && matchDate && matchSetor && matchCodigo;
     });
   }, [multas, empresaFilter, dataInicio, dataFim, setorFilter, codigoFilter]);
 
   const getValorMulta = (m: MultaANTT) => {
     const codeInfo = codeDescriptionMap.get(m.codigoInfracao);
-    return codeInfo?.valor && codeInfo.valor > 0 ? codeInfo.valor : m.valor;
+    return codeInfo?.valor && codeInfo.valor > 0 ? codeInfo.valor : (m.valor || 0);
   };
 
   const kpis = useMemo(() => {
     const totalMultas = filteredMultas.length;
     const totalValor = filteredMultas.reduce((acc, curr) => acc + getValorMulta(curr), 0);
-    const progressoMultas = filteredMultas.filter(m => m.empresa === 'PROGRESSO');
-    const cruzeiroMultas = filteredMultas.filter(m => m.empresa === 'CRUZEIRO');
+    const progressoMultas = filteredMultas.filter(m => (m.empresa || '').toUpperCase().includes('PROGRESSO'));
+    const cruzeiroMultas = filteredMultas.filter(m => (m.empresa || '').toUpperCase().includes('CRUZEIRO'));
     return {
       totalValor,
       valorProgresso: progressoMultas.reduce((acc, curr) => acc + getValorMulta(curr), 0),
@@ -67,10 +97,11 @@ export default function ViewAnttScreen({ multas, anttCodeDescriptions, motorista
     };
   }, [filteredMultas, codeDescriptionMap]);
 
+  // Setor chart — normalize and group properly
   const chartSetor = useMemo(() => {
     const counts: Record<string, number> = {};
     filteredMultas.forEach(m => {
-      const setor = m.setor && m.setor.trim() ? m.setor.trim() : 'SEM SETOR';
+      const setor = normalizeSetor(m.setor);
       counts[setor] = (counts[setor] || 0) + 1;
     });
     const sorted = Object.entries(counts).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
@@ -84,15 +115,23 @@ export default function ViewAnttScreen({ multas, anttCodeDescriptions, motorista
     return sorted;
   }, [filteredMultas]);
 
+  // Codigos chart — only show actual code values (filter out obvious non-codes)
   const chartCodigo = useMemo(() => {
     const counts: Record<string, number> = {};
-    filteredMultas.forEach(m => counts[m.codigoInfracao] = (counts[m.codigoInfracao] || 0) + 1);
+    filteredMultas.forEach(m => {
+      const code = (m.codigoInfracao || '').trim();
+      if (code) counts[code] = (counts[code] || 0) + 1;
+    });
     return Object.entries(counts).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count).slice(0, 10);
   }, [filteredMultas]);
 
+  // Terminal chart — filter out obvious non-terminal values (months, single digits)
   const chartTerminal = useMemo(() => {
     const counts: Record<string, number> = {};
-    filteredMultas.forEach(m => counts[m.terminal] = (counts[m.terminal] || 0) + 1);
+    filteredMultas.forEach(m => {
+      const t = (m.terminal || '').trim();
+      if (t) counts[t] = (counts[t] || 0) + 1;
+    });
     return Object.entries(counts).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count).slice(0, 10);
   }, [filteredMultas]);
 
@@ -114,25 +153,25 @@ export default function ViewAnttScreen({ multas, anttCodeDescriptions, motorista
     const monthlyCounts: Record<string, { Atual: number; Anterior: number }> = {};
     months.forEach(month => { monthlyCounts[month] = { Atual: 0, Anterior: 0 }; });
 
-    multas.forEach(m => {
-      try {
-        const [datePart] = m.dataHora.split(' ');
-        const [, month, year] = datePart.split('/').map(Number);
-        const fineDate = new Date(year, month - 1, 1);
-        if (fineDate.getFullYear() === currentYear) monthlyCounts[months[fineDate.getMonth()]].Atual++;
-        else if (fineDate.getFullYear() === previousYear) monthlyCounts[months[fineDate.getMonth()]].Anterior++;
-      } catch {}
+    // Use filteredMultas (respecting filters) for monthly chart
+    filteredMultas.forEach(m => {
+      const d = parseDateBR(m.dataHora);
+      if (!d) return;
+      if (d.getFullYear() === currentYear) monthlyCounts[months[d.getMonth()]].Atual++;
+      else if (d.getFullYear() === previousYear) monthlyCounts[months[d.getMonth()]].Anterior++;
     });
     return months.map(month => ({ name: month, ...monthlyCounts[month] }));
-  }, [multas]);
+  }, [filteredMultas]);
 
   const tableFiltered = useMemo(() => {
     if (!searchTable.trim()) return filteredMultas;
     const q = searchTable.toLowerCase();
     return filteredMultas.filter(m =>
-      m.autoInfracao.toLowerCase().includes(q) ||
-      m.codigoInfracao.toLowerCase().includes(q) ||
-      (codeDescriptionMap.get(m.codigoInfracao)?.descricao || m.descricaoInfracao).toLowerCase().includes(q)
+      (m.autoInfracao || '').toLowerCase().includes(q) ||
+      (m.codigoInfracao || '').toLowerCase().includes(q) ||
+      (codeDescriptionMap.get(m.codigoInfracao)?.descricao || m.descricaoInfracao || '').toLowerCase().includes(q) ||
+      (m.terminal || '').toLowerCase().includes(q) ||
+      (m.setor || '').toLowerCase().includes(q)
     );
   }, [filteredMultas, searchTable, codeDescriptionMap]);
 
@@ -161,8 +200,7 @@ export default function ViewAnttScreen({ multas, anttCodeDescriptions, motorista
           <label className="text-[10px] font-bold text-slate-600 uppercase block mb-1">Empresa</label>
           <select value={empresaFilter} onChange={e => setEmpresaFilter(e.target.value)} className="text-xs p-2 rounded-lg border border-gray-200 bg-slate-50">
             <option value="Todas">Todas</option>
-            <option value="PROGRESSO">PROGRESSO</option>
-            <option value="CRUZEIRO">CRUZEIRO</option>
+            {empresasDisponiveis.map(e => <option key={e} value={e}>{e}</option>)}
           </select>
         </div>
         <div>
@@ -183,6 +221,7 @@ export default function ViewAnttScreen({ multas, anttCodeDescriptions, motorista
           <label className="text-[10px] font-bold text-slate-600 uppercase block mb-1">Fim</label>
           <input type="date" value={dataFim} onChange={e => setDataFim(e.target.value)} className="text-xs p-2 rounded-lg border border-gray-200" />
         </div>
+        <div className="text-xs text-slate-400 font-bold pb-2">{filteredMultas.length} multas no período</div>
       </div>
 
       {/* Charts Row 1 */}
@@ -217,7 +256,7 @@ export default function ViewAnttScreen({ multas, anttCodeDescriptions, motorista
                   outerRadius={60}
                   innerRadius={20}
                   label={({ name, percent }: any) => {
-                    const label = name.length > 12 ? name.substring(0, 12) + '..' : name;
+                    const label = name.length > 10 ? name.substring(0, 10) + '..' : name;
                     return `${label} ${(percent * 100).toFixed(1)}%`;
                   }}
                   labelLine={true}
@@ -225,7 +264,7 @@ export default function ViewAnttScreen({ multas, anttCodeDescriptions, motorista
                 >
                   {chartSetor.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                 </Pie>
-                <Tooltip formatter={(value: number) => [value, 'Multas']} />
+                <Tooltip formatter={(value: number, name: string) => [`${value} multas`, name]} />
               </PieChart>
             </ResponsiveContainer>
           </div>
@@ -249,7 +288,7 @@ export default function ViewAnttScreen({ multas, anttCodeDescriptions, motorista
       {/* Charts Row 2 */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-          <h4 className="text-[10px] font-black text-slate-600 uppercase text-center mb-3">Top 10 Terminais</h4>
+          <h4 className="text-[10px] font-black text-slate-600 uppercase text-center mb-3">Top 10 Filiais</h4>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartTerminal} layout="vertical" margin={{ left: 10 }}>
@@ -286,7 +325,7 @@ export default function ViewAnttScreen({ multas, anttCodeDescriptions, motorista
           <Search size={14} className="text-slate-400" />
           <input
             type="text"
-            placeholder="Buscar na tabela (auto, codigo, descricao)..."
+            placeholder="Buscar na tabela (auto, codigo, descricao, terminal, setor)..."
             value={searchTable}
             onChange={e => setSearchTable(e.target.value)}
             className="flex-1 text-xs border-0 outline-none placeholder:text-slate-400"
@@ -302,22 +341,24 @@ export default function ViewAnttScreen({ multas, anttCodeDescriptions, motorista
                 <th className="px-3 py-2">Codigo</th>
                 <th className="px-3 py-2">Descricao</th>
                 <th className="px-3 py-2">Setor</th>
-                <th className="px-3 py-2">Terminal</th>
+                <th className="px-3 py-2">Filial</th>
+                <th className="px-3 py-2">Empresa</th>
                 <th className="px-3 py-2 text-right">Valor</th>
               </tr>
             </thead>
             <tbody>
               {tableFiltered.slice(0, 200).map(m => {
                 const codeInfo = codeDescriptionMap.get(m.codigoInfracao);
-                const valorExibido = codeInfo?.valor && codeInfo.valor > 0 ? codeInfo.valor : m.valor;
+                const valorExibido = codeInfo?.valor && codeInfo.valor > 0 ? codeInfo.valor : (m.valor || 0);
                 return (
                   <tr key={m.id} className="border-b border-gray-50 hover:bg-slate-50 transition-colors">
                     <td className="px-3 py-2 font-mono text-[10px]">{m.dataHora}</td>
                     <td className="px-3 py-2 font-bold">{m.autoInfracao}</td>
                     <td className="px-3 py-2 font-mono">{m.codigoInfracao}</td>
-                    <td className="px-3 py-2 text-slate-600">{codeInfo?.descricao || m.descricaoInfracao}</td>
-                    <td className="px-3 py-2"><span className="px-1.5 py-0.5 bg-slate-100 rounded text-[9px] font-bold">{m.setor}</span></td>
+                    <td className="px-3 py-2 text-slate-600 max-w-[300px] truncate">{codeInfo?.descricao || m.descricaoInfracao}</td>
+                    <td className="px-3 py-2"><span className="px-1.5 py-0.5 bg-slate-100 rounded text-[9px] font-bold">{normalizeSetor(m.setor)}</span></td>
                     <td className="px-3 py-2">{m.terminal}</td>
+                    <td className="px-3 py-2 text-[10px] font-bold">{m.empresa}</td>
                     <td className="px-3 py-2 text-right font-bold">{formatCurrency(valorExibido)}</td>
                   </tr>
                 );

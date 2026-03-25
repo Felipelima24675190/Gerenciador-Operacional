@@ -92,7 +92,9 @@ export default function ViewOciosoScreen({ registros, linhas, viagens }: ViewOci
     const totalOcio = registrosFiltrados.reduce((s, r) => s + r.ociosaKm, 0);
     const totalKm = registrosFiltrados.reduce((s, r) => s + r.totalKm, 0);
     const totalFretamento = linhas.filter(l => isFretamento(l.numeroLinha)).reduce((s, l) => s + l.km, 0);
-    return { veiculosUnicos, totalOp, totalOcio, totalKm, totalFretamento };
+    // KM Operacional das linhas regulares (exclui fretamento)
+    const totalLinhasRegular = linhas.filter(l => !isFretamento(l.numeroLinha)).reduce((s, l) => s + l.km, 0);
+    return { veiculosUnicos, totalOp, totalOcio, totalKm, totalFretamento, totalLinhasRegular };
   }, [registrosFiltrados, linhas]);
 
   // ─── Top 10 veículos - mais km operacional ─────────────────────────────────
@@ -218,15 +220,13 @@ export default function ViewOciosoScreen({ registros, linhas, viagens }: ViewOci
 
   return (
     <div className="space-y-4">
-      {/* KPIs */}
+      {/* KPIs — Veículos */}
       <div className="bg-slate-800 p-4 flex gap-3 overflow-x-auto rounded-xl">
         {[
           { l: 'Veículos', v: kpis.veiculosUnicos },
           { l: 'KM Operacional', v: fmtKm(kpis.totalOp) },
           { l: 'KM Ociosa', v: fmtKm(kpis.totalOcio) },
-          { l: 'KM Total', v: fmtKm(kpis.totalKm) },
-          { l: 'KM Fretamento', v: fmtKm(kpis.totalFretamento) },
-          { l: 'Linhas', v: linhas.length },
+          { l: 'KM Total (Veículos)', v: fmtKm(kpis.totalKm) },
         ].map((k, i) => (
           <div key={i} className="bg-slate-700 rounded-lg p-3 text-center min-w-[130px] flex-1">
             <p className="text-[10px] font-bold text-slate-400 uppercase">{k.l}</p>
@@ -234,6 +234,23 @@ export default function ViewOciosoScreen({ registros, linhas, viagens }: ViewOci
           </div>
         ))}
       </div>
+
+      {/* KPIs — Linhas (separado) */}
+      {linhas.length > 0 && (
+        <div className="bg-brand-800 p-4 flex gap-3 overflow-x-auto rounded-xl">
+          {[
+            { l: 'Total Linhas', v: linhas.length },
+            { l: 'KM Linhas Regulares', v: fmtKm(kpis.totalLinhasRegular) },
+            { l: 'KM Fretamento', v: fmtKm(kpis.totalFretamento) },
+            { l: 'KM Total Linhas', v: fmtKm(kpis.totalLinhasRegular + kpis.totalFretamento) },
+          ].map((k, i) => (
+            <div key={i} className="bg-brand-700 rounded-lg p-3 text-center min-w-[130px] flex-1">
+              <p className="text-[10px] font-bold text-brand-300 uppercase">{k.l}</p>
+              <p className="text-lg font-black text-white mt-0.5">{k.v}</p>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* % Operante / Ociosa */}
       {kpis.totalKm > 0 && (

@@ -23,6 +23,7 @@ import {
   BookOpen,
   Wrench,
   ShieldAlert,
+  Award,
 } from 'lucide-react';
 import { twMerge } from 'tailwind-merge';
 import { clsx } from 'clsx';
@@ -91,6 +92,17 @@ export default function Sidebar({ activeTab, onTabChange, user, onLogout }: Side
             onClick={() => onTabChange('dashboard-operacional')}
           >
             <LayoutDashboard size={18} /> Dashboard Operacional
+          </button>
+          <button
+            className={twMerge(clsx(
+              "w-full flex items-center gap-3 px-4 py-2.5 mt-2 text-[13px] font-bold rounded-xl transition-all duration-200",
+              activeTab === 'score-motoristas'
+                ? "bg-amber-500 text-white shadow-lg shadow-brand-900/40"
+                : "bg-white/5 text-white/80 hover:bg-white/10 hover:text-white border border-white/10"
+            ))}
+            onClick={() => onTabChange('score-motoristas')}
+          >
+            <Award size={18} /> Score Motoristas
           </button>
         </div>
 
