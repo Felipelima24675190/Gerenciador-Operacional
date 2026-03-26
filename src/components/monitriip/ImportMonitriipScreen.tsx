@@ -1,11 +1,12 @@
-import { useRef, useState } from 'react';
-import { UploadCloud, CheckCircle, AlertTriangle, Trash2, Info } from 'lucide-react';
-import { Monitriip, UserRole } from '../../types';
+import { useRef, useState, useMemo } from 'react';
+import { UploadCloud, CheckCircle, AlertTriangle, Trash2, Info, Search } from 'lucide-react';
+import { Monitriip, Viagem, UserRole } from '../../types';
 
 interface Props {
   monitriips: Monitriip[];
   setMonitriips: React.Dispatch<React.SetStateAction<Monitriip[]>>;
   userRole?: UserRole;
+  viagens?: Viagem[];
 }
 
 type UploadState = 'idle' | 'success' | 'error';
@@ -16,11 +17,32 @@ interface ImportStats {
   comAtraso: number;
 }
 
-export default function ImportMonitriipScreen({ monitriips, setMonitriips, userRole }: Props) {
+export default function ImportMonitriipScreen({ monitriips, setMonitriips, userRole, viagens = [] }: Props) {
   const [isDragging, setIsDragging] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<UploadState>('idle');
   const [stats, setStats] = useState<ImportStats | null>(null);
+  const [linhaSelecionada, setLinhaSelecionada] = useState('');
+  const [linhaSearch, setLinhaSearch] = useState('');
+  const [showLinhaDropdown, setShowLinhaDropdown] = useState(false);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Unique line names from base de linhas
+  const linhasDisponiveis = useMemo(() => {
+    const names = new Map<string, string>();
+    viagens.forEach(v => {
+      if (v.nomeLinha && !names.has(v.nomeLinha)) {
+        names.set(v.nomeLinha, v.numeroLinha || '');
+      }
+    });
+    return Array.from(names.entries()).map(([nome, numero]) => ({ nome, numero })).sort((a, b) => a.nome.localeCompare(b.nome));
+  }, [viagens]);
+
+  const linhasFiltradas = useMemo(() => {
+    if (!linhaSearch.trim()) return linhasDisponiveis;
+    const q = linhaSearch.toLowerCase();
+    return linhasDisponiveis.filter(l => l.nome.toLowerCase().includes(q) || l.numero.toLowerCase().includes(q));
+  }, [linhasDisponiveis, linhaSearch]);
 
   if (userRole !== 'admin') {
     return (
@@ -36,7 +58,7 @@ export default function ImportMonitriipScreen({ monitriips, setMonitriips, userR
     );
   }
 
-  const processFile = (file: File) => {
+  const processFile = (file: File, linha: string) => {
     if (!file.name.endsWith('.csv') && !file.name.endsWith('.txt')) {
       setUploadStatus('error');
       setTimeout(() => setUploadStatus('idle'), 3000);
@@ -75,7 +97,6 @@ export default function ImportMonitriipScreen({ monitriips, setMonitriips, userR
         const embarque = parseInt(cols[8]?.trim() || '0', 10) || 0;
         const noShow = parseInt(cols[9]?.trim() || '0', 10) || 0;
 
-        // Cols 11-14 kept as strings; "N/A" stays N/A
         const inicioFimViagem = cols[10]?.trim() || 'N/A';
         const jornadaMotorista = cols[11]?.trim() || 'N/A';
         const detectorParada = cols[12]?.trim() || 'N/A';
@@ -100,11 +121,11 @@ export default function ImportMonitriipScreen({ monitriips, setMonitriips, userR
           detectorParada,
           velTempoLocalizacao,
           velTempLocMinima,
+          linhaAssociada: linha || undefined,
         });
       }
 
       if (novas.length > 0) {
-        // Replace (not append)
         setMonitriips(novas);
 
         const validas = novas.filter(r => r.viagemValida).length;
@@ -112,6 +133,7 @@ export default function ImportMonitriipScreen({ monitriips, setMonitriips, userR
 
         setStats({ total: novas.length, validas, comAtraso });
         setUploadStatus('success');
+        setPendingFile(null);
       } else {
         setUploadStatus('error');
       }
@@ -120,13 +142,28 @@ export default function ImportMonitriipScreen({ monitriips, setMonitriips, userR
     reader.readAsText(file, 'utf-8');
   };
 
+  const handleFileSelected = (file: File) => {
+    if (linhasDisponiveis.length > 0 && !linhaSelecionada) {
+      // Store file and ask user to select a line first
+      setPendingFile(file);
+      return;
+    }
+    processFile(file, linhaSelecionada);
+  };
+
+  const handleConfirmImport = () => {
+    if (pendingFile) {
+      processFile(pendingFile, linhaSelecionada);
+    }
+  };
+
   const handleDragOver = (e: React.DragEvent) => { e.preventDefault(); setIsDragging(true); };
   const handleDragLeave = (e: React.DragEvent) => { e.preventDefault(); setIsDragging(false); };
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
     const file = e.dataTransfer.files[0];
-    if (file) processFile(file);
+    if (file) handleFileSelected(file);
   };
 
   const handleClear = () => {
@@ -134,6 +171,7 @@ export default function ImportMonitriipScreen({ monitriips, setMonitriips, userR
       setMonitriips([]);
       setStats(null);
       setUploadStatus('idle');
+      setPendingFile(null);
     }
   };
 
@@ -150,6 +188,80 @@ export default function ImportMonitriipScreen({ monitriips, setMonitriips, userR
           </p>
         </div>
       </div>
+
+      {/* Line selection */}
+      {linhasDisponiveis.length > 0 && (
+        <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
+          <h4 className="text-sm font-bold text-slate-800 mb-2">Linha Associada</h4>
+          <p className="text-xs text-slate-500 mb-3">Selecione a linha (da Base de Linhas) à qual esses dados Monitriip se referem.</p>
+          <div className="relative">
+            <div className="relative">
+              <Search size={14} className="absolute left-3 top-2.5 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Buscar linha por nome ou código..."
+                value={showLinhaDropdown ? linhaSearch : linhaSelecionada || linhaSearch}
+                onChange={e => {
+                  setLinhaSearch(e.target.value);
+                  setShowLinhaDropdown(true);
+                  if (!e.target.value) setLinhaSelecionada('');
+                }}
+                onFocus={() => setShowLinhaDropdown(true)}
+                className="w-full pl-9 pr-4 py-2 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-400"
+              />
+            </div>
+            {showLinhaDropdown && (
+              <div className="absolute z-20 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                {linhasFiltradas.length === 0 && (
+                  <p className="px-3 py-2 text-xs text-slate-400">Nenhuma linha encontrada</p>
+                )}
+                {linhasFiltradas.map(l => (
+                  <button
+                    key={l.nome}
+                    onClick={() => {
+                      setLinhaSelecionada(l.nome);
+                      setLinhaSearch('');
+                      setShowLinhaDropdown(false);
+                    }}
+                    className={`w-full text-left px-3 py-2 text-xs hover:bg-brand-50 transition-colors flex items-center justify-between ${linhaSelecionada === l.nome ? 'bg-brand-50 font-bold text-brand-700' : 'text-slate-700'}`}
+                  >
+                    <span>{l.nome}</span>
+                    {l.numero && <span className="text-[10px] text-slate-400 font-mono">{l.numero}</span>}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          {linhaSelecionada && (
+            <div className="mt-2 flex items-center gap-2">
+              <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded">{linhaSelecionada}</span>
+              <button onClick={() => { setLinhaSelecionada(''); setLinhaSearch(''); }} className="text-[10px] text-red-500 hover:underline">Limpar</button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Pending file warning - needs line selection */}
+      {pendingFile && !linhaSelecionada && linhasDisponiveis.length > 0 && (
+        <div className="bg-amber-50 border border-amber-300 rounded-xl px-4 py-3 text-xs text-amber-800 font-semibold flex items-center gap-2 justify-between">
+          <span>Arquivo "<strong>{pendingFile.name}</strong>" selecionado. Escolha uma linha acima para concluir a importação.</span>
+        </div>
+      )}
+
+      {/* Pending file ready - line selected */}
+      {pendingFile && linhaSelecionada && (
+        <div className="bg-emerald-50 border border-emerald-300 rounded-xl px-4 py-3 flex items-center justify-between gap-3">
+          <span className="text-xs text-emerald-800 font-semibold">
+            Arquivo "<strong>{pendingFile.name}</strong>" pronto. Linha: <strong>{linhaSelecionada}</strong>
+          </span>
+          <button
+            onClick={handleConfirmImport}
+            className="px-4 py-1.5 bg-emerald-600 text-white text-xs font-bold rounded-lg hover:bg-emerald-700 transition-colors"
+          >
+            Importar Agora
+          </button>
+        </div>
+      )}
 
       {/* Upload area */}
       <div className="bg-white p-8 rounded-xl border border-gray-200 shadow-sm">
@@ -172,7 +284,7 @@ export default function ImportMonitriipScreen({ monitriips, setMonitriips, userR
             className="hidden"
             onChange={ev => {
               const f = ev.target.files?.[0];
-              if (f) processFile(f);
+              if (f) handleFileSelected(f);
               ev.target.value = '';
             }}
           />
@@ -211,6 +323,9 @@ export default function ImportMonitriipScreen({ monitriips, setMonitriips, userR
                   </div>
                 )}
               </div>
+              {linhaSelecionada && (
+                <p className="text-xs text-slate-500 mt-3">Linha associada: <strong>{linhaSelecionada}</strong></p>
+              )}
             </div>
           )}
 
@@ -237,11 +352,10 @@ export default function ImportMonitriipScreen({ monitriips, setMonitriips, userR
               &nbsp;·&nbsp;
               <span className="text-amber-700">{monitriips.filter(r => r.atraso30min).length} com atraso</span>
             </p>
-            {monitriips[0]?.data && (
-              <p className="text-xs text-slate-400 mt-0.5">
-                Período: {monitriips[0].data} — {monitriips[monitriips.length - 1]?.data}
-              </p>
-            )}
+            <p className="text-xs text-slate-400 mt-0.5">
+              {monitriips[0]?.data && <>Período: {monitriips[0].data} — {monitriips[monitriips.length - 1]?.data}</>}
+              {monitriips[0]?.linhaAssociada && <> · Linha: <strong>{monitriips[0].linhaAssociada}</strong></>}
+            </p>
           </div>
           <button
             onClick={handleClear}

@@ -293,6 +293,7 @@ export interface Monitriip {
   detectorParada: string;
   velTempoLocalizacao: string;    // values >100 or <10 indicate GPS failure
   velTempLocMinima: string;
+  linhaAssociada?: string;        // Line name from base de linhas (selected during import)
 }
 
 export type TipoEventoMotorista = 'FALTA' | 'ATESTADO' | 'FOLGA' | 'TRABALHADO';

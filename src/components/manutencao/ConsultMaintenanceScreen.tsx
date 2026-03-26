@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, Dispatch, SetStateAction } from 'react';
 import { ManutencaoVeiculo, HistoricoManutencao, Veiculo } from '../../types';
-import { Search, Wrench, Clock, TrendingUp } from 'lucide-react';
+import { Search, Wrench, Clock, TrendingUp, Trash2 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell,
@@ -9,14 +9,21 @@ import {
 interface ConsultMaintenanceScreenProps {
   manutencoes: ManutencaoVeiculo[];
   historicoManutencao: HistoricoManutencao[];
+  setHistoricoManutencao: Dispatch<SetStateAction<HistoricoManutencao[]>>;
   veiculos: Veiculo[];
 }
 
 const COLORS = ['#0e4f8f', '#3d7fd2', '#1a6abf', '#6b9ede', '#0b3f72', '#9fbfea', '#082f55', '#c5daf3'];
 
-export default function ConsultMaintenanceScreen({ manutencoes, historicoManutencao, veiculos }: ConsultMaintenanceScreenProps) {
+export default function ConsultMaintenanceScreen({ manutencoes, historicoManutencao, setHistoricoManutencao, veiculos }: ConsultMaintenanceScreenProps) {
   const [search, setSearch] = useState('');
   const [tabView, setTabView] = useState<'atual' | 'historico'>('atual');
+
+  const handleLimparHistorico = () => {
+    if (confirm('Tem certeza que deseja limpar todo o histórico de manutenção?')) {
+      setHistoricoManutencao([]);
+    }
+  };
 
   const hoje = new Date();
   const veiculoMap = useMemo(() => new Map(veiculos.map(v => [v.prefixo, v])), [veiculos]);
@@ -189,6 +196,11 @@ export default function ConsultMaintenanceScreen({ manutencoes, historicoManuten
               Historico ({historicoManutencao.length})
             </button>
           </div>
+          {tabView === 'historico' && historicoManutencao.length > 0 && (
+            <button onClick={handleLimparHistorico} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-red-500 border border-red-200 rounded-lg hover:bg-red-50 transition-colors">
+              <Trash2 size={12} /> Limpar Histórico
+            </button>
+          )}
           <div className="relative flex-1">
             <Search className="absolute left-3 top-2 text-slate-400" size={14} />
             <input

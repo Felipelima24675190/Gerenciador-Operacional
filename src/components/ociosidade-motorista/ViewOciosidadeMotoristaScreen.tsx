@@ -120,7 +120,7 @@ export default function ViewOciosidadeMotoristaScreen({ ociosidades }: Props) {
           { label: 'KM Ociosa (<1km)',           value: fmtKm(kpis.kmOciosa),           color: 'text-amber-600' },
           { label: 'Motor Ligado Parado',        value: fmtMinutes(kpis.tempoOcioso),   color: 'text-red-600' },
           { label: 'Eficiência Média (km/l)',    value: kpis.eficienciaMedia.toFixed(2) + ' km/l', color: 'text-emerald-600' },
-          { label: 'Combustível Total (ml)',     value: kpis.combustivelTotal.toLocaleString('pt-BR'), color: 'text-purple-600' },
+          { label: 'Combustível Total (L)',       value: (kpis.combustivelTotal / 1000).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' L', color: 'text-purple-600' },
           { label: 'Veículos',                   value: kpis.veiculosUnicos.toString(), color: 'text-slate-700' },
         ].map((k, i) => (
           <div key={i} className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">

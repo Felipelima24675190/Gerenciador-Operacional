@@ -185,7 +185,7 @@ function App() {
       case 'view-ociosidade-motorista':
         return <ViewOciosidadeMotoristaScreen ociosidades={ociosidadesMotorista} motoristas={motoristas} viagens={viagens} />;
       case 'import-monitriip':
-        return <ImportMonitriipScreen monitriips={monitriips} setMonitriips={setMonitriipsN} userRole={currentUser.role} />;
+        return <ImportMonitriipScreen monitriips={monitriips} setMonitriips={setMonitriipsN} userRole={currentUser.role} viagens={viagens} />;
       case 'view-monitriip':
         return <ViewMonitriipScreen monitriips={monitriips} viagens={viagens} />;
       case 'dashboard-operacional':
@@ -195,7 +195,7 @@ function App() {
       case 'import-manutencao':
         return <ImportMaintenanceScreen manutencoes={manutencoes} setManutencoes={setManutencoesN} historicoManutencao={historicoManutencao} setHistoricoManutencao={setHistoricoManutencao} veiculos={veiculos} userRole={currentUser.role} />;
       case 'view-manutencao':
-        return <ConsultMaintenanceScreen manutencoes={manutencoes} historicoManutencao={historicoManutencao} veiculos={veiculos} />;
+        return <ConsultMaintenanceScreen manutencoes={manutencoes} historicoManutencao={historicoManutencao} setHistoricoManutencao={setHistoricoManutencao} veiculos={veiculos} />;
       case 'acidentes':
         return <AcidentesScreen acidentes={acidentes} setAcidentes={setAcidentesN} avarias={avarias} motoristas={motoristas} userRole={currentUser.role} />;
       case 'score-motoristas':

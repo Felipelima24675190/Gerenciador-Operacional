@@ -73,7 +73,7 @@ export default function ImportDriversScreen({ setMotoristas }: ImportDriversScre
         console.error(err);
       }
     };
-    reader.readAsText(file, 'latin1');
+    reader.readAsText(file, 'utf-8');
   };
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
