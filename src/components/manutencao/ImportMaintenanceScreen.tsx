@@ -104,7 +104,7 @@ export default function ImportMaintenanceScreen({ manutencoes, setManutencoes, s
                 try {
                   const entrada = parseDate(prev.retidoDesde);
                   const saida = dataReferencia ? new Date(dataReferencia + 'T12:00:00') : new Date();
-                  return Math.round((saida.getTime() - entrada.getTime()) / (1000 * 60 * 60));
+                  return Math.max(0, Math.round((saida.getTime() - entrada.getTime()) / (1000 * 60 * 60)));
                 } catch { return 0; }
               })(),
               previsaoLiberacao: prev.previsaoLiberacao,

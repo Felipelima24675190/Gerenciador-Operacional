@@ -6,8 +6,9 @@ import {
 import { clsx } from 'clsx';
 import { Motorista, Ocorrencia, Viagem, UserRole } from '../../types';
 import StatCard from './StatCard';
-import { AlertCircle, Clock, CheckCircle2, TrendingUp, Edit3, Save, X, Calendar, Search } from 'lucide-react';
+import { AlertCircle, Clock, CheckCircle2, TrendingUp, Edit3, Save, X, Calendar, Search, Settings } from 'lucide-react';
 import { getDay, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
+import { TipoStatus } from '../../types';
 
 const CustomYAxisTick = (props: any) => {
   const { x, y, payload } = props;
@@ -47,6 +48,32 @@ export default function DashboardScreen({ motoristas, ocorrencias, viagens, setO
   const [filialFilter, setFilialFilter] = useState('Todas');
   const [linhaFilter, setLinhaFilter] = useState('Todas');
   const [linePreviewId, setLinePreviewId] = useState<string | null>(null);
+  const [showToleranciaSettings, setShowToleranciaSettings] = useState(false);
+
+  // Editable threshold (persisted in localStorage)
+  const [toleranciaAtraso, setToleranciaAtraso] = useState<number>(() => {
+    try { return parseInt(localStorage.getItem('toleranciaAtraso') || '5') || 5; } catch { return 5; }
+  });
+  const [toleranciaAdiantamento, setToleranciaAdiantamento] = useState<number>(() => {
+    try { return parseInt(localStorage.getItem('toleranciaAdiantamento') || '5') || 5; } catch { return 5; }
+  });
+
+  const saveTolerancia = (atraso: number, adiant: number) => {
+    setToleranciaAtraso(atraso);
+    setToleranciaAdiantamento(adiant);
+    localStorage.setItem('toleranciaAtraso', String(atraso));
+    localStorage.setItem('toleranciaAdiantamento', String(adiant));
+  };
+
+  // Compute status dynamically based on editable thresholds
+  const calcStatus = (diff: number): TipoStatus => {
+    if (diff > toleranciaAtraso) return 'Atraso';
+    if (diff < -toleranciaAdiantamento) return 'Adiantamento';
+    return 'No Horário';
+  };
+
+  const getStatusInicio = (o: Ocorrencia): TipoStatus => calcStatus(o.diffMinutosInicio);
+  const getStatusFim = (o: Ocorrencia): TipoStatus => calcStatus(o.diffMinutosFim);
 
   const filiaisUnicas = useMemo(() => {
     const filiais = new Set(motoristas.map(m => m.filial));
@@ -105,11 +132,11 @@ export default function DashboardScreen({ motoristas, ocorrencias, viagens, setO
     let noHorario = 0;
 
     ocorrenciasFiltradas.forEach(o => {
-      // Regra de Sequência REMOVIDA conforme solicitação do usuário.
-      // Agora todas as viagens presentes na lista filtrada contam para o relatório.
+      const statusIn = getStatusInicio(o);
+      const statusOut = getStatusFim(o);
 
-      const isAtraso = o.statusInicio === 'Atraso' || o.statusFim === 'Atraso';
-      const isAdiantamento = o.statusInicio === 'Adiantamento' || o.statusFim === 'Adiantamento';
+      const isAtraso = statusIn === 'Atraso' || statusOut === 'Atraso';
+      const isAdiantamento = statusIn === 'Adiantamento' || statusOut === 'Adiantamento';
 
       if (isAtraso) atrasos++;
       else if (isAdiantamento) adiantamentos++;
@@ -122,12 +149,12 @@ export default function DashboardScreen({ motoristas, ocorrencias, viagens, setO
     const percAdiantamento = totalCalculado > 0 ? ((adiantamentos / totalCalculado) * 100).toFixed(1) : '0.0';
 
     return { atrasos, adiantamentos, noHorario, total: totalCalculado, percPontual, percAtraso, percAdiantamento };
-  }, [ocorrenciasFiltradas]);
+  }, [ocorrenciasFiltradas, toleranciaAtraso, toleranciaAdiantamento]);
 
   const linhaMaisAtrasada = useMemo(() => {
     const contagem: Record<string, { count: number, nome: string, atendimento: string }> = {};
     ocorrenciasFiltradas.forEach(o => {
-      if (o.statusInicio === 'Atraso' || o.statusFim === 'Atraso') {
+      if (getStatusInicio(o) === 'Atraso' || getStatusFim(o) === 'Atraso') {
         if (!contagem[o.numeroLinha]) {
           contagem[o.numeroLinha] = { count: 0, nome: o.nomeLinha, atendimento: o.atendimento };
         }
@@ -137,7 +164,7 @@ export default function DashboardScreen({ motoristas, ocorrencias, viagens, setO
 
     const sorted = Object.entries(contagem).sort((a, b) => b[1].count - a[1].count);
     return sorted.length > 0 ? { id: sorted[0][0], ...sorted[0][1] } : null;
-  }, [ocorrenciasFiltradas]);
+  }, [ocorrenciasFiltradas, toleranciaAtraso, toleranciaAdiantamento]);
 
   const saveMotivo = (id: string) => {
     setOcorrencias(prev => prev.map(o => o.id === id ? { ...o, motivoAtraso: motivoTemp } : o));
@@ -163,17 +190,15 @@ export default function DashboardScreen({ motoristas, ocorrencias, viagens, setO
     const contagem: Record<string, { Atraso: number; Adiantamento: number; NoHorario: number }> = {};
     
     ocorrenciasFiltradas.forEach(o => {
-      // Se houver filtro de linha, agrupamos por Motorista ou Área em vez de Filial para dar mais detalhe?
-      // Por enquanto mantemos Filial mas garantimos que os dados batam com as métricas.
       const motorista = motoristas.find(m => m.matricula === o.matriculaMotorista);
       const label = motorista ? motorista.filial : 'Desconhecida';
-      
+
       if (!contagem[label]) {
         contagem[label] = { Atraso: 0, Adiantamento: 0, NoHorario: 0 };
       }
-      
-      const isAtraso = o.statusInicio === 'Atraso' || o.statusFim === 'Atraso';
-      const isAdiantamento = o.statusInicio === 'Adiantamento' || o.statusFim === 'Adiantamento';
+
+      const isAtraso = getStatusInicio(o) === 'Atraso' || getStatusFim(o) === 'Atraso';
+      const isAdiantamento = getStatusInicio(o) === 'Adiantamento' || getStatusFim(o) === 'Adiantamento';
 
       if (isAtraso) contagem[label].Atraso++;
       else if (isAdiantamento) contagem[label].Adiantamento++;
@@ -181,14 +206,14 @@ export default function DashboardScreen({ motoristas, ocorrencias, viagens, setO
     });
 
     return Object.entries(contagem).map(([name, data]) => ({ name, ...data }));
-  }, [ocorrenciasFiltradas, motoristas]);
+  }, [ocorrenciasFiltradas, motoristas, toleranciaAtraso, toleranciaAdiantamento]);
 
   const dadosLinhaDoTempo = useMemo(() => {
     const diasSemana = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
     const contagem: Record<string, number> = { Dom: 0, Seg: 0, Ter: 0, Qua: 0, Qui: 0, Sex: 0, Sáb: 0 };
     
     ocorrenciasFiltradas.forEach(o => {
-      if (o.statusInicio !== 'No Horário') {
+      if (getStatusInicio(o) !== 'No Horário') {
         const datePart = o.prevInicio.split(' ')[0];
         const [day, month, year] = datePart.split('/').map(Number);
         const date = new Date(year, month - 1, day);
@@ -201,13 +226,13 @@ export default function DashboardScreen({ motoristas, ocorrencias, viagens, setO
     });
 
     return Object.entries(contagem).map(([name, Ocorrencias]) => ({ name, Ocorrencias }));
-  }, [ocorrenciasFiltradas]);
+  }, [ocorrenciasFiltradas, toleranciaAtraso, toleranciaAdiantamento]);
 
   const rankingMotoristas = useMemo(() => {
     const rank: Record<string, { nome: string, filial: string, total: number }> = {};
     
     ocorrenciasFiltradas.forEach(o => {
-      if (o.statusInicio !== 'No Horário') {
+      if (getStatusInicio(o) !== 'No Horário') {
         const m = motoristas.find(m => m.matricula === o.matriculaMotorista);
         if (m) {
           if (!rank[m.matricula]) {
@@ -219,7 +244,7 @@ export default function DashboardScreen({ motoristas, ocorrencias, viagens, setO
     });
 
     return Object.values(rank).sort((a, b) => b.total - a.total).slice(0, 10);
-  }, [ocorrenciasFiltradas, motoristas]);
+  }, [ocorrenciasFiltradas, motoristas, toleranciaAtraso, toleranciaAdiantamento]);
 
   return (
     <div className="space-y-6">
@@ -261,9 +286,9 @@ export default function DashboardScreen({ motoristas, ocorrencias, viagens, setO
             </select>
           </div>
 
-          <div className="space-y-1 md:col-span-2">
+          <div className="space-y-1">
             <label className="text-[10px] font-black text-slate-400 uppercase">Linha / Operação</label>
-            <select 
+            <select
               value={linhaFilter}
               onChange={e => setLinhaFilter(e.target.value)}
               className="w-full px-3 py-1.5 border border-gray-200 rounded text-xs font-bold bg-slate-50 focus:ring-2 focus:ring-brand-400"
@@ -271,7 +296,53 @@ export default function DashboardScreen({ motoristas, ocorrencias, viagens, setO
               {linhasUnicas.map(l => <option key={l} value={l}>{l === 'Todas' ? 'Todas as Linhas' : l}</option>)}
             </select>
           </div>
+
+          <div className="space-y-1">
+            <label className="text-[10px] font-black text-slate-400 uppercase">Tolerância</label>
+            <button
+              onClick={() => setShowToleranciaSettings(!showToleranciaSettings)}
+              className="w-full flex items-center gap-2 px-3 py-1.5 border border-gray-200 rounded text-xs font-bold bg-slate-50 hover:bg-slate-100 transition-colors"
+            >
+              <Settings size={12} />
+              Atraso: {toleranciaAtraso}min · Adiant: {toleranciaAdiantamento}min
+            </button>
+          </div>
         </div>
+
+        {/* Tolerance settings panel */}
+        {showToleranciaSettings && (
+          <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-xl space-y-3">
+            <p className="text-xs font-bold text-amber-700">Configurar Tolerância de Pontualidade</p>
+            <p className="text-[10px] text-amber-600">Define o limite em minutos para classificar viagens como Atraso ou Adiantamento. O sistema recalcula automaticamente.</p>
+            <div className="flex items-center gap-6 flex-wrap">
+              <div className="flex items-center gap-2">
+                <label className="text-[10px] font-bold text-slate-600 uppercase">Atraso (min):</label>
+                <input
+                  type="number"
+                  min={1}
+                  max={60}
+                  value={toleranciaAtraso}
+                  onChange={e => saveTolerancia(Math.max(1, parseInt(e.target.value) || 5), toleranciaAdiantamento)}
+                  className="w-16 px-2 py-1 text-xs border border-amber-300 rounded focus:ring-2 focus:ring-amber-400 focus:outline-none text-center font-bold"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <label className="text-[10px] font-bold text-slate-600 uppercase">Adiantamento (min):</label>
+                <input
+                  type="number"
+                  min={1}
+                  max={60}
+                  value={toleranciaAdiantamento}
+                  onChange={e => saveTolerancia(toleranciaAtraso, Math.max(1, parseInt(e.target.value) || 5))}
+                  className="w-16 px-2 py-1 text-xs border border-amber-300 rounded focus:ring-2 focus:ring-amber-400 focus:outline-none text-center font-bold"
+                />
+              </div>
+              <p className="text-[10px] text-slate-500 ml-auto">
+                Exemplo: com tolerância de {toleranciaAtraso}min, viagens com diferença &gt; {toleranciaAtraso}min são <span className="font-bold text-red-500">Atraso</span> e &lt; -{toleranciaAdiantamento}min são <span className="font-bold text-orange-500">Adiantamento</span>.
+              </p>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -416,9 +487,14 @@ export default function DashboardScreen({ motoristas, ocorrencias, viagens, setO
                                   <div>{occ.realFim}</div>
                                 </td>
                                 <td className="py-3">
-                                  <span className={`px-2 py-1 rounded-full text-[10px] font-bold ${occ.statusInicio === 'Atraso' ? 'bg-red-100 text-red-600' : occ.statusInicio === 'Adiantamento' ? 'bg-orange-100 text-orange-600' : 'bg-emerald-100 text-emerald-600'}`}>
-                                    {occ.statusInicio}
-                                  </span>
+                                  {(() => {
+                                    const st = getStatusInicio(occ);
+                                    return (
+                                      <span className={`px-2 py-1 rounded-full text-[10px] font-bold ${st === 'Atraso' ? 'bg-red-100 text-red-600' : st === 'Adiantamento' ? 'bg-orange-100 text-orange-600' : 'bg-emerald-100 text-emerald-600'}`}>
+                                        {st}
+                                      </span>
+                                    );
+                                  })()}
                                 </td>
                                 <td className="py-3 text-right">
                                   {editingOccId === occ.id && isAdmin ? (

@@ -21,12 +21,16 @@ export default function ImportDriversScreen({ setMotoristas }: ImportDriversScre
     const lines = cleaned.trim().split('\n');
     const motoristas: Motorista[] = [];
 
-    // Detect separator from first non-header data line or header itself
+    // Detect separator from first line
     const sampleLine = lines[0] || '';
-    const sep = sampleLine.includes('\t') ? '\t' : sampleLine.includes(';') ? ';' : '\t';
+    const sep = sampleLine.includes('\t') ? '\t' : sampleLine.includes(';') ? ';' : sampleLine.includes(',') ? ',' : '\t';
 
-    // Skip header line
-    for (let i = 1; i < lines.length; i++) {
+    // Auto-detect header: if first column of first line is numeric, there's no header row
+    const firstCols = sampleLine.split(sep);
+    const firstColIsNumeric = /^\d+$/.test((firstCols[0] || '').trim());
+    const startLine = firstColIsNumeric ? 0 : 1;
+
+    for (let i = startLine; i < lines.length; i++) {
       const line = lines[i].trim();
       if (!line) continue;
       const cols = line.split(sep).map(c => c.trim());

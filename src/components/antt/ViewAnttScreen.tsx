@@ -355,7 +355,7 @@ export default function ViewAnttScreen({ multas, anttCodeDescriptions, motorista
                     <td className="px-3 py-2 font-mono text-[10px]">{m.dataHora}</td>
                     <td className="px-3 py-2 font-bold">{m.autoInfracao}</td>
                     <td className="px-3 py-2 font-mono">{m.codigoInfracao}</td>
-                    <td className="px-3 py-2 text-slate-600 max-w-[300px] truncate">{m.descricaoInfracao || codeInfo?.descricao || '-'}</td>
+                    <td className="px-3 py-2 text-slate-600 whitespace-normal break-words">{m.descricaoInfracao || codeInfo?.descricao || '-'}</td>
                     <td className="px-3 py-2"><span className="px-1.5 py-0.5 bg-slate-100 rounded text-[9px] font-bold">{normalizeSetor(m.setor)}</span></td>
                     <td className="px-3 py-2">{m.terminal}</td>
                     <td className="px-3 py-2 text-[10px] font-bold">{m.empresa}</td>

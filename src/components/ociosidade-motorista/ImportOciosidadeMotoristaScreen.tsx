@@ -68,26 +68,39 @@ export default function ImportOciosidadeMotoristaScreen({ ociosidades, setOciosi
       }
 
       const novas: OciosidadeMotorista[] = [];
-      // Skip header line (contains "Descri" in first column)
-      const startIdx = lines[0].toLowerCase().includes('descri') || lines[0].toLowerCase().includes('unidade') ? 1 : 0;
+      // Skip header line (contains "Descri" or "Data" in first columns)
+      const startIdx = lines[0].toLowerCase().includes('descri') || lines[0].toLowerCase().includes('unidade') || lines[0].toLowerCase().includes('data') ? 1 : 0;
 
       for (let i = startIdx; i < lines.length; i++) {
         const line = lines[i].trim();
         if (!line) continue;
         const cols = line.split(';');
-        if (cols.length < 10) continue;
+        if (cols.length < 9) continue;
 
-        const prefixo    = cols[0]?.trim() || '';
-        const dataHora   = cols[1]?.trim() || '';
-        const areaFinal  = cols[2]?.trim() || '';
-        const areaInicial = cols[3]?.trim() || '';
-        const combustivel = parseInt(cols[4]?.trim().replace(/[^\d]/g, '') || '0') || 0;
-        const distancia  = parseBRFloat(cols[5]?.trim() || '0');
-        const eficiencia = parseBRFloat(cols[6]?.trim() || '0');
-        const paradoML   = parseHMS(cols[7]?.trim() || '00:00:00');
-        const movimento  = parseHMS(cols[8]?.trim() || '00:00:00');
-        const parado     = parseHMS(cols[9]?.trim() || '00:00:00');
-        const total      = cols[10] ? parseHMS(cols[10].trim()) : 0;
+        // CSV format (12 columns):
+        // 0: Descrição da Unidade (prefixo)
+        // 1: Data Inicial
+        // 2: Data Final  ← extra column
+        // 3: Área Final
+        // 4: Área Inicial
+        // 5: Combustível Usado (ml)
+        // 6: Distância da Viagem (km)
+        // 7: Eficiência (km/l)
+        // 8: Parado c/ Motor Ligado (HH:MM:SS)
+        // 9: Tempo em Movimento (HH:MM:SS)
+        // 10: Tempo Total Parado (HH:MM:SS)
+        // 11: Total (HH:MM:SS)
+        const prefixo     = cols[0]?.trim() || '';
+        const dataHora    = cols[1]?.trim() || '';
+        const areaFinal   = cols[3]?.trim() || '';
+        const areaInicial = cols[4]?.trim() || '';
+        const combustivel = parseInt(cols[5]?.trim().replace(/[^\d]/g, '') || '0') || 0;
+        const distancia   = parseBRFloat(cols[6]?.trim() || '0');
+        const eficiencia  = parseBRFloat(cols[7]?.trim() || '0');
+        const paradoML    = parseHMS(cols[8]?.trim() || '00:00:00');
+        const movimento   = parseHMS(cols[9]?.trim() || '00:00:00');
+        const parado      = parseHMS(cols[10]?.trim() || '00:00:00');
+        const total       = cols[11] ? parseHMS(cols[11].trim()) : 0;
 
         if (!prefixo || !dataHora) continue;
 
@@ -112,7 +125,12 @@ export default function ImportOciosidadeMotoristaScreen({ ociosidades, setOciosi
       }
 
       if (novas.length > 0) {
-        setOciosidades(novas);
+        // Append to existing data (deduplicate by prefixo+dataHora)
+        setOciosidades(prev => {
+          const existingKeys = new Set(novas.map(r => r.prefixo + '|' + r.dataHora));
+          const kept = prev.filter(r => !existingKeys.has(r.prefixo + '|' + r.dataHora));
+          return [...kept, ...novas];
+        });
         const veiculos = new Set(novas.map(r => r.prefixo)).size;
         setStats({ total: novas.length, veiculos });
         setUploadStatus('success');
@@ -144,9 +162,9 @@ export default function ImportOciosidadeMotoristaScreen({ ociosidades, setOciosi
       <div className="bg-white p-8 rounded-xl border border-gray-200 shadow-sm text-center">
         <h3 className="text-xl font-bold text-slate-800 mb-2">Importar Quilometragem de Veículos</h3>
         <p className="text-sm text-gray-500">
-          Arquivo CSV separado por <strong>;</strong> com colunas: <span className="font-semibold text-slate-600">Descrição da Unidade · Data · Área Final · Área Inicial · Combustível (ml) · Distância (km) · Eficiência · Parado c/ Motor Ligado · Tempo em Movimento · Tempo Total Parado · Total</span>
+          Arquivo CSV separado por <strong>;</strong> com colunas: <span className="font-semibold text-slate-600">Descrição · Data Inicial · Data Final · Área Final · Área Inicial · Combustível (ml) · Distância (km) · Eficiência · Parado c/ Motor Ligado · Tempo em Movimento · Tempo Total Parado · Total</span>
         </p>
-        <p className="text-xs text-amber-600 mt-2 font-semibold">A importação substitui todos os registros existentes.</p>
+        <p className="text-xs text-emerald-600 mt-2 font-semibold">A importação acumula registros — novos dados são adicionados à base existente.</p>
 
         <div
           className={`mt-6 border-2 border-dashed rounded-xl p-10 flex flex-col items-center justify-center transition-colors cursor-pointer
