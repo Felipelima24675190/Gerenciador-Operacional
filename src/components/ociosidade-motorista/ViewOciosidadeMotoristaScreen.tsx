@@ -1,349 +1,199 @@
 import { useMemo, useState } from 'react';
-import { OciosidadeMotorista, Motorista, Viagem } from '../../types';
-import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
-} from 'recharts';
-import { Calendar } from 'lucide-react';
+import { OciosidadeMotorista } from '../../types';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { Search } from 'lucide-react';
 
 interface Props {
   ociosidades: OciosidadeMotorista[];
-  motoristas: Motorista[];
-  viagens: Viagem[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  motoristas?: any[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  viagens?: any[];
 }
 
-const COLORS = ['#0f172a', '#1e40af', '#0369a1', '#0891b2', '#0d9488', '#059669', '#16a34a', '#ca8a04', '#dc2626', '#9333ea'];
-
-function parseDataBR(s: string): Date | null {
-  try {
-    const [d, m, y] = s.split('/').map(Number);
-    if (!d || !m || !y) return null;
-    return new Date(y, m - 1, d);
-  } catch { return null; }
-}
+const COLORS = ['#0e4f8f', '#1a6abf', '#3d7fd2', '#6b9ede', '#0b3f72', '#9fbfea', '#082f55', '#c5daf3', '#051e38', '#e8f1fb'];
 
 function fmtMinutes(total: number): string {
-  const h = Math.floor(total / 60);
+  if (!total || total <= 0) return '0min';
+  const d = Math.floor(total / (60 * 24));
+  const h = Math.floor((total % (60 * 24)) / 60);
   const m = total % 60;
-  if (h === 0) return `${m}min`;
-  return `${h}h ${m}min`;
+  if (d > 0) return `${d}d ${h}h ${m}min`;
+  if (h > 0) return `${h}h ${m}min`;
+  return `${m}min`;
 }
 
-const ChartCard = ({
-  title,
-  data,
-  yAxisWidth = 120,
-  valueFormatter,
-  valueLabel = 'Ocorrências',
-}: {
-  title: string;
-  data: { name: string; value: number }[];
-  yAxisWidth?: number;
-  valueFormatter?: (v: number) => string;
-  valueLabel?: string;
-}) => (
-  <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-    <h4 className="text-xs font-black text-slate-600 uppercase tracking-tighter mb-3">{title}</h4>
-    {data.length > 0 ? (
-      <div className="h-72">
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data} layout="vertical" margin={{ left: 8, right: 16 }}>
-            <XAxis type="number" hide />
-            <YAxis
-              dataKey="name"
-              type="category"
-              tick={{ fontSize: 9 }}
-              width={yAxisWidth}
-              interval={0}
-              axisLine={false}
-            />
-            <Tooltip
-              formatter={(v: number) => [valueFormatter ? valueFormatter(v) : v, valueLabel]}
-            />
-            <Bar dataKey="value" radius={[0, 4, 4, 0]}>
-              {data.map((_entry, i) => (
-                <Cell key={i} fill={COLORS[i % COLORS.length]} />
-              ))}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
-    ) : (
-      <p className="text-xs text-slate-400 text-center py-10">Sem dados no período</p>
-    )}
-  </div>
-);
+function fmtKm(km: number): string {
+  return km.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' km';
+}
 
-const PAGE_SIZE = 50;
-
-export default function ViewOciosidadeMotoristaScreen({ ociosidades, motoristas, viagens: _viagens }: Props) {
-  const [dataInicio, setDataInicio] = useState('');
-  const [dataFim, setDataFim] = useState('');
-  const [filialFiltro, setFilialFiltro] = useState('');
-  const [page, setPage] = useState(1);
-
-  // Build driver lookup map: matricula -> motorista
-  const motoristasMap = useMemo(
-    () => new Map(motoristas.map(m => [m.matricula.trim(), m])),
-    [motoristas]
-  );
-
-  const driverName = (matricula: string) =>
-    motoristasMap.get(matricula)?.nome || matricula;
-
-  // Build filial list
-  const filiais = useMemo(
-    () => Array.from(new Set(motoristas.map(m => m.filial).filter(Boolean))).sort(),
-    [motoristas]
-  );
-
-  // Filter
-  const filtered = useMemo(() => {
-    const start = dataInicio ? new Date(dataInicio + 'T00:00:00') : null;
-    const end = dataFim ? new Date(dataFim + 'T23:59:59') : null;
-
-    return ociosidades.filter(r => {
-      if (start || end) {
-        const d = parseDataBR(r.data);
-        if (!d) return false;
-        if (start && d < start) return false;
-        if (end && d > end) return false;
-      }
-      if (filialFiltro) {
-        const m = motoristasMap.get(r.matricula);
-        if (!m || m.filial !== filialFiltro) return false;
-      }
-      return true;
-    });
-  }, [ociosidades, dataInicio, dataFim, filialFiltro, motoristasMap]);
+export default function ViewOciosidadeMotoristaScreen({ ociosidades }: Props) {
+  const [search, setSearch] = useState('');
+  const [sortBy, setSortBy] = useState<'km' | 'ocioso' | 'viagens'>('km');
 
   // KPIs
   const kpis = useMemo(() => {
-    const count = filtered.length;
-    const uniqueDrivers = new Set(filtered.map(r => r.matricula)).size;
-    const totalMinutes = filtered.reduce((s, r) => s + r.tempoMinutos, 0);
-    const avgMin = count > 0 ? Math.round(totalMinutes / count) : 0;
-    return { count, uniqueDrivers, totalMinutes, avgMin };
-  }, [filtered]);
+    const kmTotal = ociosidades.reduce((s, r) => s + r.distanciaKm, 0);
+    // "KM Ociosa" = total distance in routes where the vehicle was mostly stopped (paradoMotorLigado > tempoMovimento)
+    // Actually, distância percorrida quando parado c/ motor ligado is not KM - it's time.
+    // KM Ociosa: trips where distanciaKm < 1 km (near-zero trips = just engine idling)
+    const kmOciosa = ociosidades.filter(r => r.distanciaKm < 1).reduce((s, r) => s + r.distanciaKm, 0);
+    const tempoOciosoTotal = ociosidades.reduce((s, r) => s + r.paradoMotorLigadoMin, 0);
+    const veiculosUnicos = new Set(ociosidades.map(r => r.prefixo)).size;
+    return { kmTotal, kmOciosa, tempoOciosoTotal, veiculosUnicos };
+  }, [ociosidades]);
 
-  // Chart 1: Top 10 drivers by total tempo ocioso
-  const topDriversTempo = useMemo(() => {
+  // Top 10 by idle time (Parado c/ Motor Ligado)
+  const topOcioso = useMemo(() => {
     const acc: Record<string, number> = {};
-    filtered.forEach(r => { acc[r.matricula] = (acc[r.matricula] || 0) + r.tempoMinutos; });
+    ociosidades.forEach(r => { acc[r.prefixo] = (acc[r.prefixo] || 0) + r.paradoMotorLigadoMin; });
     return Object.entries(acc)
-      .map(([mat, total]) => ({ name: driverName(mat), value: total }))
+      .map(([name, value]) => ({ name, value }))
       .sort((a, b) => b.value - a.value)
       .slice(0, 10);
-  }, [filtered, motoristasMap]);
+  }, [ociosidades]);
 
-  // Chart 2: Top 10 drivers by occurrence count
-  const topDriversCount = useMemo(() => {
+  // Top 10 by KM (most traveled)
+  const topKm = useMemo(() => {
     const acc: Record<string, number> = {};
-    filtered.forEach(r => { acc[r.matricula] = (acc[r.matricula] || 0) + 1; });
+    ociosidades.forEach(r => { acc[r.prefixo] = (acc[r.prefixo] || 0) + r.distanciaKm; });
     return Object.entries(acc)
-      .map(([mat, count]) => ({ name: driverName(mat), value: count }))
+      .map(([name, value]) => ({ name, value }))
       .sort((a, b) => b.value - a.value)
       .slice(0, 10);
-  }, [filtered, motoristasMap]);
+  }, [ociosidades]);
 
-  // Chart 3: Top 10 lines by occurrence count
-  const topLinhasCount = useMemo(() => {
-    const acc: Record<string, number> = {};
-    filtered.forEach(r => { acc[r.nomeLinha] = (acc[r.nomeLinha] || 0) + 1; });
-    return Object.entries(acc)
-      .map(([name, value]) => ({ name: name.length > 35 ? name.slice(0, 34) + '…' : name, value }))
-      .sort((a, b) => b.value - a.value)
-      .slice(0, 10);
-  }, [filtered]);
-
-  // Chart 4: Top 10 lines with lowest avg tempo per occurrence (ascending)
-  const topLinhasMenorMedia = useMemo(() => {
-    const acc: Record<string, { total: number; count: number }> = {};
-    filtered.forEach(r => {
-      if (!acc[r.nomeLinha]) acc[r.nomeLinha] = { total: 0, count: 0 };
-      acc[r.nomeLinha].total += r.tempoMinutos;
-      acc[r.nomeLinha].count += 1;
+  // Per-vehicle aggregated data for table
+  const veiculoStats = useMemo(() => {
+    const acc: Record<string, { viagens: number; kmTotal: number; paradoMin: number; movMin: number }> = {};
+    ociosidades.forEach(r => {
+      if (!acc[r.prefixo]) acc[r.prefixo] = { viagens: 0, kmTotal: 0, paradoMin: 0, movMin: 0 };
+      acc[r.prefixo].viagens++;
+      acc[r.prefixo].kmTotal    += r.distanciaKm;
+      acc[r.prefixo].paradoMin  += r.paradoMotorLigadoMin;
+      acc[r.prefixo].movMin     += r.tempoMovimentoMin;
     });
-    return Object.entries(acc)
-      .filter(([, v]) => v.count > 0)
-      .map(([name, v]) => ({
-        name: name.length > 35 ? name.slice(0, 34) + '…' : name,
-        value: Math.round(v.total / v.count),
-      }))
-      .sort((a, b) => a.value - b.value)
-      .slice(0, 10);
-  }, [filtered]);
+    return Object.entries(acc).map(([prefixo, s]) => ({ prefixo, ...s }));
+  }, [ociosidades]);
 
-  // Paginated table
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const filtered = useMemo(() => {
+    let list = veiculoStats;
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      list = list.filter(v => v.prefixo.toLowerCase().includes(q));
+    }
+    if (sortBy === 'km') return [...list].sort((a, b) => b.kmTotal - a.kmTotal);
+    if (sortBy === 'ocioso') return [...list].sort((a, b) => b.paradoMin - a.paradoMin);
+    return [...list].sort((a, b) => b.viagens - a.viagens);
+  }, [veiculoStats, search, sortBy]);
 
   if (ociosidades.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-[60vh] text-center p-8 bg-white rounded-3xl border border-gray-100 shadow-sm">
-        <h2 className="text-2xl font-black text-slate-800">Nenhum Dado Importado</h2>
-        <p className="text-slate-500 max-w-md mt-2">
-          Importe o arquivo de Ociosidade de Motorista para visualizar o painel.
-        </p>
+      <div className="bg-white rounded-xl border border-gray-200 p-16 text-center shadow-sm">
+        <p className="text-slate-400 text-sm">Nenhum dado de quilometragem importado.</p>
+        <p className="text-slate-400 text-xs mt-1">Vá em "Importar Quilometragem" para importar o relatório de viagens.</p>
       </div>
     );
   }
 
   return (
     <div className="space-y-4">
-      {/* KPI cards */}
-      <div className="bg-slate-800 p-4 flex gap-3 overflow-x-auto rounded-xl">
+      {/* KPI bar */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          { l: 'Total de Ocorrências', v: kpis.count },
-          { l: 'Motoristas Únicos', v: kpis.uniqueDrivers },
-          { l: 'Tempo Total Ocioso', v: fmtMinutes(kpis.totalMinutes) },
-          { l: 'Média por Ocorrência', v: `${kpis.avgMin} min` },
+          { label: 'KM Total', value: fmtKm(kpis.kmTotal), color: 'text-brand-700' },
+          { label: 'KM Ociosa (distância <1km)', value: fmtKm(kpis.kmOciosa), color: 'text-amber-600' },
+          { label: 'Tempo c/ Motor Ligado Parado', value: fmtMinutes(kpis.tempoOciosoTotal), color: 'text-red-600' },
+          { label: 'Veículos', value: kpis.veiculosUnicos.toString(), color: 'text-emerald-600' },
         ].map((k, i) => (
-          <div key={i} className="bg-slate-700 rounded-lg p-3 text-center min-w-[150px] flex-1">
-            <p className="text-[10px] font-bold text-slate-400 uppercase">{k.l}</p>
-            <p className="text-lg font-black text-white mt-0.5">{k.v}</p>
+          <div key={i} className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+            <p className="text-[10px] font-bold text-slate-500 uppercase">{k.label}</p>
+            <p className={`text-2xl font-black mt-1 ${k.color}`}>{k.value}</p>
           </div>
         ))}
       </div>
 
-      {/* Filters */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-          <div>
-            <label className="text-xs font-bold text-slate-500 uppercase block mb-1">Data Início</label>
-            <div className="relative">
-              <Calendar className="absolute left-2 top-2.5 text-gray-400" size={14} />
-              <input
-                type="date"
-                value={dataInicio}
-                onChange={e => { setDataInicio(e.target.value); setPage(1); }}
-                className="w-full pl-8 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-300"
-              />
-            </div>
+      {/* Charts */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+          <h4 className="text-[10px] font-black text-slate-600 uppercase text-center mb-3">Top 10 — Maior Tempo Ocioso (Motor Ligado)</h4>
+          <div style={{ height: Math.max(200, topOcioso.length * 30) }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={topOcioso} layout="vertical" margin={{ left: 5, right: 40 }}>
+                <XAxis type="number" hide />
+                <YAxis dataKey="name" type="category" tick={{ fontSize: 10 }} width={55} interval={0} axisLine={false} />
+                <Tooltip formatter={(v: number) => [fmtMinutes(v), 'Ocioso']} />
+                <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={18} label={{ position: 'right', fontSize: 9, formatter: (v: number) => fmtMinutes(v) }}>
+                  {topOcioso.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
           </div>
-          <div>
-            <label className="text-xs font-bold text-slate-500 uppercase block mb-1">Data Fim</label>
-            <div className="relative">
-              <Calendar className="absolute left-2 top-2.5 text-gray-400" size={14} />
-              <input
-                type="date"
-                value={dataFim}
-                onChange={e => { setDataFim(e.target.value); setPage(1); }}
-                className="w-full pl-8 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-300"
-              />
-            </div>
-          </div>
-          <div>
-            <label className="text-xs font-bold text-slate-500 uppercase block mb-1">Filial</label>
-            <select
-              value={filialFiltro}
-              onChange={e => { setFilialFiltro(e.target.value); setPage(1); }}
-              className="w-full py-2 px-3 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-300"
-            >
-              <option value="">Todas</option>
-              {filiais.map(f => <option key={f} value={f}>{f}</option>)}
-            </select>
-          </div>
-          <p className="text-sm text-slate-500 pb-2">
-            {filtered.length} registro{filtered.length !== 1 ? 's' : ''} no período
-          </p>
         </div>
-      </div>
 
-      {/* Charts row 1 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <ChartCard
-          title="Top 10 — Motoristas com Mais Tempo Ocioso"
-          data={topDriversTempo}
-          valueFormatter={fmtMinutes}
-          valueLabel="Tempo Ocioso"
-        />
-        <ChartCard
-          title="Top 10 — Motoristas com Mais Ocorrências"
-          data={topDriversCount}
-          valueLabel="Ocorrências"
-        />
-      </div>
-
-      {/* Charts row 2 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <ChartCard
-          title="Top 10 — Linhas com Mais Ocorrências de Ociosidade"
-          data={topLinhasCount}
-          yAxisWidth={160}
-          valueLabel="Ocorrências"
-        />
-        <ChartCard
-          title="Top 10 — Linhas com Menor Tempo Médio Ocioso por Ocorrência"
-          data={topLinhasMenorMedia}
-          yAxisWidth={160}
-          valueFormatter={v => `${v} min`}
-          valueLabel="Média (min)"
-        />
+        <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+          <h4 className="text-[10px] font-black text-slate-600 uppercase text-center mb-3">Top 10 — Veículos que Mais Rodaram (KM)</h4>
+          <div style={{ height: Math.max(200, topKm.length * 30) }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={topKm} layout="vertical" margin={{ left: 5, right: 60 }}>
+                <XAxis type="number" hide />
+                <YAxis dataKey="name" type="category" tick={{ fontSize: 10 }} width={55} interval={0} axisLine={false} />
+                <Tooltip formatter={(v: number) => [fmtKm(v), 'KM']} />
+                <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={18} label={{ position: 'right', fontSize: 9, formatter: (v: number) => v.toFixed(0) + 'km' }}>
+                  {topKm.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
       </div>
 
       {/* Table */}
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-        <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
-          <h4 className="text-xs font-black text-slate-600 uppercase tracking-tighter">
-            Registros Detalhados
-          </h4>
-          <span className="text-xs text-slate-400">
-            Pág. {page}/{totalPages} — {filtered.length} registros
-          </span>
+        <div className="p-4 border-b border-gray-100 flex items-center gap-4 flex-wrap">
+          <div className="relative flex-1 min-w-[200px]">
+            <Search size={14} className="absolute left-3 top-2.5 text-slate-400" />
+            <input type="text" placeholder="Buscar veículo..." value={search} onChange={e => setSearch(e.target.value)}
+              className="w-full pl-9 pr-4 py-2 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-400" />
+          </div>
+          <div className="flex items-center gap-2 text-xs text-slate-500">
+            <span className="font-bold">Ordenar:</span>
+            {(['km', 'ocioso', 'viagens'] as const).map(s => (
+              <button key={s} onClick={() => setSortBy(s)}
+                className={`px-3 py-1.5 rounded-lg font-bold transition-colors ${sortBy === s ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>
+                {s === 'km' ? 'Maior KM' : s === 'ocioso' ? 'Mais Ocioso' : 'Mais Viagens'}
+              </button>
+            ))}
+          </div>
+          <span className="text-[10px] text-slate-400 font-bold">{filtered.length} veículos</span>
         </div>
-        <div className="overflow-x-auto">
+        <div className="overflow-y-auto max-h-[500px]">
           <table className="w-full text-xs text-left">
-            <thead className="bg-slate-800 text-white">
+            <thead className="bg-slate-800 text-white text-[10px] uppercase sticky top-0 z-10">
               <tr>
-                {['Data/Hora', 'Linha', 'Sentido', 'Prefixo', 'Motorista', 'Tempo', 'Evento', 'Endereço'].map(h => (
-                  <th key={h} className="px-3 py-2 font-bold uppercase whitespace-nowrap">{h}</th>
-                ))}
+                <th className="px-3 py-2">Veículo</th>
+                <th className="px-3 py-2 text-right">Viagens</th>
+                <th className="px-3 py-2 text-right">KM Total</th>
+                <th className="px-3 py-2 text-right">Motor Ligado Parado</th>
+                <th className="px-3 py-2 text-right">Tempo em Movimento</th>
               </tr>
             </thead>
             <tbody>
-              {paginated.map((r, i) => (
-                <tr key={r.id} className={i % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
-                  <td className="px-3 py-2 whitespace-nowrap font-mono text-slate-700">{r.dataHora}</td>
-                  <td className="px-3 py-2 max-w-[180px] truncate text-slate-700" title={r.nomeLinha}>{r.nomeLinha}</td>
-                  <td className="px-3 py-2 whitespace-nowrap text-slate-600">{r.sentido}</td>
-                  <td className="px-3 py-2 font-bold text-slate-800">{r.prefixo}</td>
-                  <td className="px-3 py-2 whitespace-nowrap text-slate-700">{driverName(r.matricula)}</td>
-                  <td className="px-3 py-2 whitespace-nowrap font-bold text-amber-700">{r.tempoMinutos} min</td>
-                  <td className="px-3 py-2 max-w-[200px] truncate text-slate-600" title={r.eventoOcorrido}>{r.eventoOcorrido}</td>
-                  <td className="px-3 py-2 max-w-[160px] truncate text-slate-500" title={r.endereco}>
-                    {r.endereco.length > 40 ? r.endereco.slice(0, 40) + '…' : r.endereco}
-                  </td>
+              {filtered.length === 0 && (
+                <tr><td colSpan={5} className="px-3 py-8 text-center text-slate-400">Nenhum resultado</td></tr>
+              )}
+              {filtered.map(v => (
+                <tr key={v.prefixo} className="border-b border-gray-50 hover:bg-slate-50 transition-colors">
+                  <td className="px-3 py-2 font-bold font-mono text-brand-700">{v.prefixo}</td>
+                  <td className="px-3 py-2 text-right">{v.viagens}</td>
+                  <td className="px-3 py-2 text-right font-bold">{fmtKm(v.kmTotal)}</td>
+                  <td className="px-3 py-2 text-right text-amber-600 font-bold">{fmtMinutes(v.paradoMin)}</td>
+                  <td className="px-3 py-2 text-right text-emerald-600">{fmtMinutes(v.movMin)}</td>
                 </tr>
               ))}
-              {paginated.length === 0 && (
-                <tr>
-                  <td colSpan={8} className="text-center py-10 text-slate-400">
-                    Nenhum registro no período selecionado
-                  </td>
-                </tr>
-              )}
             </tbody>
           </table>
         </div>
-        {totalPages > 1 && (
-          <div className="px-4 py-3 border-t border-gray-100 flex items-center justify-between">
-            <button
-              onClick={() => setPage(p => Math.max(1, p - 1))}
-              disabled={page === 1}
-              className="px-3 py-1 text-xs font-bold border border-gray-300 rounded-lg disabled:opacity-40 hover:bg-gray-50"
-            >
-              Anterior
-            </button>
-            <span className="text-xs text-slate-500">Página {page} de {totalPages}</span>
-            <button
-              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-              disabled={page === totalPages}
-              className="px-3 py-1 text-xs font-bold border border-gray-300 rounded-lg disabled:opacity-40 hover:bg-gray-50"
-            >
-              Próxima
-            </button>
-          </div>
-        )}
       </div>
     </div>
   );

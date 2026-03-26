@@ -48,19 +48,22 @@ export default function ImportAnttScreen({ multas, setMultas, userRole, anttCode
   // Map normalized header to field name
   const identifyColumn = (header: string): string | null => {
     const h = normalizeHeader(header);
-    if (h === 'PLACA' || h.includes('PLACA')) return 'placa';
-    if (h === 'ORDEM' || h.includes('ORDEM')) return 'ordem';
+    // More specific checks first (before broad patterns)
+    if (h === 'PLACA' || (h.startsWith('PLACA') && !h.includes('PREFIXO'))) return 'placa';
+    if (h === 'SETOR' || h.includes('SETOR RESP') || (h.includes('SETOR') && !h.includes('CODIGO'))) return 'setor';
+    if (h === 'N DO AUTO' || h === 'NUMERO AUTO' || h === 'NO AUTO' || h === 'N AUTO' ||
+        h.includes('N DO AUTO') || h.includes('NUMERO DO AUTO') ||
+        (h.includes('AUTO') && !h.includes('AUTOMATICO') && !h.includes('CODIGO'))) return 'auto';
+    if (h === 'ORDEM' || h.startsWith('ORDEM ') || h === 'N ORDEM' || h === 'N DA ORDEM') return 'ordem';
     if (h === 'EMPRESA' || h.includes('EMPRESA')) return 'empresa';
-    if (h === 'LINHA' || h.includes('LINHA')) return 'linha';
-    if (h.includes('MATRICULA') || h.includes('MOTORISTA')) return 'matricula';
-    if (h === 'MES' || h === 'MESANO' || h === 'MES ANO' || h.includes('MES REF')) return 'mes'; // skip
-    if (h === 'DATA' || h.includes('DATA')) return 'data';
-    if (h === 'LOCAL' || h.includes('LOCAL') || h.includes('FILIAL') || h.includes('TERMINAL')) return 'local';
-    if (h === 'HORA' || h.includes('HORA') || h.includes('HORARIO')) return 'hora';
-    if (h.includes('CODIGO') || h.includes('COD') && h.includes('INFR')) return 'codigo';
-    if (h.includes('DESCRICAO') || h.includes('DESC')) return 'descricao';
-    if (h.includes('AUTO') || h.includes('N DO AUTO') || h.includes('NUMERO AUTO')) return 'auto';
-    if (h.includes('SETOR') || h.includes('RESPONSAVEL')) return 'setor';
+    if (h === 'LINHA' || h.startsWith('LINHA ') || h === 'COD LINHA' || h === 'NUMERO LINHA') return 'linha';
+    if (h.includes('MATRICULA') || h.includes('MAT MOTORISTA') || (h.includes('MOTORISTA') && !h.includes('NOME'))) return 'matricula';
+    if (h === 'MES' || h === 'MESANO' || h === 'MES ANO' || h.includes('MES REF')) return 'mes';
+    if (h === 'DATA' || h === 'DATA HORA' || h === 'DATA INFRACAO' || h.startsWith('DATA ')) return 'data';
+    if (h === 'LOCAL' || h === 'FILIAL' || h === 'TERMINAL' || h.includes('LOCAL ') || h.startsWith('FILIAL') || h.startsWith('TERMINAL')) return 'local';
+    if (h === 'HORA' || h === 'HORARIO' || h === 'HORA INFRACAO' || (h.startsWith('HORA') && !h.includes('HORARIO LINHA'))) return 'hora';
+    if (h === 'CODIGO' || h === 'CODIGO INFRACAO' || h === 'COD INFRACAO' || h === 'COD INF' || h.includes('CODIGO DA INFRACAO') || h.includes('COD DA INF')) return 'codigo';
+    if (h.includes('DESCRICAO') || h.includes('DESCR') || h.includes('DESC')) return 'descricao';
     if (h.includes('VALOR')) return 'valor';
     return null;
   };

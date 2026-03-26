@@ -261,16 +261,18 @@ export interface MultaTransito {
 
 export interface OciosidadeMotorista {
   id: string;
-  dataHora: string;        // "01/03/2026, 01:24"
-  data: string;            // "01/03/2026"
-  codigoLinha: string;     // code before first '-' in Linha column
-  nomeLinha: string;       // from viagensMap or fallback to raw Linha
-  sentido: string;
-  prefixo: string;
-  matricula: string;       // last 5 digits of Motorista column
-  eventoOcorrido: string;
-  tempoMinutos: number;    // parsed from "há X minutos" in eventoOcorrido
-  endereco: string;
+  prefixo: string;                // Descrição da Unidade (vehicle prefix)
+  data: string;                   // DD/MM/YYYY extracted from Data column
+  dataHora: string;               // full datetime from Data column
+  areaFinal: string;              // Área Final
+  areaInicial: string;            // Área Inicial
+  combustivelMl: number;          // Combustível Usado (ml)
+  distanciaKm: number;            // Distância da Viagem (decimal km)
+  eficiencia: number;             // Eficiência (km/l)
+  paradoMotorLigadoMin: number;   // Parado c/ Motor Ligado → minutes
+  tempoMovimentoMin: number;      // Tempo em Movimento → minutes
+  tempoParadoMin: number;         // Tempo Total Parado → minutes
+  tempoTotalMin: number;          // Total → minutes
 }
 
 export interface Monitriip {

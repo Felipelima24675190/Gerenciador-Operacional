@@ -16,7 +16,6 @@ import {
   AlertTriangle,
   StopCircle,
   Bus,
-  Clock,
   CarFront,
   RadioTower,
   LayoutDashboard,
@@ -46,7 +45,6 @@ export default function Sidebar({ activeTab, onTabChange, user, onLogout }: Side
   const [linhasOpen, setLinhasOpen] = useState(false);
   const [veiculosOpen, setVeiculosOpen] = useState(false);
   const [avariaOpen, setAvariaOpen] = useState(false);
-  const [quilometragemOpen, setQuilometragemOpen] = useState(false);
   const [ociosidadeMotoOpen, setOciosidadeMotoOpen] = useState(false);
   const [monitriipOpen, setMonitriipOpen] = useState(false);
   const [manutencaoOpen, setManutencaoOpen] = useState(false);
@@ -233,38 +231,19 @@ export default function Sidebar({ activeTab, onTabChange, user, onLogout }: Side
         </div>
 
         <div>
-          <button onClick={() => setQuilometragemOpen(!quilometragemOpen)} className={sectionHeaderClass}>
-            <span>Quilometragem Op.</span>
-            {quilometragemOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-          </button>
-          {quilometragemOpen && (
-            <div className="mt-1.5 space-y-0.5 flex flex-col sidebar-collapse-enter">
-              {isAdmin && (
-                <button className={menuButtonClass(activeTab === 'import-ocioso')} onClick={() => onTabChange('import-ocioso')}>
-                  <UploadCloud size={17} /> Importar Quilometragem
-                </button>
-              )}
-              <button className={menuButtonClass(activeTab === 'view-ocioso')} onClick={() => onTabChange('view-ocioso')}>
-                <Clock size={17} /> Consultar Quilometragem
-              </button>
-            </div>
-          )}
-        </div>
-
-        <div>
           <button onClick={() => setOciosidadeMotoOpen(!ociosidadeMotoOpen)} className={sectionHeaderClass}>
-            <span>Ociosidade Motorista</span>
+            <span>Quilometragem</span>
             {ociosidadeMotoOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
           </button>
           {ociosidadeMotoOpen && (
             <div className="mt-1.5 space-y-0.5 flex flex-col sidebar-collapse-enter">
               {isAdmin && (
                 <button className={menuButtonClass(activeTab === 'import-ociosidade-motorista')} onClick={() => onTabChange('import-ociosidade-motorista')}>
-                  <UploadCloud size={17} /> Importar Ociosidade
+                  <UploadCloud size={17} /> Importar Quilometragem
                 </button>
               )}
               <button className={menuButtonClass(activeTab === 'view-ociosidade-motorista')} onClick={() => onTabChange('view-ociosidade-motorista')}>
-                <CarFront size={17} /> Consultar Ociosidade
+                <CarFront size={17} /> Consultar Quilometragem
               </button>
             </div>
           )}

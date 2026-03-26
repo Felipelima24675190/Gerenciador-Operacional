@@ -66,10 +66,10 @@ export default function ConsultMaintenanceScreen({ manutencoes, historicoManuten
       .slice(0, 10);
   }, [historicoManutencao, manutencoes]);
 
-  // Motivos distribution (using descricaoServico)
+  // Motivos distribution (using descricaoServico) - only current manutencoes
   const motivoChart = useMemo(() => {
     const counts: Record<string, number> = {};
-    [...manutencoes.map(m => m.descricaoServico), ...historicoManutencao.map(h => h.descricaoServico)].forEach(desc => {
+    manutencoes.map(m => m.descricaoServico).forEach(desc => {
       const label = desc.length > 30 ? desc.substring(0, 30) + '...' : desc;
       counts[label] = (counts[label] || 0) + 1;
     });
@@ -77,7 +77,7 @@ export default function ConsultMaintenanceScreen({ manutencoes, historicoManuten
       .map(([name, value]) => ({ name, value }))
       .sort((a, b) => b.value - a.value)
       .slice(0, 8);
-  }, [manutencoes, historicoManutencao]);
+  }, [manutencoes]);
 
   const parseDateBR = (str: string) => {
     try {
@@ -90,6 +90,16 @@ export default function ConsultMaintenanceScreen({ manutencoes, historicoManuten
     const entrada = parseDateBR(retidoDesde);
     return Math.max(0, Math.round((hoje.getTime() - entrada.getTime()) / (1000 * 60 * 60 * 24)));
   };
+
+  const topTempoOficina = useMemo(() => {
+    return manutencoes
+      .map(m => ({
+        name: m.prefixo,
+        dias: diasNaOficina(m.retidoDesde),
+      }))
+      .sort((a, b) => b.dias - a.dias)
+      .slice(0, 10);
+  }, [manutencoes]);
 
   return (
     <div className="space-y-4">
@@ -112,8 +122,8 @@ export default function ConsultMaintenanceScreen({ manutencoes, historicoManuten
         <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm flex items-center gap-4">
           <div className="p-3 bg-emerald-50 rounded-xl text-emerald-600"><Clock size={24} /></div>
           <div>
-            <p className="text-[10px] font-bold text-slate-500 uppercase">Tempo Medio (horas)</p>
-            <p className="text-3xl font-black text-slate-800">{kpis.avgTempo}h</p>
+            <p className="text-[10px] font-bold text-slate-500 uppercase">Tempo Médio na Oficina</p>
+            <p className="text-3xl font-black text-slate-800">{Math.floor(kpis.avgTempo / 24)}d {kpis.avgTempo % 24}h</p>
           </div>
         </div>
       </div>
@@ -150,6 +160,23 @@ export default function ConsultMaintenanceScreen({ manutencoes, historicoManuten
           </div>
         </div>
       </div>
+
+      {/* Veículos há mais tempo na oficina */}
+      {topTempoOficina.length > 0 && (
+        <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+          <h4 className="text-[10px] font-black text-slate-600 uppercase text-center mb-3">Veículos há Mais Tempo na Oficina</h4>
+          <div style={{ height: Math.max(200, topTempoOficina.length * 28) }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={topTempoOficina} layout="vertical" margin={{ left: 5, right: 50 }}>
+                <XAxis type="number" hide />
+                <YAxis dataKey="name" type="category" tick={{ fontSize: 10 }} width={60} interval={0} axisLine={false} />
+                <Tooltip formatter={(v: number) => [`${v} dias`, 'Na Oficina']} />
+                <Bar dataKey="dias" fill="#0e4f8f" radius={[0, 4, 4, 0]} barSize={16} label={{ position: 'right', fontSize: 9, formatter: (v: number) => `${v}d` }} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
 
       {/* Tabs & Search */}
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
@@ -199,7 +226,12 @@ export default function ConsultMaintenanceScreen({ manutencoes, historicoManuten
                   const atrasado = m.previsaoLiberacao ? parseDateBR(m.previsaoLiberacao) < hoje : false;
                   return (
                     <tr key={m.id} className="border-b border-gray-50 hover:bg-slate-50 transition-colors">
-                      <td className="px-3 py-2 font-bold text-slate-700">{m.prefixo}</td>
+                      <td className="px-3 py-2 font-bold font-mono text-brand-700">
+                        {veiculoMap.get(m.prefixo)?.tipo && (
+                          <span className="mr-1 text-[9px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-bold">{veiculoMap.get(m.prefixo)!.tipo}</span>
+                        )}
+                        {m.prefixo}
+                      </td>
                       <td className="px-3 py-2 font-mono text-[10px]">{getPlaca(m.prefixo)}</td>
                       <td className="px-3 py-2 font-mono text-[10px]">{m.retidoDesde}</td>
                       <td className="px-3 py-2 text-right">{m.kmAtual.toLocaleString('pt-BR')}</td>

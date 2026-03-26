@@ -15,6 +15,7 @@ export default function ImportMaintenanceScreen({ manutencoes, setManutencoes, s
   const [isDragging, setIsDragging] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [stats, setStats] = useState<{ total: number; novos: number; liberados: number } | null>(null);
+  const [dataReferencia, setDataReferencia] = useState<string>(new Date().toISOString().split('T')[0]);
 
   const veiculoMap = useMemo(() => new Map(veiculos.map(v => [v.prefixo, v])), [veiculos]);
 
@@ -33,14 +34,6 @@ export default function ImportMaintenanceScreen({ manutencoes, setManutencoes, s
   const parseDate = (str: string) => {
     const [d, m, y] = str.split('/').map(Number);
     return new Date(y, m - 1, d);
-  };
-
-  const diffHours = (start: string, end: string) => {
-    try {
-      const s = parseDate(start);
-      const e = parseDate(end);
-      return Math.round((e.getTime() - s.getTime()) / (1000 * 60 * 60));
-    } catch { return 0; }
   };
 
   const handleDrop = (e: React.DragEvent) => {
@@ -91,7 +84,9 @@ export default function ImportMaintenanceScreen({ manutencoes, setManutencoes, s
       if (novosVeiculos.length > 0) {
         // Compare with previous manutencoes to detect vehicles that left
         const novoPrefixos = new Set(novosVeiculos.map(v => v.prefixo));
-        const hoje = new Date().toLocaleDateString('pt-BR');
+        const hoje = dataReferencia
+          ? new Date(dataReferencia + 'T12:00:00').toLocaleDateString('pt-BR')
+          : new Date().toLocaleDateString('pt-BR');
         let liberados = 0;
 
         const novoHistorico: HistoricoManutencao[] = [];
@@ -105,7 +100,13 @@ export default function ImportMaintenanceScreen({ manutencoes, setManutencoes, s
               descricaoServico: prev.descricaoServico,
               dataEntrada: prev.retidoDesde,
               dataSaida: hoje,
-              tempoOficinaHoras: diffHours(prev.retidoDesde, hoje),
+              tempoOficinaHoras: (() => {
+                try {
+                  const entrada = parseDate(prev.retidoDesde);
+                  const saida = dataReferencia ? new Date(dataReferencia + 'T12:00:00') : new Date();
+                  return Math.round((saida.getTime() - entrada.getTime()) / (1000 * 60 * 60));
+                } catch { return 0; }
+              })(),
               previsaoLiberacao: prev.previsaoLiberacao,
               local: prev.local,
               kmAtual: prev.kmAtual,
@@ -147,6 +148,17 @@ export default function ImportMaintenanceScreen({ manutencoes, setManutencoes, s
           <p className="text-xs text-amber-600 mt-2 font-semibold">
             Ao importar uma nova planilha, veiculos que estavam na lista anterior e nao aparecem mais serao automaticamente registrados como liberados no historico.
           </p>
+        </div>
+
+        <div className="mb-4 flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-xl p-3">
+          <label className="text-xs font-bold text-amber-700 whitespace-nowrap">Data de Referência:</label>
+          <input
+            type="date"
+            value={dataReferencia}
+            onChange={e => setDataReferencia(e.target.value)}
+            className="text-xs p-2 border border-amber-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white"
+          />
+          <span className="text-xs text-amber-600">Usada como data base para calcular histórico de saídas. Permite importações retroativas.</span>
         </div>
 
         <div

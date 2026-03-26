@@ -161,7 +161,7 @@ function App() {
       case 'consult-speed-driver':
         return <ConsultSpeedDriverScreen motoristas={motoristas} excessos={excessosVelocidade} />;
       case 'reports':
-        return <ReportsScreen motoristas={motoristas} ocorrencias={ocorrencias} excessos={excessosVelocidade} multasAntt={multasAntt} avarias={avarias} paradas={paradasIndevidas} multasTransito={multasTransito} registrosOciosidade={registrosOciosidade} registrosLinhas={registrosLinhas} />;
+        return <ReportsScreen motoristas={motoristas} ocorrencias={ocorrencias} excessos={excessosVelocidade} multasAntt={multasAntt} avarias={avarias} paradas={paradasIndevidas} multasTransito={multasTransito} />;
       case 'manual-driver':
         return <ManualDriverScreen setMotoristas={setMotoristasN} />;
       case 'users':
@@ -237,8 +237,8 @@ function App() {
       case 'view-transit': return 'Consultar Multas de Trânsito';
       case 'import-ocioso': return 'Importar Quilometragem Operacional';
       case 'view-ocioso': return 'Consultar Quilometragem Operacional';
-      case 'import-ociosidade-motorista': return 'Importar Ociosidade de Motoristas';
-      case 'view-ociosidade-motorista': return 'Consultar Ociosidade de Motoristas';
+      case 'import-ociosidade-motorista': return 'Importar Quilometragem de Veículos';
+      case 'view-ociosidade-motorista': return 'Consultar Quilometragem';
       case 'import-monitriip': return 'Importar Dados Monitriip';
       case 'view-monitriip': return 'Consultar Monitriip';
       case 'dashboard-operacional': return 'Dashboard Operacional';

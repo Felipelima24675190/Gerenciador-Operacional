@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Calendar, Filter, FileBarChart, Users, Bus, FileDown } from 'lucide-react';
-import { Motorista, Ocorrencia, ExcessoVelocidade, MultaANTT, Avaria, ParadaIndevida, MultaTransito, RegistroOciosidade, RegistroLinha } from '../../types';
+import { Motorista, Ocorrencia, ExcessoVelocidade, MultaANTT, Avaria, ParadaIndevida, MultaTransito } from '../../types';
 import StatCard from '../dashboard/StatCard';
 import { isWithinInterval, startOfDay, endOfDay } from 'date-fns';
 
@@ -13,11 +13,9 @@ interface ReportsScreenProps {
   avarias?: Avaria[];
   paradas?: ParadaIndevida[];
   multasTransito?: MultaTransito[];
-  registrosOciosidade?: RegistroOciosidade[];
-  registrosLinhas?: RegistroLinha[];
 }
 
-type Tab = 'pontualidade' | 'velocidade' | 'antt' | 'avarias' | 'paradas' | 'transito' | 'quilometragem';
+type Tab = 'pontualidade' | 'velocidade' | 'antt' | 'avarias' | 'paradas' | 'transito';
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'pontualidade', label: 'Pontualidade' },
@@ -26,7 +24,6 @@ const TABS: { id: Tab; label: string }[] = [
   { id: 'avarias', label: 'Avarias' },
   { id: 'paradas', label: 'Paradas Indevidas' },
   { id: 'transito', label: 'Multas de Trânsito' },
-  { id: 'quilometragem', label: 'Quilometragem Op.' },
 ];
 
 function parseDate(str: string): Date | null {
@@ -444,79 +441,8 @@ function TransitoTab({ motoristas, multas }: { motoristas: Motorista[]; multas: 
   );
 }
 
-// ── Quilometragem Operacional ─────────────────────────────────────────────────
-const fmtKmR = (v: number) => `${v.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} km`;
-
-function QuilometragemTab({ registros, linhas }: { registros: RegistroOciosidade[]; linhas: RegistroLinha[] }) {
-  const [dataInicio, setDataInicio] = useState('2026-01-01');
-  const [dataFim, setDataFim] = useState('2026-12-31');
-
-  const filtered = useMemo(() => {
-    const start = new Date(dataInicio + 'T00:00:00');
-    const end = new Date(dataFim + 'T23:59:59');
-    return registros.filter(r => {
-      try {
-        const [d, m, y] = r.data.split('/').map(Number);
-        const dt = new Date(y, m - 1, d);
-        return dt >= start && dt <= end;
-      } catch { return false; }
-    });
-  }, [registros, dataInicio, dataFim]);
-
-  const kpis = useMemo(() => {
-    const totalOp = filtered.reduce((s, r) => s + r.operacionalKm, 0);
-    const totalOcio = filtered.reduce((s, r) => s + r.ociosaKm, 0);
-    const totalKm = filtered.reduce((s, r) => s + r.totalKm, 0);
-    const pctOp = totalKm > 0 ? (totalOp / totalKm) * 100 : 0;
-    const pctOcio = totalKm > 0 ? (totalOcio / totalKm) * 100 : 0;
-    return { veiculos: new Set(filtered.map(r => r.prefixo)).size, totalOp, totalOcio, totalKm, pctOp, pctOcio, linhas: linhas.length };
-  }, [filtered, linhas]);
-
-  const handleExport = () => {
-    if (!filtered.length) return;
-    const headers = ['Prefixo', 'Data', 'KM Operacional', 'KM Ociosa', 'KM Total'];
-    const rows = filtered.map(r => [r.prefixo, r.data, r.operacionalKm.toFixed(1), r.ociosaKm.toFixed(1), r.totalKm.toFixed(1)]);
-    downloadCSV([headers, ...rows].map(r => r.join(';')).join('\n'), `quilometragem_${dataInicio}_${dataFim}.csv`);
-  };
-
-  return (
-    <div className="space-y-6">
-      <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-        <div className="flex items-center gap-2 mb-4"><Filter className="text-gray-500" size={18} /><h3 className="font-bold text-slate-800">Filtros</h3></div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div><label className="block text-sm font-medium text-gray-700 mb-1">Data Início</label><div className="relative"><input type="date" value={dataInicio} onChange={e => setDataInicio(e.target.value)} className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm bg-slate-50" /><Calendar className="absolute left-3 top-2.5 text-gray-400" size={18} /></div></div>
-          <div><label className="block text-sm font-medium text-gray-700 mb-1">Data Fim</label><div className="relative"><input type="date" value={dataFim} onChange={e => setDataFim(e.target.value)} className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm bg-slate-50" /><Calendar className="absolute left-3 top-2.5 text-gray-400" size={18} /></div></div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
-        {[
-          { label: 'Veículos', value: kpis.veiculos, cls: 'text-slate-800' },
-          { label: 'KM Operacional', value: fmtKmR(kpis.totalOp), cls: 'text-slate-800' },
-          { label: 'KM Ociosa', value: fmtKmR(kpis.totalOcio), cls: 'text-slate-800' },
-          { label: 'KM Total', value: fmtKmR(kpis.totalKm), cls: 'text-slate-800' },
-          { label: 'Linhas', value: kpis.linhas, cls: 'text-slate-800' },
-          { label: '% Operante', value: `${kpis.pctOp.toFixed(1)}%`, cls: 'text-emerald-700' },
-          { label: '% Ociosa', value: `${kpis.pctOcio.toFixed(1)}%`, cls: 'text-amber-600' },
-        ].map((k, i) => (
-          <div key={i} className="bg-white p-3 rounded-xl border border-gray-200 shadow-sm">
-            <p className="text-[10px] text-gray-500 uppercase font-bold">{k.label}</p>
-            <p className={`text-lg font-black ${k.cls}`}>{k.value}</p>
-          </div>
-        ))}
-      </div>
-
-      <div className="flex justify-end">
-        <button onClick={handleExport} disabled={!filtered.length} className="flex items-center gap-2 bg-brand-500 hover:bg-brand-600 text-white px-6 py-3 rounded-xl font-bold transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
-          <FileDown size={20} /> Exportar CSV
-        </button>
-      </div>
-    </div>
-  );
-}
-
 // ── Main ──────────────────────────────────────────────────────────────────────
-export default function ReportsScreen({ motoristas, ocorrencias, excessos = [], multasAntt = [], avarias = [], paradas = [], multasTransito = [], registrosOciosidade = [], registrosLinhas = [] }: ReportsScreenProps) {
+export default function ReportsScreen({ motoristas, ocorrencias, excessos = [], multasAntt = [], avarias = [], paradas = [], multasTransito = [] }: ReportsScreenProps) {
   const [activeTab, setActiveTab] = useState<Tab>('pontualidade');
 
   return (
@@ -544,7 +470,6 @@ export default function ReportsScreen({ motoristas, ocorrencias, excessos = [], 
       {activeTab === 'avarias' && <AvariasTab avarias={avarias} />}
       {activeTab === 'paradas' && <ParadasTab paradas={paradas} />}
       {activeTab === 'transito' && <TransitoTab motoristas={motoristas} multas={multasTransito} />}
-      {activeTab === 'quilometragem' && <QuilometragemTab registros={registrosOciosidade} linhas={registrosLinhas} />}
     </div>
   );
 }
