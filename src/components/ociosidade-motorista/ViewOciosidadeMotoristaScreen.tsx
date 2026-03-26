@@ -31,22 +31,30 @@ export default function ViewOciosidadeMotoristaScreen({ ociosidades }: Props) {
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState<'km' | 'ocioso' | 'viagens'>('km');
 
+  // Detect stale data (old format had 'tempoMinutos' instead of 'paradoMotorLigadoMin')
+  const isStaleFormat = useMemo(() =>
+    ociosidades.length > 0 && (ociosidades[0] as any).tempoMinutos !== undefined,
+  [ociosidades]);
+
   // KPIs
   const kpis = useMemo(() => {
-    const kmTotal = ociosidades.reduce((s, r) => s + r.distanciaKm, 0);
-    // "KM Ociosa" = total distance in routes where the vehicle was mostly stopped (paradoMotorLigado > tempoMovimento)
-    // Actually, distância percorrida quando parado c/ motor ligado is not KM - it's time.
-    // KM Ociosa: trips where distanciaKm < 1 km (near-zero trips = just engine idling)
-    const kmOciosa = ociosidades.filter(r => r.distanciaKm < 1).reduce((s, r) => s + r.distanciaKm, 0);
-    const tempoOciosoTotal = ociosidades.reduce((s, r) => s + r.paradoMotorLigadoMin, 0);
+    const kmTotal        = ociosidades.reduce((s, r) => s + (r.distanciaKm || 0), 0);
+    // KM Ociosa: trips with near-zero distance (vehicle idled in place)
+    const kmOciosa       = ociosidades.filter(r => (r.distanciaKm || 0) < 1)
+                                       .reduce((s, r) => s + (r.distanciaKm || 0), 0);
+    const tempoOcioso    = ociosidades.reduce((s, r) => s + (r.paradoMotorLigadoMin || 0), 0);
+    const combustivelTotal = ociosidades.reduce((s, r) => s + (r.combustivelMl || 0), 0);
+    const eficienciaMedia = ociosidades.length > 0
+      ? ociosidades.reduce((s, r) => s + (r.eficiencia || 0), 0) / ociosidades.length
+      : 0;
     const veiculosUnicos = new Set(ociosidades.map(r => r.prefixo)).size;
-    return { kmTotal, kmOciosa, tempoOciosoTotal, veiculosUnicos };
+    return { kmTotal, kmOciosa, tempoOcioso, combustivelTotal, eficienciaMedia, veiculosUnicos };
   }, [ociosidades]);
 
   // Top 10 by idle time (Parado c/ Motor Ligado)
   const topOcioso = useMemo(() => {
     const acc: Record<string, number> = {};
-    ociosidades.forEach(r => { acc[r.prefixo] = (acc[r.prefixo] || 0) + r.paradoMotorLigadoMin; });
+    ociosidades.forEach(r => { acc[r.prefixo] = (acc[r.prefixo] || 0) + (r.paradoMotorLigadoMin || 0); });
     return Object.entries(acc)
       .map(([name, value]) => ({ name, value }))
       .sort((a, b) => b.value - a.value)
@@ -98,17 +106,26 @@ export default function ViewOciosidadeMotoristaScreen({ ociosidades }: Props) {
 
   return (
     <div className="space-y-4">
+      {/* Stale data warning */}
+      {isStaleFormat && (
+        <div className="bg-amber-50 border border-amber-300 rounded-xl px-4 py-3 text-xs text-amber-800 font-semibold flex items-center gap-2">
+          ⚠️ Os dados salvos estão no formato antigo. Reimporte o arquivo em "Importar Quilometragem" para visualizar corretamente.
+        </div>
+      )}
+
       {/* KPI bar */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         {[
-          { label: 'KM Total', value: fmtKm(kpis.kmTotal), color: 'text-brand-700' },
-          { label: 'KM Ociosa (distância <1km)', value: fmtKm(kpis.kmOciosa), color: 'text-amber-600' },
-          { label: 'Tempo c/ Motor Ligado Parado', value: fmtMinutes(kpis.tempoOciosoTotal), color: 'text-red-600' },
-          { label: 'Veículos', value: kpis.veiculosUnicos.toString(), color: 'text-emerald-600' },
+          { label: 'KM Total',                  value: fmtKm(kpis.kmTotal),            color: 'text-brand-700' },
+          { label: 'KM Ociosa (<1km)',           value: fmtKm(kpis.kmOciosa),           color: 'text-amber-600' },
+          { label: 'Motor Ligado Parado',        value: fmtMinutes(kpis.tempoOcioso),   color: 'text-red-600' },
+          { label: 'Eficiência Média (km/l)',    value: kpis.eficienciaMedia.toFixed(2) + ' km/l', color: 'text-emerald-600' },
+          { label: 'Combustível Total (ml)',     value: kpis.combustivelTotal.toLocaleString('pt-BR'), color: 'text-purple-600' },
+          { label: 'Veículos',                   value: kpis.veiculosUnicos.toString(), color: 'text-slate-700' },
         ].map((k, i) => (
           <div key={i} className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-            <p className="text-[10px] font-bold text-slate-500 uppercase">{k.label}</p>
-            <p className={`text-2xl font-black mt-1 ${k.color}`}>{k.value}</p>
+            <p className="text-[10px] font-bold text-slate-500 uppercase leading-tight">{k.label}</p>
+            <p className={`text-xl font-black mt-1 ${k.color}`}>{k.value}</p>
           </div>
         ))}
       </div>

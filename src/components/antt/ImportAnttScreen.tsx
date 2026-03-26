@@ -48,22 +48,23 @@ export default function ImportAnttScreen({ multas, setMultas, userRole, anttCode
   // Map normalized header to field name
   const identifyColumn = (header: string): string | null => {
     const h = normalizeHeader(header);
-    // More specific checks first (before broad patterns)
-    if (h === 'PLACA' || (h.startsWith('PLACA') && !h.includes('PREFIXO'))) return 'placa';
-    if (h === 'SETOR' || h.includes('SETOR RESP') || (h.includes('SETOR') && !h.includes('CODIGO'))) return 'setor';
-    if (h === 'N DO AUTO' || h === 'NUMERO AUTO' || h === 'NO AUTO' || h === 'N AUTO' ||
-        h.includes('N DO AUTO') || h.includes('NUMERO DO AUTO') ||
-        (h.includes('AUTO') && !h.includes('AUTOMATICO') && !h.includes('CODIGO'))) return 'auto';
-    if (h === 'ORDEM' || h.startsWith('ORDEM ') || h === 'N ORDEM' || h === 'N DA ORDEM') return 'ordem';
+    // Specific checks first — order matters!
+    if (h === 'PLACA' || h.startsWith('PLACA ')) return 'placa';
+    if (h === 'SETOR' || h.includes('SETOR RESP') || h.includes('SETOR RESPONSAVEL') || (h.includes('SETOR') && !h.includes('CODIGO'))) return 'setor';
+    if (h.includes('N DO AUTO') || h.includes('NUMERO DO AUTO') || h.includes('NO DO AUTO') || h === 'AUTO INFRACAO' ||
+        (h.includes('AUTO') && !h.includes('AUTOMATICO') && !h.includes('CODIGO') && !h.includes('ORGAO') && !h.includes('ATUADOR'))) return 'auto';
+    if (h === 'ORDEM' || h === 'SEQ' || h === 'SEQUENCIA' || h.startsWith('ORDEM ')) return 'ordem';
     if (h === 'EMPRESA' || h.includes('EMPRESA')) return 'empresa';
-    if (h === 'LINHA' || h.startsWith('LINHA ') || h === 'COD LINHA' || h === 'NUMERO LINHA') return 'linha';
-    if (h.includes('MATRICULA') || h.includes('MAT MOTORISTA') || (h.includes('MOTORISTA') && !h.includes('NOME'))) return 'matricula';
+    if (h === 'LINHA' || h === 'COD LINHA' || h.startsWith('LINHA ')) return 'linha';
+    // Only match matricula if header explicitly mentions "MATRICULA" — NOT just "MOTORISTA"
+    if (h.includes('MATRICULA') || h === 'MAT' || h.includes('MAT DO MOTORISTA')) return 'matricula';
     if (h === 'MES' || h === 'MESANO' || h === 'MES ANO' || h.includes('MES REF')) return 'mes';
-    if (h === 'DATA' || h === 'DATA HORA' || h === 'DATA INFRACAO' || h.startsWith('DATA ')) return 'data';
-    if (h === 'LOCAL' || h === 'FILIAL' || h === 'TERMINAL' || h.includes('LOCAL ') || h.startsWith('FILIAL') || h.startsWith('TERMINAL')) return 'local';
-    if (h === 'HORA' || h === 'HORARIO' || h === 'HORA INFRACAO' || (h.startsWith('HORA') && !h.includes('HORARIO LINHA'))) return 'hora';
-    if (h === 'CODIGO' || h === 'CODIGO INFRACAO' || h === 'COD INFRACAO' || h === 'COD INF' || h.includes('CODIGO DA INFRACAO') || h.includes('COD DA INF')) return 'codigo';
-    if (h.includes('DESCRICAO') || h.includes('DESCR') || h.includes('DESC')) return 'descricao';
+    if (h === 'DATA' || h === 'DATA HORA' || h === 'DATA INFRACAO' || h === 'DATA DA INFRACAO' || h.startsWith('DATA ')) return 'data';
+    if (h === 'LOCAL' || h === 'FILIAL' || h === 'TERMINAL' || h.startsWith('LOCAL') || h.startsWith('FILIAL') || h.startsWith('TERMINAL')) return 'local';
+    if (h === 'HORA' || h === 'HORARIO' || h === 'HORA INFRACAO' || h.startsWith('HORA')) return 'hora';
+    if (h === 'CODIGO' || h === 'CODIGO INFRACAO' || h === 'CODIGO INFR' || h === 'COD INFRACAO' || h === 'COD INF' ||
+        h.includes('CODIGO DA INFRACAO') || h.includes('COD DA INF') || h === 'CODIGO ANTT') return 'codigo';
+    if (h.includes('DESCRICAO') || h.includes('DESCR FISCAL') || h.includes('DESC')) return 'descricao';
     if (h.includes('VALOR')) return 'valor';
     return null;
   };
@@ -98,22 +99,31 @@ export default function ImportAnttScreen({ multas, setMultas, userRole, anttCode
     const reader = new FileReader();
     reader.onload = (event) => {
       const text = event.target?.result as string;
-      // Normalize line endings and remove BOM
-      const cleaned = text.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-      const lines = cleaned.split('\n').filter(l => l.trim());
-      if (lines.length < 2) {
+      // Remove BOM only
+      const raw = text.replace(/^\uFEFF/, '');
+
+      // Detect separator from first non-empty line
+      const firstLine = raw.split(/\r?\n/).find(l => l.trim()) || '';
+      const sep = firstLine.includes('\t') ? '\t' : ';';
+
+      // Parse the whole CSV properly (handles multi-line quoted fields)
+      const allRows = parseCsvFileLevel(raw, sep);
+      if (allRows.length < 2) {
         setUploadStatus('error');
         setErrorMsg('Arquivo vazio ou sem dados.');
         setTimeout(() => setUploadStatus('idle'), 5000);
         return;
       }
 
-      // Detect separator from header line
-      const headerLine = lines[0];
-      const sep = headerLine.includes('\t') ? '\t' : ';';
-
-      // Parse header using quoted-field-aware parser
-      const headers = parseCsvLine(headerLine, sep);
+      // Find header row (first row with at least 3 columns)
+      const headerRowIdx = allRows.findIndex(r => r.length >= 3);
+      if (headerRowIdx === -1) {
+        setUploadStatus('error');
+        setErrorMsg('Cabeçalho não encontrado no arquivo.');
+        setTimeout(() => setUploadStatus('idle'), 5000);
+        return;
+      }
+      const headers = allRows[headerRowIdx];
       const colMap: Record<string, number> = {};
       headers.forEach((h, i) => {
         const field = identifyColumn(h);
@@ -166,16 +176,14 @@ export default function ImportAnttScreen({ multas, setMultas, userRole, anttCode
       const novasMultas: MultaANTT[] = [];
       const codeDescMap = new Map(anttCodeDescriptions.map(c => [c.codigo, c]));
 
-      for (let i = 1; i < lines.length; i++) {
-        const line = lines[i].trim();
-        if (!line) continue;
+      for (let i = headerRowIdx + 1; i < allRows.length; i++) {
+        const parts = allRows[i];
+        if (!parts || parts.length < 2) continue;
 
-        // Use quoted-field-aware parser so descriptions with `;` don't shift columns
-        const parts = parseCsvLine(line, sep);
-
-        // Skip repeated header rows
+        // Skip repeated header rows or empty rows
         const firstColNorm = normalizeHeader(parts[0] || '');
-        if (firstColNorm === 'PLACA' || firstColNorm === 'CODIGO' || firstColNorm === 'DATA') continue;
+        if (firstColNorm === 'PLACA' || firstColNorm === 'CODIGO' || firstColNorm === 'DATA' ||
+            firstColNorm === 'ORDEM' || firstColNorm === 'SEQ') continue;
 
         const empresa        = get(parts, 'empresa').toUpperCase();
         const matricula      = get(parts, 'matricula');
@@ -227,6 +235,45 @@ export default function ImportAnttScreen({ multas, setMultas, userRole, anttCode
       setTimeout(() => setUploadStatus('idle'), 10000);
     };
     reader.readAsText(file, 'UTF-8');
+  };
+
+  // Parse ENTIRE CSV file respecting quoted fields (handles multi-line quoted values)
+  const parseCsvFileLevel = (text: string, sep: string): string[][] => {
+    const rows: string[][] = [];
+    let currentRow: string[] = [];
+    let field = '';
+    let inQuotes = false;
+    for (let i = 0; i < text.length; i++) {
+      const ch = text[i];
+      if (inQuotes) {
+        if (ch === '"') {
+          if (i + 1 < text.length && text[i + 1] === '"') { field += '"'; i++; }
+          else inQuotes = false;
+        } else {
+          field += ch; // keep newlines inside quotes as spaces
+        }
+      } else {
+        if (ch === '"') {
+          inQuotes = true;
+        } else if (ch === sep) {
+          currentRow.push(field.trim());
+          field = '';
+        } else if (ch === '\n') {
+          currentRow.push(field.trim());
+          field = '';
+          if (currentRow.some(c => c.length > 0)) rows.push(currentRow);
+          currentRow = [];
+        } else if (ch === '\r') {
+          // skip
+        } else {
+          field += ch;
+        }
+      }
+    }
+    // last field/row
+    currentRow.push(field.trim());
+    if (currentRow.some(c => c.length > 0)) rows.push(currentRow);
+    return rows;
   };
 
   // Parse a CSV/TXT line respecting quoted fields
