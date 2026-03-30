@@ -39,9 +39,8 @@ export default function ViewOciosidadeMotoristaScreen({ ociosidades }: Props) {
   // KPIs
   const kpis = useMemo(() => {
     const kmTotal        = ociosidades.reduce((s, r) => s + (r.distanciaKm || 0), 0);
-    // KM Ociosa: trips with near-zero distance (vehicle idled in place)
-    const kmOciosa       = ociosidades.filter(r => (r.distanciaKm || 0) < 1)
-                                       .reduce((s, r) => s + (r.distanciaKm || 0), 0);
+    // KM Ociosa: sum of all distances in the dataset
+    const kmOciosa       = ociosidades.reduce((s, r) => s + (r.distanciaKm || 0), 0);
     const tempoOcioso    = ociosidades.reduce((s, r) => s + (r.paradoMotorLigadoMin || 0), 0);
     const combustivelTotal = ociosidades.reduce((s, r) => s + (r.combustivelMl || 0), 0);
     const eficienciaMedia = ociosidades.length > 0
@@ -117,7 +116,7 @@ export default function ViewOciosidadeMotoristaScreen({ ociosidades }: Props) {
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         {[
           { label: 'KM Total',                  value: fmtKm(kpis.kmTotal),            color: 'text-brand-700' },
-          { label: 'KM Ociosa (<1km)',           value: fmtKm(kpis.kmOciosa),           color: 'text-amber-600' },
+          { label: 'KM Ociosa',                   value: fmtKm(kpis.kmOciosa),           color: 'text-amber-600' },
           { label: 'Motor Ligado Parado',        value: fmtMinutes(kpis.tempoOcioso),   color: 'text-red-600' },
           { label: 'Eficiência Média (km/l)',    value: kpis.eficienciaMedia.toFixed(2) + ' km/l', color: 'text-emerald-600' },
           { label: 'Combustível Total (L)',       value: (kpis.combustivelTotal / 1000).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' L', color: 'text-purple-600' },

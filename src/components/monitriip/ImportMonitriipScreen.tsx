@@ -126,7 +126,12 @@ export default function ImportMonitriipScreen({ monitriips, setMonitriips, userR
       }
 
       if (novas.length > 0) {
-        setMonitriips(novas);
+        // Accumulate: append new records, dedup by data+servico+partidaPrevista
+        setMonitriips(prev => {
+          const existingKeys = new Set(novas.map(r => `${r.data}|${r.servico}|${r.partidaPrevista}`));
+          const kept = prev.filter(r => !existingKeys.has(`${r.data}|${r.servico}|${r.partidaPrevista}`));
+          return [...kept, ...novas];
+        });
 
         const validas = novas.filter(r => r.viagemValida).length;
         const comAtraso = novas.filter(r => r.atraso30min).length;
@@ -184,7 +189,7 @@ export default function ImportMonitriipScreen({ monitriips, setMonitriips, userR
           <p className="font-bold">Importação — Monitriip</p>
           <p className="text-xs mt-0.5 text-blue-700">
             Arquivo CSV com separador <strong>;</strong>. Colunas: Partida Prevista; Partida; Chegada; Serviço; Viagem Valida?; Atraso &gt;30min; Venda Passagem; Cancel. Passagem; Embarque; NoShow; Inicio/Fim Viagem; Jornada Motorista; Detector Parada; Vel. Tempo Localização; Vel. Temp. Loc. Mínima.
-            <br />A importação <strong>substitui</strong> os dados existentes.
+            <br />A importação <strong>acumula</strong> registros (dados duplicados são substituídos).
           </p>
         </div>
       </div>

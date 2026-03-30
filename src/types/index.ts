@@ -211,6 +211,8 @@ export interface Acidente {
   avariaVinculadaId?: string; // ID da avaria vinculada
   valorEstimado: number;
   status: 'Em Análise' | 'Concluído' | 'Pendente Seguro';
+  causaAvaria?: string;
+  acaoTomada?: string;
 }
 
 export interface ResumoAvaria {

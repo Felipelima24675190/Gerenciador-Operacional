@@ -3,7 +3,7 @@ import { ManutencaoVeiculo, HistoricoManutencao, Veiculo } from '../../types';
 import { Search, Wrench, Clock, TrendingUp, Trash2, Bus, CheckCircle } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, LineChart, Line, CartesianGrid, Legend,
+  Cell, LineChart, Line, CartesianGrid, Legend,
 } from 'recharts';
 import { subDays, format, addDays } from 'date-fns';
 
@@ -181,13 +181,12 @@ export default function ConsultMaintenanceScreen({ manutencoes, historicoManuten
   const motivoChart = useMemo(() => {
     const counts: Record<string, number> = {};
     manutencoes.map(m => m.descricaoServico).forEach(desc => {
-      const label = desc.length > 30 ? desc.substring(0, 30) + '...' : desc;
-      counts[label] = (counts[label] || 0) + 1;
+      counts[desc] = (counts[desc] || 0) + 1;
     });
     return Object.entries(counts)
       .map(([name, value]) => ({ name, value }))
       .sort((a, b) => b.value - a.value)
-      .slice(0, 8);
+      .slice(0, 10);
   }, [manutencoes]);
 
   const parseDateBR = (str: string) => {
@@ -271,16 +270,16 @@ export default function ConsultMaintenanceScreen({ manutencoes, historicoManuten
 
         <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
           <h4 className="text-[10px] font-black text-slate-600 uppercase text-center mb-3">Distribuicao por Servico</h4>
-          <div className="h-56">
+          <div style={{ height: Math.max(200, motivoChart.length * 32) }}>
             <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie data={motivoChart} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={65} innerRadius={25}
-                  label={({ name, percent }: any) => `${name.length > 15 ? name.substring(0, 15) + '...' : name} (${(percent * 100).toFixed(0)}%)`}
-                  labelLine={true} fontSize={9}>
-                  {motivoChart.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
-                </Pie>
+              <BarChart data={motivoChart} layout="vertical" margin={{ left: 10, right: 40 }}>
+                <XAxis type="number" hide />
+                <YAxis dataKey="name" type="category" tick={{ fontSize: 9 }} width={180} interval={0} axisLine={false} />
                 <Tooltip />
-              </PieChart>
+                <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={16} label={{ position: 'right', fontSize: 9 }}>
+                  {motivoChart.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                </Bar>
+              </BarChart>
             </ResponsiveContainer>
           </div>
         </div>

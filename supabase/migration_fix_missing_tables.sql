@@ -102,6 +102,8 @@ CREATE TABLE IF NOT EXISTS acidentes (
   "tipoAcidente" TEXT NOT NULL DEFAULT '',
   gravidade TEXT NOT NULL DEFAULT 'Leve' CHECK (gravidade IN ('Leve','Moderado','Grave')),
   fotos JSONB NOT NULL DEFAULT '[]',
+  "causaAvaria" TEXT,
+  "acaoTomada" TEXT,
   "avariaVinculadaId" TEXT,
   "valorEstimado" REAL NOT NULL DEFAULT 0,
   status TEXT NOT NULL DEFAULT 'Em Análise' CHECK (status IN ('Em Análise','Concluído','Pendente Seguro'))

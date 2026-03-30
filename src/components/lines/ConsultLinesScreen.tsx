@@ -393,6 +393,11 @@ export default function ConsultLinesScreen({ viagens, setViagens, userRole }: Co
                       </div>
                     ) : (
                       <div className="flex items-center gap-3 min-w-0 flex-1">
+                        {linha.numeroLinha && (
+                          <span className="px-2 py-0.5 bg-slate-800 text-white text-[10px] font-bold font-mono rounded shrink-0" title="Código da Linha">
+                            {linha.numeroLinha}
+                          </span>
+                        )}
                         <span className="font-bold text-slate-800 truncate">{linha.nomeLinha}</span>
                         {linha.regiao && (
                           <span className="px-2 py-0.5 bg-purple-50 text-purple-700 text-[10px] font-bold rounded-full shrink-0">
@@ -409,7 +414,7 @@ export default function ConsultLinesScreen({ viagens, setViagens, userRole }: Co
                             <button
                               onClick={(e) => startEditingLine(linha.nomeLinha, linha.nomeLinha, e)}
                               className="text-gray-400 hover:text-blue-600 transition-colors shrink-0"
-                              title="Editar nome da linha"
+                              title="Editar nome e código da linha"
                             >
                               <Edit2 size={14} />
                             </button>
@@ -427,6 +432,14 @@ export default function ConsultLinesScreen({ viagens, setViagens, userRole }: Co
                   </div>
 
                   <div className="flex items-center gap-4 shrink-0">
+                    {!linha.numeroLinha && isAdmin && (
+                      <button
+                        onClick={(e) => startEditingLine(linha.nomeLinha, linha.nomeLinha, e)}
+                        className="text-[10px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded hover:bg-amber-100 shrink-0 hidden md:inline"
+                      >
+                        Atribuir Código
+                      </button>
+                    )}
                     <span className="text-xs text-gray-400 font-mono hidden md:inline">
                       {linha.servicos.length} serviço{linha.servicos.length !== 1 ? 's' : ''}
                     </span>
@@ -440,7 +453,11 @@ export default function ConsultLinesScreen({ viagens, setViagens, userRole }: Co
                 {isExpanded && (
                   <div className="p-4 bg-slate-50">
                     {/* Line summary info */}
-                    <div className="mb-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+                    <div className="mb-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-3">
+                      <div className="bg-white p-3 rounded-lg border border-gray-100">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase">Código</p>
+                        <p className="text-sm font-bold font-mono text-brand-700">{linha.numeroLinha || '-'}</p>
+                      </div>
                       <div className="bg-white p-3 rounded-lg border border-gray-100">
                         <p className="text-[10px] font-bold text-slate-400 uppercase">Empresa</p>
                         <p className="text-sm font-bold text-slate-700">{linha.empresa || '-'}</p>

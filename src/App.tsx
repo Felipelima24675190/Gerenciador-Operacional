@@ -153,7 +153,7 @@ function App() {
       case 'create-avaria':
         return <ImportAvariasScreen setAvarias={setAvariasN} motoristas={motoristas} userRole={currentUser.role} />;
       case 'view-avaria':
-        return <ConsultAvariasScreen avarias={avarias} setAvarias={setAvarias} motoristas={motoristas} resumos={resumosAvaria} setResumos={setResumosAvaria} />;
+        return <ConsultAvariasScreen avarias={avarias} setAvarias={setAvarias} motoristas={motoristas} resumos={resumosAvaria} setResumos={setResumosAvaria} acidentes={acidentes} />;
       case 'import-speed':
         return <ImportSpeedScreen setExcessos={setExcessosN} userRole={currentUser.role} />;
       case 'view-speed':

@@ -11,11 +11,12 @@ interface ConsultAvariasScreenProps {
   userRole?: UserRole;
   resumos: ResumoAvaria[];
   setResumos: React.Dispatch<React.SetStateAction<ResumoAvaria[]>>;
+  acidentes?: any[];
 }
 
 const formatCurrency = (value: number) => `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-const AvariaDetailModal = ({ group, motoristasMap, onClose, onSave }: { group: Avaria[], motoristasMap: Map<string, Motorista>, onClose: () => void, onSave: (a: Avaria) => void }) => {
+const AvariaDetailModal = ({ group, motoristasMap, onClose, onSave, acidentes }: { group: Avaria[], motoristasMap: Map<string, Motorista>, onClose: () => void, onSave: (a: Avaria) => void, acidentes?: any[] }) => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Partial<Avaria>>({});
 
@@ -116,34 +117,42 @@ const AvariaDetailModal = ({ group, motoristasMap, onClose, onSave }: { group: A
                      </div>
                   </div>
 
-                  {(avaria.descricaoAvaria || avaria.tipoAvaria || avaria.causaAvaria || avaria.acaoTomada) && (
-                    <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
-                      {avaria.descricaoAvaria && (
-                        <div className="bg-slate-50 p-3 rounded-lg">
-                          <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Descrição</p>
-                          <p className="text-xs text-slate-700">{avaria.descricaoAvaria}</p>
-                        </div>
-                      )}
-                      {avaria.tipoAvaria && (
-                        <div className="bg-slate-50 p-3 rounded-lg">
-                          <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Tipo de Avaria</p>
-                          <p className="text-xs font-bold text-slate-700">{avaria.tipoAvaria}</p>
-                        </div>
-                      )}
-                      {avaria.causaAvaria && (
-                        <div className="bg-slate-50 p-3 rounded-lg">
-                          <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Causa</p>
-                          <p className="text-xs text-slate-700">{avaria.causaAvaria}</p>
-                        </div>
-                      )}
-                      {avaria.acaoTomada && avaria.causaAvaria && (
-                        <div className="bg-slate-50 p-3 rounded-lg">
-                          <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Ação Tomada</p>
-                          <p className="text-xs text-slate-700">{avaria.acaoTomada}</p>
-                        </div>
-                      )}
-                    </div>
-                  )}
+                  {(() => {
+                    // If an accident is linked to this avaria, use its causa/acao
+                    const linkedAccident = acidentes?.find((ac: any) => ac.avariaVinculadaId === avaria.id);
+                    const causa = linkedAccident?.causaAvaria || avaria.causaAvaria;
+                    const acao = linkedAccident?.acaoTomada || avaria.acaoTomada;
+                    const showSection = avaria.descricaoAvaria || avaria.tipoAvaria || causa || acao;
+                    if (!showSection) return null;
+                    return (
+                      <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {avaria.descricaoAvaria && (
+                          <div className="bg-slate-50 p-3 rounded-lg">
+                            <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Descrição</p>
+                            <p className="text-xs text-slate-700">{avaria.descricaoAvaria}</p>
+                          </div>
+                        )}
+                        {avaria.tipoAvaria && (
+                          <div className="bg-slate-50 p-3 rounded-lg">
+                            <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Tipo de Avaria</p>
+                            <p className="text-xs font-bold text-slate-700">{avaria.tipoAvaria}</p>
+                          </div>
+                        )}
+                        {causa && (
+                          <div className="bg-slate-50 p-3 rounded-lg">
+                            <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Causa{linkedAccident?.causaAvaria ? ' (via Acidente)' : ''}</p>
+                            <p className="text-xs text-slate-700">{causa}</p>
+                          </div>
+                        )}
+                        {acao && (
+                          <div className="bg-slate-50 p-3 rounded-lg">
+                            <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Ação Tomada{linkedAccident?.acaoTomada ? ' (via Acidente)' : ''}</p>
+                            <p className="text-xs text-slate-700">{acao}</p>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </div>
               );
             })}
@@ -154,7 +163,7 @@ const AvariaDetailModal = ({ group, motoristasMap, onClose, onSave }: { group: A
   );
 };
 
-export default function ConsultAvariasScreen({ avarias, setAvarias, motoristas, resumos, setResumos }: ConsultAvariasScreenProps) {
+export default function ConsultAvariasScreen({ avarias, setAvarias, motoristas, resumos, setResumos, acidentes = [] }: ConsultAvariasScreenProps) {
   // Auto-detect date range from actual data
   const defaultDates = useMemo(() => {
     if (avarias.length === 0) return { start: format(subDays(new Date(), 90), 'yyyy-MM-dd'), end: format(new Date(), 'yyyy-MM-dd') };
@@ -465,7 +474,7 @@ export default function ConsultAvariasScreen({ avarias, setAvarias, motoristas, 
         </div>
       </div>
 
-      {selectedGroup && <AvariaDetailModal group={selectedGroup} motoristasMap={motoristaMap} onClose={() => setSelectedGroup(null)} onSave={handleUpdateAvaria} />}
+      {selectedGroup && <AvariaDetailModal group={selectedGroup} motoristasMap={motoristaMap} onClose={() => setSelectedGroup(null)} onSave={handleUpdateAvaria} acidentes={acidentes} />}
     </div>
   );
 }

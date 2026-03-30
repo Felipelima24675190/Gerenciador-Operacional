@@ -434,7 +434,9 @@ CREATE TABLE IF NOT EXISTS acidentes (
   fotos JSONB NOT NULL DEFAULT '[]',
   "avariaVinculadaId" TEXT,
   "valorEstimado" REAL NOT NULL DEFAULT 0,
-  status TEXT NOT NULL DEFAULT 'Em Análise' CHECK (status IN ('Em Análise','Concluído','Pendente Seguro'))
+  status TEXT NOT NULL DEFAULT 'Em Análise' CHECK (status IN ('Em Análise','Concluído','Pendente Seguro')),
+  "causaAvaria" TEXT,
+  "acaoTomada" TEXT
 );
 ALTER TABLE acidentes ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "allow_all_acidentes" ON acidentes FOR ALL USING (true) WITH CHECK (true);

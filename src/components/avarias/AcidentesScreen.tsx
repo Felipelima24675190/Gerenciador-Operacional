@@ -33,6 +33,8 @@ export default function AcidentesScreen({ acidentes, setAcidentes, avarias, moto
     gravidade: 'Leve' as Acidente['gravidade'],
     valorEstimado: 0,
     status: 'Em Análise' as Acidente['status'],
+    causaAvaria: '',
+    acaoTomada: '',
   });
   const [formFotos, setFormFotos] = useState<AcidenteFoto[]>([]);
 
@@ -100,6 +102,8 @@ export default function AcidentesScreen({ acidentes, setAcidentes, avarias, moto
       gravidade: 'Leve',
       valorEstimado: 0,
       status: 'Em Análise',
+      causaAvaria: '',
+      acaoTomada: '',
     });
     setFormFotos([]);
     setShowForm(false);
@@ -226,6 +230,17 @@ export default function AcidentesScreen({ acidentes, setAcidentes, avarias, moto
             <textarea value={formData.descricao} onChange={e => setFormData(p => ({ ...p, descricao: e.target.value }))} rows={3} className="w-full text-xs p-2 border border-gray-200 rounded-lg resize-none" placeholder="Descreva o acidente em detalhes..." />
           </div>
 
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <label className="text-[10px] font-bold text-slate-600 uppercase block mb-1">Causa da Avaria</label>
+              <textarea value={formData.causaAvaria} onChange={e => setFormData(p => ({ ...p, causaAvaria: e.target.value }))} rows={2} className="w-full text-xs p-2 border border-gray-200 rounded-lg resize-none" placeholder="Descreva a causa da avaria..." />
+            </div>
+            <div>
+              <label className="text-[10px] font-bold text-slate-600 uppercase block mb-1">Acao Tomada</label>
+              <textarea value={formData.acaoTomada} onChange={e => setFormData(p => ({ ...p, acaoTomada: e.target.value }))} rows={2} className="w-full text-xs p-2 border border-gray-200 rounded-lg resize-none" placeholder="Descreva a ação tomada..." />
+            </div>
+          </div>
+
           {/* Photos */}
           <div>
             <label className="text-[10px] font-bold text-slate-600 uppercase block mb-2">Fotos do Acidente</label>
@@ -302,6 +317,23 @@ export default function AcidentesScreen({ acidentes, setAcidentes, avarias, moto
                     <span className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Descricao</span>
                     <p className="text-xs text-slate-600 bg-white p-3 rounded-lg border border-gray-200">{acidente.descricao || 'Sem descricao'}</p>
                   </div>
+
+                  {(acidente.causaAvaria || acidente.acaoTomada) && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {acidente.causaAvaria && (
+                        <div>
+                          <span className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Causa da Avaria</span>
+                          <p className="text-xs text-slate-600 bg-white p-3 rounded-lg border border-gray-200">{acidente.causaAvaria}</p>
+                        </div>
+                      )}
+                      {acidente.acaoTomada && (
+                        <div>
+                          <span className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Acao Tomada</span>
+                          <p className="text-xs text-slate-600 bg-white p-3 rounded-lg border border-gray-200">{acidente.acaoTomada}</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   {/* Photos gallery */}
                   {acidente.fotos.length > 0 && (
