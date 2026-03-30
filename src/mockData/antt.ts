@@ -1,8 +1,0 @@
-import { MultaANTT } from '../types';
-
-export const mockMultas: MultaANTT[] = [
-  { id: '1', autoInfracao: 'PASLD00010912026', dataHora: '02/03/2026', empresa: 'PROGRESSO', setor: 'MANUTENÇÃO', terminal: 'RECIFE-PE', codigoInfracao: '202', descricaoInfracao: 'NO MOMENTO A FISCALIZAÇÃO, FOI CONSTATADA A AUSÊNCIA DO SELO DE CONFORMIDADE DO INMETRO NO EXTINTOR DE INCÊNDIO DO VEÍCULO.', matriculaMotorista: '26891', placaVeiculo: '', valor: 5000, status: 'Aguardando' },
-  { id: '2', autoInfracao: 'PASLD00010922026', dataHora: '02/03/2026', empresa: 'PROGRESSO', setor: 'OPERAÇÃO', terminal: 'JOÃO PESSOA-PB', codigoInfracao: '209', descricaoInfracao: 'VIAGEM PREVISTA PARA INICIAR AS 14:00 HS, CONFORME QUADRO DE HORÁRIOS CADASTRADO/BILHETE Nº 592722, INICIOU ÀS 14:26 HS.', matriculaMotorista: '25504', placaVeiculo: '', valor: 4919, status: 'Aguardando' },
-  { id: '3', autoInfracao: 'PASLD00010942026', dataHora: '02/03/2026', empresa: 'PROGRESSO', setor: 'ATRASO', terminal: 'RECIFE-PE', codigoInfracao: '202', descricaoInfracao: 'VIAGEM PREVISTA PARA INICIAR AS 14:30 HS, CONFORME QUADRO DE HORÁRIOS CADASTRADO/BILHETE Nº 609594, INICIOU ÀS 15:35 HS.', matriculaMotorista: '26891', placaVeiculo: '', valor: 4919, status: 'Aguardando' },
-  { id: '4', autoInfracao: 'PASLD00010962026', dataHora: '02/03/2026', empresa: 'CRUZEIRO', setor: 'ATRASO', terminal: 'NATAL-RN', codigoInfracao: '111', descricaoInfracao: 'VIAGEM PREVISTA PARA INICIAR AS 16H:00MIN, CONFORME QUADRO DE HORÁRIOS CADASTRADO NA ANTT E BILHETE Nº 602091. VIAGEM INICIOU ÀS 16H:33MIN.', matriculaMotorista: '26410', placaVeiculo: '', valor: 5437, status: 'Aguardando' },
-];
