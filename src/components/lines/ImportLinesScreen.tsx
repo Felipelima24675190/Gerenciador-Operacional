@@ -171,15 +171,22 @@ export default function ImportLinesScreen({ viagens, setViagens, userRole }: Imp
           a.nomeLinha.localeCompare(b.nomeLinha) || a.horarioSaida.localeCompare(b.horarioSaida)
         );
 
+        // Helper: normalize line name so both directions get the same name
+        // e.g., RECIFE(PE) X ARACAJU(SE) and ARACAJU(SE) X RECIFE(PE) → same normalized name
+        const normalizeLineName = (origem: string, destino: string): string => {
+          const [a, b] = [origem, destino].sort((x, y) => x.localeCompare(y));
+          return `${a} X ${b}`;
+        };
+
         for (const svc of sortedEntries) {
           const diasArr = [...svc.dias].sort();
-          // Merge key: same atendimento (origem×destino normalized alphabetically), and departure time
-          // Normalize: always sort origem/destino alphabetically so IDA and VOLTA merge into same line
-          // Do NOT include nomeLinha (route numbers differ) or diasOperantes (get unioned) or sentido
-          const [normalA, normalB] = [svc.origem.toLowerCase(), svc.destino.toLowerCase()].sort();
+          // Merge key: same exact origem×destino + sentido + departure time
+          // Services with same trip characteristics merge their service codes with /
+          // sentido IS included so ida and volta remain as separate viagens
           const mergeKey = [
-            normalA,
-            normalB,
+            svc.origem.toLowerCase(),
+            svc.destino.toLowerCase(),
+            svc.sentido.toLowerCase(),
             svc.horarioSaida,
           ].join('|');
 
@@ -192,15 +199,14 @@ export default function ImportLinesScreen({ viagens, setViagens, userRole }: Imp
             const daySet = new Set(existing.diasOperantes);
             diasArr.forEach(d => daySet.add(d));
             existing.diasOperantes = [...daySet].sort();
-            // Preserve the sentido from the first entry but note both directions are merged
           } else {
-            // Use normalized atendimento: always alphabetical order (e.g., ARACAJU(SE) X RECIFE(PE) → RECIFE(PE) X ARACAJU(SE) based on first entry)
-            const atendimento = svc.origem && svc.destino
-              ? `${svc.origem} X ${svc.destino}`
+            // nomeLinha is NORMALIZED so both directions appear under the same line in ConsultLinesScreen
+            const normalizedName = svc.origem && svc.destino
+              ? normalizeLineName(svc.origem, svc.destino)
               : svc.nomeLinha;
             mergeMap.set(mergeKey, {
               empresa: svc.empresa,
-              nomeLinha: atendimento,
+              nomeLinha: normalizedName,
               origem: svc.origem,
               destino: svc.destino,
               servicos: [svc.servico],
