@@ -136,15 +136,31 @@ export default function ViewAnttScreen({ multas, anttCodeDescriptions, motorista
   }, [filteredMultas]);
 
   const chartMotorista = useMemo(() => {
-    const counts: Record<string, number> = {};
+    const counts: Record<string, { count: number; nome: string; matricula: string; valor: number; codigos: Record<string, number> }> = {};
     filteredMultas.forEach(m => {
       if (m.matriculaMotorista) {
-        const nome = motoristaMap.get(m.matriculaMotorista)?.nome || m.matriculaMotorista;
-        counts[nome] = (counts[nome] || 0) + 1;
+        const mat = m.matriculaMotorista;
+        if (!counts[mat]) {
+          const mot = motoristaMap.get(mat);
+          counts[mat] = { count: 0, nome: mot?.nome || mat, matricula: mat, valor: 0, codigos: {} };
+        }
+        counts[mat].count++;
+        counts[mat].valor += m.valor || 0;
+        const cod = m.codigoInfracao || 'N/A';
+        counts[mat].codigos[cod] = (counts[mat].codigos[cod] || 0) + 1;
       }
     });
-    return Object.entries(counts).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count).slice(0, 10);
+    return Object.values(counts)
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10)
+      .map(d => ({ name: d.matricula, count: d.count, fullName: d.nome, matricula: d.matricula, valor: d.valor, codigos: d.codigos }));
   }, [filteredMultas, motoristaMap]);
+
+  const [selectedAnttMatricula, setSelectedAnttMatricula] = useState<string | null>(null);
+  const selectedAnttMotorista = useMemo(() => {
+    if (!selectedAnttMatricula) return null;
+    return chartMotorista.find(m => m.matricula === selectedAnttMatricula) || null;
+  }, [selectedAnttMatricula, chartMotorista]);
 
   const chartDataMensal = useMemo(() => {
     const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
@@ -303,21 +319,56 @@ export default function ViewAnttScreen({ multas, anttCodeDescriptions, motorista
           </div>
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+        <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm relative">
           <h4 className="text-[10px] font-black text-slate-600 uppercase text-center mb-3">Top 10 Motoristas</h4>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartMotorista} layout="vertical" margin={{ left: 10 }}>
                 <XAxis type="number" hide />
-                <YAxis dataKey="name" type="category" tick={({ x, y, payload }: any) => {
-                  const label = payload.value.length > 20 ? payload.value.substring(0, 20) + '...' : payload.value;
-                  return <text x={x} y={y} dy={4} textAnchor="end" fontSize={9} fill="#334155">{label}</text>;
-                }} width={120} interval={0} axisLine={false} />
-                <Tooltip />
-                <Bar dataKey="count" fill="#0b3f72" radius={[0, 4, 4, 0]} barSize={18} label={{ position: 'right', fontSize: 9 }} />
+                <YAxis dataKey="name" type="category" tick={{ fontSize: 10, fontWeight: 700, cursor: 'pointer' }} width={80} interval={0} axisLine={false} />
+                <Tooltip formatter={(v: number) => [`${v} multas`, 'Qtd']} labelFormatter={(_: string, payload: any[]) => payload?.[0]?.payload?.fullName || ''} />
+                <Bar
+                  dataKey="count"
+                  fill="#0b3f72"
+                  radius={[0, 4, 4, 0]}
+                  barSize={18}
+                  label={{ position: 'right', fontSize: 9 }}
+                  cursor="pointer"
+                  onClick={(data: any) => {
+                    const mat = data?.matricula || data?.payload?.matricula;
+                    if (mat) setSelectedAnttMatricula(prev => prev === mat ? null : mat);
+                  }}
+                />
               </BarChart>
             </ResponsiveContainer>
           </div>
+
+          {selectedAnttMotorista && (
+            <div
+              className="mt-3 bg-gradient-to-r from-slate-50 to-slate-100 border-2 border-blue-300 rounded-xl p-4 shadow-md cursor-pointer"
+              onClick={() => setSelectedAnttMatricula(null)}
+            >
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <p className="text-sm font-black text-slate-800">{selectedAnttMotorista.fullName}</p>
+                  <p className="text-xs text-slate-500">Matrícula: <strong>{selectedAnttMotorista.matricula}</strong></p>
+                </div>
+                <div className="text-right">
+                  <p className="text-xl font-black text-slate-800">{selectedAnttMotorista.count} <span className="text-xs font-bold text-slate-500">multas</span></p>
+                  <p className="text-xs font-bold text-slate-500">{formatCurrency(selectedAnttMotorista.valor)}</p>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {Object.entries(selectedAnttMotorista.codigos).sort((a, b) => b[1] - a[1]).map(([cod, qty]) => (
+                  <div key={cod} className="bg-white rounded-lg border border-gray-200 px-3 py-1.5 text-center">
+                    <p className="text-[9px] font-bold text-slate-500">Cód. {cod}</p>
+                    <p className="text-sm font-black text-slate-800">{qty}</p>
+                  </div>
+                ))}
+              </div>
+              <p className="mt-2 text-[10px] text-slate-400 text-center">Clique para fechar</p>
+            </div>
+          )}
         </div>
       </div>
 

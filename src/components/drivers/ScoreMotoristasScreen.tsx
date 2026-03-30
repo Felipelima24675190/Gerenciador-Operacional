@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Motorista, Ocorrencia, ExcessoVelocidade, Avaria, Acidente, EventoMotorista } from '../../types';
-import { Search, TrendingDown, TrendingUp, AlertTriangle, Award, ChevronDown, ChevronUp } from 'lucide-react';
+import { Search, TrendingDown, TrendingUp, AlertTriangle, Award, ChevronDown, ChevronUp, Edit2, Check, X } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
 } from 'recharts';
@@ -36,14 +36,24 @@ interface MotoristaScore {
   };
 }
 
-// Deduction weights
-const PESOS = {
-  falta: 5,       // -5 per falta
-  excesso: 3,     // -3 per excesso de velocidade
-  atraso: 2,      // -2 per atraso de linha
-  avaria: 8,      // -8 per avaria
-  acidente: 15,   // -15 per acidente
+// Default deduction weights
+const DEFAULT_PESOS = {
+  falta: 5,
+  excesso: 3,
+  atraso: 2,
+  avaria: 8,
+  acidente: 15,
 };
+
+type PesosConfig = typeof DEFAULT_PESOS;
+
+function loadPesos(): PesosConfig {
+  try {
+    const s = localStorage.getItem('scorePesos');
+    if (s) return { ...DEFAULT_PESOS, ...JSON.parse(s) };
+  } catch { /* ignore */ }
+  return { ...DEFAULT_PESOS };
+}
 
 function parseDateBR(s: string): Date | null {
   if (!s) return null;
@@ -92,6 +102,17 @@ export default function ScoreMotoristasScreen({
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
   const [expandedMatricula, setExpandedMatricula] = useState<string | null>(null);
   const [filterFaixa, setFilterFaixa] = useState('Todas');
+
+  // Editable persistent weights
+  const [PESOS, setPESOS] = useState<PesosConfig>(loadPesos);
+  const [editingPesos, setEditingPesos] = useState(false);
+  const [tempPesos, setTempPesos] = useState<PesosConfig>({ ...DEFAULT_PESOS });
+
+  const savePesos = () => {
+    setPESOS(tempPesos);
+    localStorage.setItem('scorePesos', JSON.stringify(tempPesos));
+    setEditingPesos(false);
+  };
 
   // Date range: last 3 months from today
   const dateRange = useMemo(() => {
@@ -291,16 +312,59 @@ export default function ScoreMotoristasScreen({
         </div>
       </div>
 
-      {/* Scoring info */}
+      {/* Scoring info — editable */}
       <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
         <div className="flex items-start gap-3">
           <Award size={18} className="text-brand-600 mt-0.5 shrink-0" />
-          <div>
-            <p className="text-xs font-bold text-slate-700">Algoritmo de Score — Últimos 3 meses</p>
-            <p className="text-[10px] text-slate-500 mt-1">
-              Cada motorista inicia com <strong>100 pontos</strong>. Deduções:
-              Falta <strong>−{PESOS.falta}pts</strong> · Excesso de Velocidade <strong>−{PESOS.excesso}pts</strong> · Atraso de Linha <strong>−{PESOS.atraso}pts</strong> · Avaria <strong>−{PESOS.avaria}pts</strong> · Acidente <strong>−{PESOS.acidente}pts</strong>
-            </p>
+          <div className="flex-1">
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-bold text-slate-700">Algoritmo de Score — Últimos 3 meses</p>
+              {!editingPesos && (
+                <button
+                  onClick={() => { setTempPesos({ ...PESOS }); setEditingPesos(true); }}
+                  className="text-[10px] font-bold text-brand-500 hover:text-brand-700 flex items-center gap-1"
+                >
+                  <Edit2 size={10} /> Editar pesos
+                </button>
+              )}
+            </div>
+            {!editingPesos ? (
+              <p className="text-[10px] text-slate-500 mt-1">
+                Cada motorista inicia com <strong>100 pontos</strong>. Deduções:
+                Falta <strong>−{PESOS.falta}pts</strong> · Excesso de Velocidade <strong>−{PESOS.excesso}pts</strong> · Atraso de Linha <strong>−{PESOS.atraso}pts</strong> · Avaria <strong>−{PESOS.avaria}pts</strong> · Acidente <strong>−{PESOS.acidente}pts</strong>
+              </p>
+            ) : (
+              <div className="mt-2">
+                <p className="text-[10px] text-slate-500 mb-2">Defina quantos pontos cada infração deduz do score (100 pontos base):</p>
+                <div className="grid grid-cols-5 gap-2">
+                  {([
+                    { key: 'falta' as const, label: 'Falta' },
+                    { key: 'excesso' as const, label: 'Exc. Velocidade' },
+                    { key: 'atraso' as const, label: 'Atraso de Linha' },
+                    { key: 'avaria' as const, label: 'Avaria' },
+                    { key: 'acidente' as const, label: 'Acidente' },
+                  ]).map(item => (
+                    <div key={item.key} className="bg-white border border-gray-200 rounded-lg p-2 text-center">
+                      <label className="text-[9px] font-bold text-slate-500 uppercase block mb-1">{item.label}</label>
+                      <input
+                        type="number"
+                        min={0}
+                        max={100}
+                        value={tempPesos[item.key]}
+                        onChange={e => setTempPesos(p => ({ ...p, [item.key]: Math.max(0, parseInt(e.target.value) || 0) }))}
+                        className="w-full text-center text-sm font-black border border-gray-200 rounded p-1 focus:ring-1 focus:ring-brand-500"
+                      />
+                      <p className="text-[9px] text-slate-400 mt-0.5">−pts/infração</p>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex gap-2 mt-3">
+                  <button onClick={savePesos} className="px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-xs font-bold hover:bg-emerald-700 flex items-center gap-1"><Check size={12} /> Salvar</button>
+                  <button onClick={() => setEditingPesos(false)} className="px-3 py-1.5 bg-slate-200 text-slate-700 rounded-lg text-xs font-bold hover:bg-slate-300 flex items-center gap-1"><X size={12} /> Cancelar</button>
+                  <button onClick={() => setTempPesos({ ...DEFAULT_PESOS })} className="px-3 py-1.5 bg-slate-100 text-slate-500 rounded-lg text-xs font-bold hover:bg-slate-200">Restaurar padrão</button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

@@ -75,6 +75,36 @@ export default function ConsultLinesScreen({ viagens, setViagens, userRole }: Co
     prevFim: '00:00'
   });
 
+  // Edit Viagem State
+  const [editingViagemId, setEditingViagemId] = useState<string | null>(null);
+  const [editViagemData, setEditViagemData] = useState<Partial<Viagem>>({});
+
+  const startEditingViagem = (viagem: Viagem) => {
+    setEditingViagemId(viagem.id);
+    setEditViagemData({
+      atendimento: viagem.atendimento,
+      sentido: viagem.sentido,
+      pontoInicio: viagem.pontoInicio,
+      pontoFim: viagem.pontoFim,
+      horarioSaida: viagem.horarioSaida || formatTimeOnly(viagem.prevInicio),
+      servico: viagem.servico,
+    });
+  };
+
+  const saveEditingViagem = () => {
+    if (!editingViagemId) return;
+    setViagens(prev => prev.map(v =>
+      v.id === editingViagemId ? { ...v, ...editViagemData } : v
+    ));
+    setEditingViagemId(null);
+    setEditViagemData({});
+  };
+
+  const cancelEditingViagem = () => {
+    setEditingViagemId(null);
+    setEditViagemData({});
+  };
+
   // Drag and Drop State
   const [draggedItemIndex, setDraggedItemIndex] = useState<number | null>(null);
 
@@ -641,19 +671,21 @@ export default function ConsultLinesScreen({ viagens, setViagens, userRole }: Co
                         </div>
 
                         <div className="space-y-1.5">
-                          {trips.map((viagem, index) => (
+                          {trips.map((viagem, index) => {
+                            const isEditing = editingViagemId === viagem.id;
+                            return (
+                            <div key={viagem.id}>
                             <div
-                              key={viagem.id}
-                              draggable={isAdmin}
+                              draggable={isAdmin && !isEditing}
                               onDragStart={(e) => handleDragStart(e, index)}
                               onDragEnd={handleDragEnd}
                               onDragOver={handleDragOver}
                               onDrop={(e) => handleDrop(e, linha.nomeLinha, index)}
-                              className={`grid ${isAdmin ? 'grid-cols-[32px_80px_1fr_64px_1fr_80px_48px_110px]' : 'grid-cols-[32px_80px_1fr_64px_1fr_80px_110px]'} gap-3 items-center bg-white border border-gray-200 rounded-lg p-2.5 text-sm hover:border-blue-300 hover:shadow-sm transition-all ${isAdmin ? 'cursor-move' : ''} group relative`}
+                              className={`grid ${isAdmin ? 'grid-cols-[32px_80px_1fr_64px_1fr_80px_48px_110px]' : 'grid-cols-[32px_80px_1fr_64px_1fr_80px_110px]'} gap-3 items-center bg-white border border-gray-200 rounded-lg p-2.5 text-sm hover:border-blue-300 hover:shadow-sm transition-all ${isAdmin && !isEditing ? 'cursor-move' : ''} group relative`}
                               style={{ borderLeft: (isAdmin && viagem.grupoCor) ? `4px solid ${viagem.grupoCor}` : '1px solid #e5e7eb' }}
                             >
                               <div className="flex justify-center text-gray-400 group-hover:text-blue-500">
-                                {isAdmin ? <GripVertical size={16} /> : <span className="text-[10px] font-bold">{viagem.ordem}</span>}
+                                {isAdmin && !isEditing ? <GripVertical size={16} /> : <span className="text-[10px] font-bold">{viagem.ordem}</span>}
                               </div>
                               <div className="font-mono text-xs text-slate-600 font-bold truncate" title={viagem.servico}>{viagem.servico || '-'}</div>
                               <div className="font-medium text-slate-700 truncate text-xs" title={viagem.atendimento}>{viagem.atendimento}</div>
@@ -665,14 +697,23 @@ export default function ConsultLinesScreen({ viagens, setViagens, userRole }: Co
                               <div className="text-slate-600 truncate text-xs" title={`${viagem.pontoInicio} → ${viagem.pontoFim}`}>
                                 {viagem.pontoInicio} → {viagem.pontoFim}
                               </div>
-                              <div className="font-mono text-slate-700 text-xs text-center">
+                              <div className="font-mono text-slate-700 text-xs text-center flex items-center gap-1">
                                 {isAdmin ? (
-                                  <input
-                                    type="time"
-                                    value={viagem.horarioSaida || formatTimeOnly(viagem.prevInicio)}
-                                    onChange={(e) => saveTripEdit(viagem.id, 'horarioSaida', e.target.value)}
-                                    className="bg-slate-50 border border-slate-200 rounded px-1 py-0.5 w-[75px] focus:ring-1 focus:ring-blue-500 text-center"
-                                  />
+                                  <>
+                                    <input
+                                      type="time"
+                                      value={viagem.horarioSaida || formatTimeOnly(viagem.prevInicio)}
+                                      onChange={(e) => saveTripEdit(viagem.id, 'horarioSaida', e.target.value)}
+                                      className="bg-slate-50 border border-slate-200 rounded px-1 py-0.5 w-[68px] focus:ring-1 focus:ring-blue-500 text-center"
+                                    />
+                                    <button
+                                      onClick={(e) => { e.stopPropagation(); startEditingViagem(viagem); }}
+                                      className="text-slate-400 hover:text-blue-600 transition-colors"
+                                      title="Editar viagem"
+                                    >
+                                      <Edit2 size={12} />
+                                    </button>
+                                  </>
                                 ) : <span>{viagem.horarioSaida || formatTimeOnly(viagem.prevInicio)}</span>}
                               </div>
                               {isAdmin && (
@@ -709,7 +750,46 @@ export default function ConsultLinesScreen({ viagens, setViagens, userRole }: Co
                                 )}
                               </div>
                             </div>
-                          ))}
+                            {/* Inline edit panel */}
+                            {isEditing && (
+                              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-1 grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                                <div>
+                                  <label className="text-[10px] font-bold text-slate-600 uppercase block mb-1">Serviço</label>
+                                  <input value={editViagemData.servico || ''} onChange={e => setEditViagemData(p => ({ ...p, servico: e.target.value }))} className="w-full p-1.5 border border-gray-200 rounded text-xs" />
+                                </div>
+                                <div>
+                                  <label className="text-[10px] font-bold text-slate-600 uppercase block mb-1">Atendimento</label>
+                                  <input value={editViagemData.atendimento || ''} onChange={e => setEditViagemData(p => ({ ...p, atendimento: e.target.value }))} className="w-full p-1.5 border border-gray-200 rounded text-xs" />
+                                </div>
+                                <div>
+                                  <label className="text-[10px] font-bold text-slate-600 uppercase block mb-1">Sentido</label>
+                                  <select value={editViagemData.sentido || 'Ida'} onChange={e => setEditViagemData(p => ({ ...p, sentido: e.target.value }))} className="w-full p-1.5 border border-gray-200 rounded text-xs">
+                                    <option value="Ida">Ida</option>
+                                    <option value="Volta">Volta</option>
+                                  </select>
+                                </div>
+                                <div>
+                                  <label className="text-[10px] font-bold text-slate-600 uppercase block mb-1">Hora Saída</label>
+                                  <input type="time" value={editViagemData.horarioSaida || ''} onChange={e => setEditViagemData(p => ({ ...p, horarioSaida: e.target.value }))} className="w-full p-1.5 border border-gray-200 rounded text-xs" />
+                                </div>
+                                <div>
+                                  <label className="text-[10px] font-bold text-slate-600 uppercase block mb-1">Ponto Início (Origem)</label>
+                                  <input value={editViagemData.pontoInicio || ''} onChange={e => setEditViagemData(p => ({ ...p, pontoInicio: e.target.value }))} className="w-full p-1.5 border border-gray-200 rounded text-xs" />
+                                </div>
+                                <div>
+                                  <label className="text-[10px] font-bold text-slate-600 uppercase block mb-1">Ponto Fim (Destino)</label>
+                                  <input value={editViagemData.pontoFim || ''} onChange={e => setEditViagemData(p => ({ ...p, pontoFim: e.target.value }))} className="w-full p-1.5 border border-gray-200 rounded text-xs" />
+                                </div>
+                                <div className="flex items-end gap-2 col-span-2">
+                                  <button onClick={saveEditingViagem} className="flex items-center gap-1 px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-xs font-bold hover:bg-emerald-700"><Check size={12} /> Salvar</button>
+                                  <button onClick={cancelEditingViagem} className="flex items-center gap-1 px-3 py-1.5 bg-slate-200 text-slate-700 rounded-lg text-xs font-bold hover:bg-slate-300"><X size={12} /> Cancelar</button>
+                                  <button onClick={() => { if (confirm('Excluir esta viagem?')) { setViagens(prev => prev.filter(v => v.id !== viagem.id)); setEditingViagemId(null); } }} className="flex items-center gap-1 px-3 py-1.5 bg-red-100 text-red-600 rounded-lg text-xs font-bold hover:bg-red-200"><Trash2 size={12} /> Excluir</button>
+                                </div>
+                              </div>
+                            )}
+                            </div>
+                          );
+                          })}
                         </div>
                       </>
                     )}
