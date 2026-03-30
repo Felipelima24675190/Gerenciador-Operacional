@@ -206,7 +206,8 @@ export function usePersistedState<T>(
             await upsertChunked(table, snapshot as any[]);
             // 2) Fetch remote PKs and delete stale ones
             const remotePks = await fetchAllPks(table);
-            const localPks = new Set(snapshot.map((r: any) => r.id ?? r.matricula ?? r.key ?? r.codigo));
+            const pkCol = detectPkColumn(table);
+            const localPks = new Set(snapshot.map((r: any) => r[pkCol]));
             const toDelete = remotePks.filter(pk => !localPks.has(pk));
             if (toDelete.length > 0) {
               const pkCol = detectPkColumn(table);

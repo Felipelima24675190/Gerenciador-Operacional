@@ -60,9 +60,10 @@ export default function ConsultMaintenanceScreen({ manutencoes, historicoManuten
     const avgTempo = totalHistorico > 0
       ? Math.round(historicoManutencao.reduce((acc, h) => acc + h.tempoOficinaHoras, 0) / totalHistorico)
       : 0;
-    const totalVeiculos = veiculos.length;
+    const veiculosAtivos = veiculos.filter(v => v.status?.toUpperCase() !== 'INATIVO');
+    const totalVeiculos = veiculosAtivos.length;
     const prefixosNaOficina = new Set(manutencoes.map(m => m.prefixo));
-    const disponiveis = veiculos.filter(v => !prefixosNaOficina.has(v.prefixo)).length;
+    const disponiveis = veiculosAtivos.filter(v => !prefixosNaOficina.has(v.prefixo)).length;
     return { naOficina, totalHistorico, avgTempo, totalVeiculos, disponiveis };
   }, [manutencoes, historicoManutencao, veiculos]);
 
@@ -118,47 +119,23 @@ export default function ConsultMaintenanceScreen({ manutencoes, historicoManuten
     });
 
     const data: any[] = [];
-    // Carry-forward: keep last known value per type (max 2 days)
-    const lastKnown: Record<string, { value: number; daysAgo: number }> = {};
-    const lastKnownPrev: Record<string, { value: number; daysAgo: number }> = {};
 
     for (let i = 0; i < diffDays; i++) {
       const currentDate = addDays(start, i);
       const prevDate = addDays(prevStart, i);
-      const label = format(currentDate, 'dd/MM');
       const maintenanceCurrent = getMaintenancePrefixosOnDate(currentDate);
       const maintenancePrev = getMaintenancePrefixosOnDate(prevDate);
 
+      // Only include days that have at least one vehicle in maintenance
+      if (maintenanceCurrent.size === 0 && maintenancePrev.size === 0) continue;
+
+      const label = format(currentDate, 'dd/MM');
       const entry: any = { name: label };
 
       tiposSelecionados.forEach(tipo => {
         const prefixos = veiculosByTipo[tipo] || [];
-        const totalTipo = prefixos.length;
-        const inMaintCurrent = prefixos.filter(p => maintenanceCurrent.has(p)).length;
-        const inMaintPrev = prefixos.filter(p => maintenancePrev.has(p)).length;
-
-        // Current period
-        if (inMaintCurrent > 0 || totalTipo > 0) {
-          entry[tipo] = inMaintCurrent;
-          lastKnown[tipo] = { value: inMaintCurrent, daysAgo: 0 };
-        } else if (lastKnown[tipo] && lastKnown[tipo].daysAgo < 2) {
-          entry[tipo] = lastKnown[tipo].value;
-          lastKnown[tipo].daysAgo++;
-        } else {
-          entry[tipo] = 0;
-        }
-
-        // Previous period (dotted)
-        const prevKey = `${tipo} (Anterior)`;
-        if (inMaintPrev > 0 || totalTipo > 0) {
-          entry[prevKey] = inMaintPrev;
-          lastKnownPrev[tipo] = { value: inMaintPrev, daysAgo: 0 };
-        } else if (lastKnownPrev[tipo] && lastKnownPrev[tipo].daysAgo < 2) {
-          entry[prevKey] = lastKnownPrev[tipo].value;
-          lastKnownPrev[tipo].daysAgo++;
-        } else {
-          entry[prevKey] = 0;
-        }
+        entry[tipo] = prefixos.filter(p => maintenanceCurrent.has(p)).length;
+        entry[`${tipo} (Anterior)`] = prefixos.filter(p => maintenancePrev.has(p)).length;
       });
 
       data.push(entry);

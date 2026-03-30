@@ -48,7 +48,7 @@ export default function ImportOciosoScreen({ registros, setRegistros, linhas, se
     }
     const reader = new FileReader();
     reader.onload = e => {
-      const text = e.target?.result as string;
+      const text = (e.target?.result as string).replace(/^\uFEFF/, '');
       const lines = text.split('\n');
       const novosRegistros: RegistroOciosidade[] = [];
 
@@ -98,7 +98,7 @@ export default function ImportOciosoScreen({ registros, setRegistros, linhas, se
     }
     const reader = new FileReader();
     reader.onload = e => {
-      const text = e.target?.result as string;
+      const text = (e.target?.result as string).replace(/^\uFEFF/, '');
       const fileLines = text.split('\n');
       const novosRegistros: RegistroLinha[] = [];
 

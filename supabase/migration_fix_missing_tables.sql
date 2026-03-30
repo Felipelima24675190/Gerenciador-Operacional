@@ -408,3 +408,6 @@ DO $$ BEGIN ALTER TABLE monitriips ADD COLUMN "linhaAssociada" TEXT; EXCEPTION W
 -- acidentes
 DO $$ BEGIN ALTER TABLE acidentes ADD COLUMN "causaAvaria" TEXT; EXCEPTION WHEN duplicate_column THEN NULL; END $$;
 DO $$ BEGIN ALTER TABLE acidentes ADD COLUMN "acaoTomada" TEXT; EXCEPTION WHEN duplicate_column THEN NULL; END $$;
+
+-- antt_code_descriptions: campo valor faltando (causa do bug: ANTT codes não sincronizavam)
+DO $$ BEGIN ALTER TABLE antt_code_descriptions ADD COLUMN valor REAL NOT NULL DEFAULT 0; EXCEPTION WHEN duplicate_column THEN NULL; END $$;

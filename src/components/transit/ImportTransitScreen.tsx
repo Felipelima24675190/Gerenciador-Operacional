@@ -63,13 +63,9 @@ export default function ImportTransitScreen({ multas, setMultas, motoristas, use
         if (first === 'DATA DA INFRAÇÃO' || first === 'DATA DA INFRAÇAO' || first === 'DATA') continue;
         if (parts.length < 5) continue;
 
-        // Detect format: old has 16 cols (with NOME DO MOTORISTA), new has 15 cols (without)
-        // New format:
-        // 0 DATA DA INFRAÇÃO, 1 VEÍCULO, 2 ORGÃO ATUADOR, 3 DESCRIÇÃO DA MULTA,
-        // 4 NÚMERO DO AUTO, 5 VALOR COBRADO, 6 VALOR RECUPERADO,
-        // 7 MOTORISTA IDENTIFICADO?, 8 MATRÍCULA DO MOTORISTA,
-        // 9 GESTOR, 10 FILIAL, 11 ENVIADO AO GERENTE?,
-        // 12 GERENTE DEVOLVEU?, 13 LANÇADO NO GLOBUS?, 14 OBSERVAÇÃO
+        // Formats:
+        // New (14 cols): DATA;VEÍCULO;ORGÃO;DESCRIÇÃO;AUTO;VALOR COBRADO;VALOR RECUPERADO;IDENTIFICADO?;MATRÍCULA;GESTOR;ENVIADO GERENTE?;DEVOLVEU?;GLOBUS?;OBS
+        // Old (16 cols): ...same but with NOME DO MOTORISTA at 9, GESTOR 10, FILIAL 11, etc.
 
         const get = (idx: number) => parts[idx]?.trim() || '';
 
@@ -83,30 +79,29 @@ export default function ImportTransitScreen({ multas, setMultas, motoristas, use
         const motoristaIdentificado = get(7).toUpperCase() === 'SIM';
         const matriculaMotorista = get(8);
 
-        // Auto-detect: if column 9 looks like a name (has spaces, letters), use old 16-col layout
-        const col9 = get(9);
-        const isOldFormat = parts.length >= 16 || (col9.length > 5 && /[a-zA-Z].*\s+[a-zA-Z]/.test(col9) && !['SIM','NÃO','NAO'].includes(col9.toUpperCase()));
+        // Lookup motorista from base
+        const mot = motoristas.find(m => m.matricula === matriculaMotorista);
+        const nomeMotorista = mot ? mot.nome : (matriculaMotorista ? `DESLIGADO` : '');
+        const filial = mot ? mot.filial : (matriculaMotorista ? matriculaMotorista : '');
 
-        let nomeMotorista: string, gestor: string, filial: string, enviadoGerente: string, gerenteDevolveu: string, lancadoGlobus: string, observacao: string;
+        // Detect old format (16 cols with NOME+FILIAL) vs new (14 cols without)
+        const isOldFormat = parts.length >= 16;
+
+        let gestor: string, enviadoGerente: string, gerenteDevolveu: string, lancadoGlobus: string, observacao: string;
         if (isOldFormat) {
-          // Old 16-col: col 9 = NOME DO MOTORISTA
-          nomeMotorista = get(9);
+          // Old: col 9=NOME, 10=GESTOR, 11=FILIAL, 12=ENVIADO, 13=DEVOLVEU, 14=GLOBUS, 15=OBS
           gestor = get(10);
-          filial = get(11);
           enviadoGerente = get(12);
           gerenteDevolveu = get(13);
           lancadoGlobus = get(14);
           observacao = get(15);
         } else {
-          // New 15-col: no NOME column, lookup by matricula
-          const mot = motoristas.find(m => m.matricula === matriculaMotorista);
-          nomeMotorista = mot ? mot.nome : '';
+          // New 14-col: col 9=GESTOR, 10=ENVIADO, 11=DEVOLVEU, 12=GLOBUS, 13=OBS
           gestor = get(9);
-          filial = get(10);
-          enviadoGerente = get(11);
-          gerenteDevolveu = get(12);
-          lancadoGlobus = get(13);
-          observacao = get(14);
+          enviadoGerente = get(10);
+          gerenteDevolveu = get(11);
+          lancadoGlobus = get(12);
+          observacao = get(13);
         }
 
         if (!dataInfracao && !veiculo) continue;
@@ -185,8 +180,8 @@ export default function ImportTransitScreen({ multas, setMultas, motoristas, use
             {[
               'DATA DA INFRAÇÃO', 'VEÍCULO', 'ORGÃO ATUADOR', 'DESCRIÇÃO DA MULTA',
               'NÚMERO DO AUTO', 'VALOR COBRADO', 'VALOR RECUPERADO', 'MOTORISTA IDENTIFICADO?',
-              'MATRÍCULA', 'GESTOR', 'FILIAL',
-              'ENVIADO AO GERENTE?', 'GERENTE DEVOLVEU?', 'LANÇADO NO GLOBUS?', 'OBSERVAÇÃO',
+              'MATRÍCULA', 'GESTOR', 'ENVIADO AO GERENTE?', 'GERENTE DEVOLVEU?',
+              'LANÇADO NO GLOBUS?', 'OBSERVAÇÃO',
             ].map((col, i) => (
               <span key={i} className="text-[10px] bg-white border border-slate-200 rounded px-2 py-1 text-slate-600 font-mono truncate" title={col}>
                 {i + 1}. {col}

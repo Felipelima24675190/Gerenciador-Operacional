@@ -67,7 +67,7 @@ export default function ImportMonitriipScreen({ monitriips, setMonitriips, userR
 
     const reader = new FileReader();
     reader.onload = e => {
-      const text = e.target?.result as string;
+      const text = (e.target?.result as string).replace(/^\uFEFF/, '');
       const lines = text.split('\n');
       const novas: Monitriip[] = [];
 
