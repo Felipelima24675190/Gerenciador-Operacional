@@ -71,13 +71,25 @@ export default function ImportMonitriipScreen({ monitriips, setMonitriips, userR
       const lines = text.split('\n');
       const novas: Monitriip[] = [];
 
+      // Detect separator and Imei column from header
+      const headerLine = (lines[0] || '').trim();
+      const sep = headerLine.includes(';') ? ';' : ',';
+      const headerCols = headerLine.split(sep).map(h => h.trim().toLowerCase());
+      const hasImei = headerCols[0]?.includes('imei');
+
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i].trim();
         if (!line) continue;
-        const cols = line.split(';');
+        const rawCols = line.split(sep);
 
-        // Skip header: detect by "Partida" in col[0]
-        if (cols[0] && cols[0].includes('Partida')) continue;
+        // Skip header
+        const first = rawCols[0]?.trim().toLowerCase() || '';
+        if (first.includes('imei') || first.includes('partida')) continue;
+
+        // If Imei column exists, skip it (offset by 1)
+        const offset = hasImei ? 1 : 0;
+        const cols = rawCols.slice(offset);
+
         if (cols.length < 10) continue;
 
         const partidaPrevista = cols[0]?.trim() || '';
@@ -188,7 +200,7 @@ export default function ImportMonitriipScreen({ monitriips, setMonitriips, userR
         <div>
           <p className="font-bold">Importação — Monitriip</p>
           <p className="text-xs mt-0.5 text-blue-700">
-            Arquivo CSV com separador <strong>;</strong>. Colunas: Partida Prevista; Partida; Chegada; Serviço; Viagem Valida?; Atraso &gt;30min; Venda Passagem; Cancel. Passagem; Embarque; NoShow; Inicio/Fim Viagem; Jornada Motorista; Detector Parada; Vel. Tempo Localização; Vel. Temp. Loc. Mínima.
+            Arquivo CSV com separador <strong>;</strong> ou <strong>,</strong>. Colunas: Partida Prevista, Partida, Chegada, Servi\u00e7o, Viagem Valida?, Atraso &gt;30min, Venda Passagem, Cancel. Passagem, Embarque, NoShow, Inicio/Fim Viagem, Jornada Motorista, Detector Parada, Vel. Tempo Localiza\u00e7\u00e3o, Vel. Temp. Loc. M\u00ednima. A coluna Imei (se presente) \u00e9 ignorada automaticamente.
             <br />A importação <strong>acumula</strong> registros (dados duplicados são substituídos).
           </p>
         </div>

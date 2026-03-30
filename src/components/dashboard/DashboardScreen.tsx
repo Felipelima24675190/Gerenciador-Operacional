@@ -80,27 +80,35 @@ export default function DashboardScreen({ motoristas, ocorrencias, viagens, setO
     return ['Todas', ...Array.from(filiais)].sort();
   }, [motoristas]);
 
-  const linhasUnicas = useMemo(() => {
-    const linhas = new Map<string, string>(); // codigo -> nome
-    // Build from voyages base to ensure all lines are present
+  // Build a resolver to map codes/numbers to full line names
+  const resolveLinha = useMemo(() => {
+    const byNome = new Map<string, string>();
+    const byNumero = new Map<string, string>();
+    const byServico = new Map<string, string>();
     viagens.forEach(v => {
-      linhas.set(v.nomeLinha, v.nomeLinha);
-      // Also index by servico for quick filtering
-      if (v.servico) linhas.set(v.servico, v.nomeLinha);
-    });
-    // Add lines from occurrences that might not be in the base
-    ocorrencias.forEach(o => {
-      if (!linhas.has(o.nomeLinha) && !linhas.has(o.numeroLinha)) {
-        linhas.set(o.numeroLinha, o.nomeLinha);
+      byNome.set(v.nomeLinha, v.nomeLinha);
+      if (v.numeroLinha) byNumero.set(v.numeroLinha, v.nomeLinha);
+      if (v.servico) {
+        v.servico.split('/').forEach(s => byServico.set(s.trim(), v.nomeLinha));
       }
     });
-    // Deduplicate by nome
-    const uniqueNames = new Map<string, string>();
-    linhas.forEach((nome, key) => {
-      if (!uniqueNames.has(nome)) uniqueNames.set(nome, key);
+    return (codeOrName: string): string => {
+      const t = codeOrName.trim();
+      return byNome.get(t) || byNumero.get(t) || byServico.get(t) || t;
+    };
+  }, [viagens]);
+
+  const linhasUnicas = useMemo(() => {
+    const uniqueNames = new Set<string>();
+    // Build from voyages base
+    viagens.forEach(v => uniqueNames.add(v.nomeLinha));
+    // Add lines from occurrences, resolving codes to names
+    ocorrencias.forEach(o => {
+      const resolved = resolveLinha(o.nomeLinha) || resolveLinha(o.numeroLinha);
+      uniqueNames.add(resolved);
     });
-    return ['Todas', ...Array.from(uniqueNames.keys())].sort();
-  }, [viagens, ocorrencias]);
+    return ['Todas', ...Array.from(uniqueNames).sort()];
+  }, [viagens, ocorrencias, resolveLinha]);
 
   const ocorrenciasFiltradas = useMemo(() => {
     return ocorrencias.filter(o => {
@@ -117,8 +125,9 @@ export default function DashboardScreen({ motoristas, ocorrencias, viagens, setO
       const filial = motorista ? motorista.filial : 'Desconhecida';
       const matchFilial = filialFilter === 'Todas' || filial === filialFilter;
 
-      // Linha Filter
-      const matchLinha = linhaFilter === 'Todas' || o.nomeLinha === linhaFilter || o.numeroLinha === linhaFilter;
+      // Linha Filter — resolve code to name for consistent matching
+      const resolvedLinha = resolveLinha(o.nomeLinha) || resolveLinha(o.numeroLinha);
+      const matchLinha = linhaFilter === 'Todas' || resolvedLinha === linhaFilter || o.nomeLinha === linhaFilter || o.numeroLinha === linhaFilter;
       
       return matchDate && matchFilial && matchLinha;
     });

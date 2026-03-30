@@ -63,23 +63,13 @@ export default function ImportTransitScreen({ multas, setMultas, motoristas, use
         if (first === 'DATA DA INFRAÇÃO' || first === 'DATA DA INFRAÇAO' || first === 'DATA') continue;
         if (parts.length < 5) continue;
 
-        // Colunas (baseado no modelo):
-        // 0  DATA DA INFRAÇÃO
-        // 1  VEÍCULO
-        // 2  ORGÃO ATUADOR
-        // 3  DESCRIÇÃO DA MULTA
-        // 4  NÚMERO DO AUTO DE INFRAÇÃO
-        // 5  VALOR COBRADO
-        // 6  VALOR RECUPERADO
-        // 7  MOTORISTA INDENTIFICADO?
-        // 8  MATRÍCULA DO MOTORISTA
-        // 9  NOME DO MOTORISTA
-        // 10 GESTOR
-        // 11 FILIAL
-        // 12 ENVIADO PARA O GERENTE?
-        // 13 GERENTE DEVOLVEU O VALE?
-        // 14 LANÇADO NO GLOBUS?
-        // 15 OBSERVAÇÃO
+        // Detect format: old has 16 cols (with NOME DO MOTORISTA), new has 15 cols (without)
+        // New format:
+        // 0 DATA DA INFRAÇÃO, 1 VEÍCULO, 2 ORGÃO ATUADOR, 3 DESCRIÇÃO DA MULTA,
+        // 4 NÚMERO DO AUTO, 5 VALOR COBRADO, 6 VALOR RECUPERADO,
+        // 7 MOTORISTA IDENTIFICADO?, 8 MATRÍCULA DO MOTORISTA,
+        // 9 GESTOR, 10 FILIAL, 11 ENVIADO AO GERENTE?,
+        // 12 GERENTE DEVOLVEU?, 13 LANÇADO NO GLOBUS?, 14 OBSERVAÇÃO
 
         const get = (idx: number) => parts[idx]?.trim() || '';
 
@@ -92,13 +82,32 @@ export default function ImportTransitScreen({ multas, setMultas, motoristas, use
         const valorRecuperado = parseBRL(get(6));
         const motoristaIdentificado = get(7).toUpperCase() === 'SIM';
         const matriculaMotorista = get(8);
-        const nomeMotorista = get(9);
-        const gestor = get(10);
-        const filial = get(11);
-        const enviadoGerente = get(12);
-        const gerenteDevolveu = get(13);
-        const lancadoGlobus = get(14);
-        const observacao = get(15);
+
+        // Auto-detect: if column 9 looks like a name (has spaces, letters), use old 16-col layout
+        const col9 = get(9);
+        const isOldFormat = parts.length >= 16 || (col9.length > 5 && /[a-zA-Z].*\s+[a-zA-Z]/.test(col9) && !['SIM','NÃO','NAO'].includes(col9.toUpperCase()));
+
+        let nomeMotorista: string, gestor: string, filial: string, enviadoGerente: string, gerenteDevolveu: string, lancadoGlobus: string, observacao: string;
+        if (isOldFormat) {
+          // Old 16-col: col 9 = NOME DO MOTORISTA
+          nomeMotorista = get(9);
+          gestor = get(10);
+          filial = get(11);
+          enviadoGerente = get(12);
+          gerenteDevolveu = get(13);
+          lancadoGlobus = get(14);
+          observacao = get(15);
+        } else {
+          // New 15-col: no NOME column, lookup by matricula
+          const mot = motoristas.find(m => m.matricula === matriculaMotorista);
+          nomeMotorista = mot ? mot.nome : '';
+          gestor = get(9);
+          filial = get(10);
+          enviadoGerente = get(11);
+          gerenteDevolveu = get(12);
+          lancadoGlobus = get(13);
+          observacao = get(14);
+        }
 
         if (!dataInfracao && !veiculo) continue;
 
@@ -176,7 +185,7 @@ export default function ImportTransitScreen({ multas, setMultas, motoristas, use
             {[
               'DATA DA INFRAÇÃO', 'VEÍCULO', 'ORGÃO ATUADOR', 'DESCRIÇÃO DA MULTA',
               'NÚMERO DO AUTO', 'VALOR COBRADO', 'VALOR RECUPERADO', 'MOTORISTA IDENTIFICADO?',
-              'MATRÍCULA', 'NOME DO MOTORISTA', 'GESTOR', 'FILIAL',
+              'MATRÍCULA', 'GESTOR', 'FILIAL',
               'ENVIADO AO GERENTE?', 'GERENTE DEVOLVEU?', 'LANÇADO NO GLOBUS?', 'OBSERVAÇÃO',
             ].map((col, i) => (
               <span key={i} className="text-[10px] bg-white border border-slate-200 rounded px-2 py-1 text-slate-600 font-mono truncate" title={col}>

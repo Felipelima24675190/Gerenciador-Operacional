@@ -22,7 +22,8 @@
       "Bash(timeout 5)",
       "Bash(find '/c/Users/luis.lima/Downloads/App Atrasos' -name *.sql -o -name migrations -o -name schema)",
       "Bash(find '/c/Users/luis.lima/Downloads/App Atrasos' -maxdepth 1 -type f -name .*)",
-      "Bash(grep -r \"usePersistedState\\\\|truncate_table\" '/c/Users/luis.lima/Downloads/App Atrasos/src' --include=*.tsx --include=*.ts)"
+      "Bash(grep -r \"usePersistedState\\\\|truncate_table\" '/c/Users/luis.lima/Downloads/App Atrasos/src' --include=*.tsx --include=*.ts)",
+      "Bash(find 'C:\\\\Users\\\\luis.lima\\\\Downloads\\\\App Atrasos' -type f -iname *import* -iname *traffic* -o -type f -iname *import* -iname *transito* -o -type f -iname *import* -iname *multa*)"
     ]
   }
 }

@@ -226,11 +226,20 @@ export default function ScoreMotoristasScreen({
     return [...scores]
       .sort((a, b) => a.score - b.score)
       .slice(0, 10)
-      .map(s => ({
-        name: s.nome.length > 18 ? s.nome.substring(0, 17) + '…' : s.nome,
-        score: s.score,
-        fullName: s.nome,
-      }));
+      .map(s => {
+        // Show first name + last name initial for readability
+        const parts = s.nome.split(' ').filter(Boolean);
+        let shortName = s.nome;
+        if (parts.length > 2) {
+          shortName = `${parts[0]} ${parts.slice(1).map(p => p[0] + '.').join(' ')}`;
+        }
+        if (shortName.length > 22) shortName = shortName.substring(0, 21) + '…';
+        return {
+          name: shortName,
+          score: s.score,
+          fullName: s.nome,
+        };
+      });
   }, [scores]);
 
   // Chart: score distribution
@@ -316,11 +325,11 @@ export default function ScoreMotoristasScreen({
 
         <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
           <h4 className="text-xs font-black text-slate-600 uppercase tracking-tighter mb-3">Top 10 — Menores Scores</h4>
-          <div className="h-48">
+          <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartPiores} layout="vertical" margin={{ left: 5 }}>
                 <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 9 }} axisLine={false} />
-                <YAxis dataKey="name" type="category" tick={{ fontSize: 8 }} width={100} interval={0} axisLine={false} />
+                <YAxis dataKey="name" type="category" tick={{ fontSize: 9 }} width={130} interval={0} axisLine={false} />
                 <Tooltip formatter={(v: number) => [`${v} pts`, 'Score']} labelFormatter={(_: string, payload: any[]) => payload?.[0]?.payload?.fullName || ''} />
                 <Bar dataKey="score" radius={[0, 4, 4, 0]} barSize={14}>
                   {chartPiores.map((entry, i) => <Cell key={i} fill={getBarColor(entry.score)} />)}

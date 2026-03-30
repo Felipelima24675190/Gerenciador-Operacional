@@ -32,27 +32,57 @@ export default function ImportStopsScreen({ setParadas, motoristas, viagens, use
   const resolveLinha = buildLinhaLookup(viagens);
 
   const processFile = (text: string) => {
-    const lines = text.split('\n').slice(1); // Pular cabeçalho
+    const rawLines = text.split('\n');
     const novasParadas: ParadaIndevida[] = [];
     let found = 0;
     let notFound = 0;
 
-    for (const line of lines) {
-      if (!line.trim()) continue;
-      const parts = line.split(/[,;]|\t/).map(p => p.trim());
+    // Detect format by header
+    const headerLine = (rawLines[0] || '').toUpperCase();
+    const sep = headerLine.includes(';') ? ';' : headerLine.includes('\t') ? '\t' : ',';
+    const headerCols = headerLine.split(sep).map(h => h.trim());
+
+    // New format (10 cols): DATA;LINHA;SENTIDO;HORÁRIO DA LINHA;MATRÍCULA;VEÍCULO;LOCAL;INÍCIO;FIM;TEMPO PARADO
+    // Old format (12 cols): Data,Linha,Sentido,Horário,Matrícula,Motorista,Área,Veículo,Local,Início,Fim,Tempo Parado
+    const hasMotoristaCol = headerCols.some(h => h.includes('MOTORISTA') || h.includes('AREA') || h.includes('ÁREA'));
+
+    for (let i = 1; i < rawLines.length; i++) {
+      const line = rawLines[i].trim();
+      if (!line) continue;
+      const parts = line.split(sep).map(p => p.trim());
       if (parts.length < 5) continue;
 
-      // Formato esperado (baseado na imagem):
-      // [0] Data, [1] Linha (código), [2] Sentido, [3] Horário Linha, [4] Matrícula,
-      // [5] Motorista (opcional, será sobrescrito pelo lookup), [6] Área, [7] Veículo,
-      // [8] Local, [9] Início, [10] Fim, [11] Tempo Parado
-      const matricula = (parts[4] || '').trim();
-      const codigoLinha = (parts[1] || '').trim();
+      let matricula: string, codigoLinha: string, sentido: string, horarioLinha: string;
+      let veiculo: string, local: string, inicio: string, fim: string, tempoParado: string;
+
+      if (hasMotoristaCol) {
+        // Old format: [0]Data [1]Linha [2]Sentido [3]Horário [4]Matrícula [5]Motorista [6]Área [7]Veículo [8]Local [9]Início [10]Fim [11]Tempo
+        codigoLinha = (parts[1] || '').trim();
+        sentido = parts[2] || '';
+        horarioLinha = parts[3] || '';
+        matricula = (parts[4] || '').trim();
+        veiculo = parts[7] || '';
+        local = parts[8] || '';
+        inicio = parts[9] || '';
+        fim = parts[10] || '';
+        tempoParado = parts[11] || '';
+      } else {
+        // New format: [0]Data [1]Linha [2]Sentido [3]Horário [4]Matrícula [5]Veículo [6]Local [7]Início [8]Fim [9]Tempo
+        codigoLinha = (parts[1] || '').trim();
+        sentido = parts[2] || '';
+        horarioLinha = parts[3] || '';
+        matricula = (parts[4] || '').trim();
+        veiculo = parts[5] || '';
+        local = parts[6] || '';
+        inicio = parts[7] || '';
+        fim = parts[8] || '';
+        tempoParado = parts[9] || '';
+      }
 
       // Lookup motorista na base
       const motoristaBase = motoristasMap.get(matricula);
-      const nomeMotorista = motoristaBase ? motoristaBase.nome : (parts[5] || 'Desconhecido');
-      const area = motoristaBase ? motoristaBase.area : (parts[6] || '');
+      const nomeMotorista = motoristaBase ? motoristaBase.nome : 'Desconhecido';
+      const area = motoristaBase ? motoristaBase.area : '';
 
       // Lookup linha na base (flexible: by numero, servico, partial name)
       const nomeLinha = resolveLinha(codigoLinha) || codigoLinha;
@@ -64,16 +94,16 @@ export default function ImportStopsScreen({ setParadas, motoristas, viagens, use
         id: crypto.randomUUID(),
         data: parts[0] || '',
         linha: nomeLinha,
-        sentido: parts[2] || '',
-        horarioLinha: parts[3] || '',
+        sentido,
+        horarioLinha,
         matricula,
         motorista: nomeMotorista,
         area,
-        veiculo: parts[7] || '',
-        local: parts[8] || '',
-        inicio: parts[9] || '',
-        fim: parts[10] || '',
-        tempoParado: parts[11] || '',
+        veiculo,
+        local,
+        inicio,
+        fim,
+        tempoParado,
       };
       novasParadas.push(parada);
     }
@@ -122,22 +152,22 @@ export default function ImportStopsScreen({ setParadas, motoristas, viagens, use
         <div className="flex items-start gap-3">
           <Info size={18} className="text-blue-500 mt-0.5 shrink-0" />
           <div>
-            <p className="text-sm font-bold text-blue-800 mb-2">Formato esperado do arquivo (CSV/TXT com separador vírgula, ponto-e-vírgula ou tab):</p>
+            <p className="text-sm font-bold text-blue-800 mb-2">Formato esperado do arquivo (CSV/TXT com separador ponto-e-v\u00edrgula):</p>
             <div className="overflow-x-auto">
               <table className="text-[10px] text-blue-700 font-mono">
                 <thead><tr className="font-black uppercase text-blue-900">
-                  {['Data','Linha (Cód)','Sentido','Horário Linha','Matrícula','Motorista','Área','Veículo','Local','Início','Fim','Tempo Parado'].map((h,i) => (
+                  {['Data','Linha','Sentido','Hor\u00e1rio da Linha','Matr\u00edcula','Ve\u00edculo','Local','In\u00edcio','Fim','Tempo Parado'].map((h,i) => (
                     <th key={i} className="px-2 py-1 bg-blue-100 border border-blue-200">{`[${i}] ${h}`}</th>
                   ))}
                 </tr></thead>
                 <tbody><tr>
-                  {['01/03/2026','1234','Ida','06:00','12345','JOÃO SILVA','MACEIÓ','9001','Rua X, Feitosa...','06:10','06:25','15min'].map((v,i) => (
+                  {['01/03/2026','RECIFE(PE) - NATAL(RN)','IDA','06:00:00','26905','6189','LOCAL PARADA','06:10:00','06:25:00','00:15:00'].map((v,i) => (
                     <td key={i} className="px-2 py-1 border border-blue-100 text-center">{v}</td>
                   ))}
                 </tr></tbody>
               </table>
             </div>
-            <p className="text-[10px] text-blue-600 mt-2">O nome do motorista e a área serão buscados automaticamente na base de motoristas pela matrícula. O nome da linha será buscado pela base de linhas pelo código.</p>
+            <p className="text-[10px] text-blue-600 mt-2">O nome do motorista e a \u00e1rea ser\u00e3o buscados automaticamente na base de motoristas pela matr\u00edcula.</p>
           </div>
         </div>
       </div>

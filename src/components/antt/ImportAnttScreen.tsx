@@ -146,19 +146,20 @@ export default function ImportAnttScreen({ multas, setMultas, userRole, anttCode
       const requiredFields = ['data', 'codigo'];
       const missing = requiredFields.filter(f => !(f in colMap));
       if (missing.length > 0) {
-        // Fallback positional mapping (sem PLACA): ORDEM, EMPRESA, LINHA, MATRÍCULA, DATA, LOCAL, HORA, CÓDIGO, DESCRIÇÃO, AUTO, SETOR
+        // Fallback positional mapping: ORDEM, EMPRESA, LINHA, MOTORISTA, MATRÍCULA, DATA, LOCAL, HORA, CÓDIGO, DESCRIÇÃO, AUTO, SETOR
         if (headers.length >= 11) {
           colMap['ordem']     = 0;
           colMap['empresa']   = 1;
           colMap['linha']     = 2;
-          colMap['matricula'] = 3;
-          colMap['data']      = 4;
-          colMap['local']     = 5;
-          colMap['hora']      = 6;
-          colMap['codigo']    = 7;
-          colMap['descricao'] = 8;
-          colMap['auto']      = 9;
-          colMap['setor']     = 10;
+          // index 3 = MOTORISTA (nome, ignored)
+          colMap['matricula'] = 4;
+          colMap['data']      = 5;
+          colMap['local']     = 6;
+          colMap['hora']      = 7;
+          colMap['codigo']    = 8;
+          colMap['descricao'] = 9;
+          colMap['auto']      = 10;
+          colMap['setor']     = 11;
         } else {
           setUploadStatus('error');
           setErrorMsg(`Colunas obrigatórias não encontradas: ${missing.join(', ')}. Verifique o cabeçalho do arquivo.`);
@@ -186,6 +187,7 @@ export default function ImportAnttScreen({ multas, setMultas, userRole, anttCode
             firstColNorm === 'ORDEM' || firstColNorm === 'SEQ') continue;
 
         const empresa        = get(parts, 'empresa').toUpperCase();
+        const prefixoVeiculo = get(parts, 'ordem');
         const matricula      = get(parts, 'matricula');
         const data           = get(parts, 'data');
         const local          = get(parts, 'local');
@@ -207,7 +209,8 @@ export default function ImportAnttScreen({ multas, setMultas, userRole, anttCode
 
         novasMultas.push({
           id: crypto.randomUUID(),
-          placaVeiculo: '',          // placa removed from import; looked up from vehicle base
+          prefixoVeiculo: prefixoVeiculo || undefined,
+          placaVeiculo: '',
           empresa,
           matriculaMotorista: matricula,
           dataHora,
@@ -383,8 +386,8 @@ export default function ImportAnttScreen({ multas, setMultas, userRole, anttCode
           <h3 className="text-xl font-bold text-slate-800">Importar Multas ANTT</h3>
           <p className="text-sm text-gray-500 mt-2">
             Selecione o arquivo CSV/TXT com os autos de infração. O sistema detecta as colunas automaticamente pelo cabeçalho.
-            Colunas esperadas: <span className="font-semibold text-slate-600">ORDEM · EMPRESA · LINHA · MATRÍCULA · DATA · LOCAL · HORA · CÓDIGO · DESCRIÇÃO · AUTO · SETOR</span>.
-            Campos AUTO e MATRÍCULA são opcionais. A placa é consultada na base de veículos.
+            Colunas esperadas: <span className="font-semibold text-slate-600">ORDEM · EMPRESA · LINHA · MOTORISTA · MATRÍCULA · DATA · LOCAL · HORA · CÓDIGO · DESCRIÇÃO · AUTO · SETOR</span>.
+            Campos MATRÍCULA e ORDEM (nº do veículo) são opcionais.
           </p>
         </div>
 
