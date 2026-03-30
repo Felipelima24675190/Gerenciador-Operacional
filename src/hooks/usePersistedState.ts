@@ -131,25 +131,11 @@ export function usePersistedState<T>(
         if (dead) return;
 
         if (rows.length > 0) {
-          // Supabase has data → merge with localStorage to prevent data loss
-          let merged = rows;
-          try {
-            const ls = localStorage.getItem(lsKey);
-            if (ls) {
-              const local: T[] = JSON.parse(ls);
-              const pkCol = detectPkColumn(table);
-              const remotePkSet = new Set(rows.map((r: any) => r[pkCol]));
-              const localOnly = local.filter((item: any) => {
-                const pk = (item as any)[pkCol];
-                return pk && !remotePkSet.has(pk);
-              });
-              if (localOnly.length > 0) merged = [...rows, ...localOnly];
-            }
-          } catch { /* ignore */ }
-          echoRef.current = merged;
-          setData(merged);
+          // Supabase is the single source of truth — use remote data only
+          echoRef.current = rows;
+          setData(rows);
         } else {
-          // Supabase empty → seed with current localStorage / fallback
+          // Supabase empty → seed with current localStorage (if any)
           try {
             const s = localStorage.getItem(lsKey);
             const parsed: T[] = s ? JSON.parse(s) : fallback;

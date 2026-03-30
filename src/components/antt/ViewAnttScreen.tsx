@@ -148,19 +148,21 @@ export default function ViewAnttScreen({ multas, anttCodeDescriptions, motorista
 
   const chartDataMensal = useMemo(() => {
     const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
-    const monthlyCounts: Record<string, { Atual: number; Anterior: number }> = {};
-    months.forEach(month => { monthlyCounts[month] = { Atual: 0, Anterior: 0 }; });
-
     const currentYear = new Date().getFullYear();
     const previousYear = currentYear - 1;
+    const keyAtual = `${currentYear}`;
+    const keyAnterior = `${previousYear}`;
+
+    const monthlyCounts: Record<string, Record<string, number>> = {};
+    months.forEach(month => { monthlyCounts[month] = { [keyAtual]: 0, [keyAnterior]: 0 }; });
 
     multas.forEach(m => {
       const d = parseDateBR(m.dataHora);
       if (!d) return;
-      if (d.getFullYear() === currentYear)     monthlyCounts[months[d.getMonth()]].Atual++;
-      else if (d.getFullYear() === previousYear) monthlyCounts[months[d.getMonth()]].Anterior++;
+      if (d.getFullYear() === currentYear)     monthlyCounts[months[d.getMonth()]][keyAtual]++;
+      else if (d.getFullYear() === previousYear) monthlyCounts[months[d.getMonth()]][keyAnterior]++;
     });
-    return months.map(month => ({ name: month, ...monthlyCounts[month] }));
+    return { data: months.map(month => ({ name: month, ...monthlyCounts[month] })), keyAtual, keyAnterior };
   }, [multas]);
 
   const tableFiltered = useMemo(() => {
@@ -227,16 +229,16 @@ export default function ViewAnttScreen({ multas, anttCodeDescriptions, motorista
       {/* Charts Row 1 */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-          <h4 className="text-[10px] font-black text-slate-600 uppercase text-center mb-3">Quantitativo Mensal</h4>
+          <h4 className="text-[10px] font-black text-slate-600 uppercase text-center mb-3">Quantitativo Mensal — Ano Atual vs Ano Anterior</h4>
           <div className="h-56">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartDataMensal}>
+              <BarChart data={chartDataMensal.data}>
                 <XAxis dataKey="name" tick={{ fontSize: 9 }} axisLine={false} />
                 <YAxis tick={{ fontSize: 9 }} axisLine={false} />
                 <Tooltip />
                 <Legend wrapperStyle={{ fontSize: 10 }} />
-                <Bar dataKey="Atual" fill="#0e4f8f" radius={[3, 3, 0, 0]} />
-                <Bar dataKey="Anterior" fill="#9fbfea" radius={[3, 3, 0, 0]} />
+                <Bar dataKey={chartDataMensal.keyAtual} name={chartDataMensal.keyAtual} fill="#0e4f8f" radius={[3, 3, 0, 0]} />
+                <Bar dataKey={chartDataMensal.keyAnterior} name={chartDataMensal.keyAnterior} fill="#9fbfea" radius={[3, 3, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>

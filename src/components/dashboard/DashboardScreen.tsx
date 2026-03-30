@@ -391,7 +391,7 @@ export default function DashboardScreen({ motoristas, ocorrencias, viagens, setO
               <p className="text-xs font-bold text-red-600 uppercase tracking-wider">Linha Crítica (Mais Atrasos)</p>
               <h4 className="text-lg font-black text-slate-800">{linhaMaisAtrasada.nome}</h4>
               <p className="text-xs font-bold text-slate-400">{linhaMaisAtrasada.id}</p>
-              <p className="text-sm text-slate-500 mt-1">{linhaMaisAtrasada.count} ocorrências de atraso hoje.</p>
+              <p className="text-sm text-slate-500 mt-1">{linhaMaisAtrasada.count} ocorrências de atraso no intervalo selecionado.</p>
             </div>
           </div>
           

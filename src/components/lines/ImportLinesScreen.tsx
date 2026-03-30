@@ -173,12 +173,13 @@ export default function ImportLinesScreen({ viagens, setViagens, userRole }: Imp
 
         for (const svc of sortedEntries) {
           const diasArr = [...svc.dias].sort();
-          // Merge key: same atendimento (origem×destino), direction and departure time
-          // Do NOT include nomeLinha (route numbers differ) or diasOperantes (get unioned)
+          // Merge key: same atendimento (origem×destino normalized alphabetically), and departure time
+          // Normalize: always sort origem/destino alphabetically so IDA and VOLTA merge into same line
+          // Do NOT include nomeLinha (route numbers differ) or diasOperantes (get unioned) or sentido
+          const [normalA, normalB] = [svc.origem.toLowerCase(), svc.destino.toLowerCase()].sort();
           const mergeKey = [
-            svc.origem.toLowerCase(),
-            svc.destino.toLowerCase(),
-            svc.sentido.toLowerCase(),
+            normalA,
+            normalB,
             svc.horarioSaida,
           ].join('|');
 
@@ -191,8 +192,9 @@ export default function ImportLinesScreen({ viagens, setViagens, userRole }: Imp
             const daySet = new Set(existing.diasOperantes);
             diasArr.forEach(d => daySet.add(d));
             existing.diasOperantes = [...daySet].sort();
+            // Preserve the sentido from the first entry but note both directions are merged
           } else {
-            // Use atendimento as nomeLinha so merged services from different routes group correctly
+            // Use normalized atendimento: always alphabetical order (e.g., ARACAJU(SE) X RECIFE(PE) → RECIFE(PE) X ARACAJU(SE) based on first entry)
             const atendimento = svc.origem && svc.destino
               ? `${svc.origem} X ${svc.destino}`
               : svc.nomeLinha;

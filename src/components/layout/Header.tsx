@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, Dispatch, SetStateAction } from 'react';
-import { Bell, Search, Database } from 'lucide-react';
+import { Bell, Database } from 'lucide-react';
 import { User, AppNotification } from '../../types';
 
 interface HeaderProps {
@@ -40,15 +40,6 @@ export default function Header({ title, user, notifications, setNotifications }:
       </div>
 
       <div className="flex items-center gap-5">
-        <div className="relative">
-          <input
-            type="text"
-            placeholder="Buscar motorista..."
-            className="pl-9 pr-4 py-2 border border-gray-200 rounded-button text-sm focus:outline-none focus:ring-2 focus:ring-brand-400 focus:border-brand-400 w-60 bg-slate-50 placeholder:text-slate-400"
-          />
-          <Search className="absolute left-3 top-2.5 text-slate-400" size={16} />
-        </div>
-
         {/* Notification bell */}
         <div ref={ref} className="relative">
           <button

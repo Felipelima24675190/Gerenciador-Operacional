@@ -221,26 +221,26 @@ export default function ScoreMotoristasScreen({
     return { total, excelente, bom, regular, critico, avgScore };
   }, [scores]);
 
-  // Chart: top 10 piores scores
+  // Chart: top 10 piores scores (show matrícula on Y axis)
   const chartPiores = useMemo(() => {
     return [...scores]
       .sort((a, b) => a.score - b.score)
       .slice(0, 10)
-      .map(s => {
-        // Show first name + last name initial for readability
-        const parts = s.nome.split(' ').filter(Boolean);
-        let shortName = s.nome;
-        if (parts.length > 2) {
-          shortName = `${parts[0]} ${parts.slice(1).map(p => p[0] + '.').join(' ')}`;
-        }
-        if (shortName.length > 22) shortName = shortName.substring(0, 21) + '…';
-        return {
-          name: shortName,
-          score: s.score,
-          fullName: s.nome,
-        };
-      });
+      .map(s => ({
+        name: s.matricula,
+        score: s.score,
+        fullName: s.nome,
+        matricula: s.matricula,
+      }));
   }, [scores]);
+
+  // Popup state for clicked matrícula in chart
+  const [selectedChartMatricula, setSelectedChartMatricula] = useState<string | null>(null);
+
+  const selectedChartScore = useMemo(() => {
+    if (!selectedChartMatricula) return null;
+    return scores.find(s => s.matricula === selectedChartMatricula) || null;
+  }, [selectedChartMatricula, scores]);
 
   // Chart: score distribution
   const chartDistribuicao = useMemo(() => [
@@ -323,20 +323,73 @@ export default function ScoreMotoristasScreen({
           </div>
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+        <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm relative">
           <h4 className="text-xs font-black text-slate-600 uppercase tracking-tighter mb-3">Top 10 — Menores Scores</h4>
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartPiores} layout="vertical" margin={{ left: 5 }}>
+              <BarChart data={chartPiores} layout="vertical" margin={{ left: 5 }} onClick={(data: any) => {
+                if (data?.activePayload?.[0]?.payload?.matricula) {
+                  const mat = data.activePayload[0].payload.matricula;
+                  setSelectedChartMatricula(prev => prev === mat ? null : mat);
+                }
+              }}>
                 <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 9 }} axisLine={false} />
-                <YAxis dataKey="name" type="category" tick={{ fontSize: 9 }} width={130} interval={0} axisLine={false} />
+                <YAxis dataKey="name" type="category" tick={{ fontSize: 9, cursor: 'pointer' }} width={80} interval={0} axisLine={false} />
                 <Tooltip formatter={(v: number) => [`${v} pts`, 'Score']} labelFormatter={(_: string, payload: any[]) => payload?.[0]?.payload?.fullName || ''} />
-                <Bar dataKey="score" radius={[0, 4, 4, 0]} barSize={14}>
+                <Bar dataKey="score" radius={[0, 4, 4, 0]} barSize={14} cursor="pointer">
                   {chartPiores.map((entry, i) => <Cell key={i} fill={getBarColor(entry.score)} />)}
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
           </div>
+
+          {/* Score detail popup */}
+          {selectedChartScore && (
+            <div className="mt-3 bg-slate-50 border border-slate-200 rounded-xl p-4 animate-in fade-in duration-200">
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <p className="text-xs font-black text-slate-700">{selectedChartScore.nome}</p>
+                  <p className="text-[10px] text-slate-500">Mat. {selectedChartScore.matricula} · {selectedChartScore.filial}</p>
+                </div>
+                <div className={`text-lg font-black ${getScoreColor(selectedChartScore.score)}`}>
+                  {selectedChartScore.score} pts
+                </div>
+              </div>
+              <div className="grid grid-cols-5 gap-2">
+                <div className="bg-white rounded-lg border border-gray-200 p-2 text-center">
+                  <p className="text-[9px] font-bold text-slate-500 uppercase">Faltas</p>
+                  <p className="text-sm font-black text-slate-800">{selectedChartScore.detalhes.faltas}</p>
+                  <p className="text-[9px] text-red-500">-{selectedChartScore.deducoes.faltas}</p>
+                </div>
+                <div className="bg-white rounded-lg border border-gray-200 p-2 text-center">
+                  <p className="text-[9px] font-bold text-slate-500 uppercase">Exc. Veloc.</p>
+                  <p className="text-sm font-black text-slate-800">{selectedChartScore.detalhes.excessos}</p>
+                  <p className="text-[9px] text-red-500">-{selectedChartScore.deducoes.excessos}</p>
+                </div>
+                <div className="bg-white rounded-lg border border-gray-200 p-2 text-center">
+                  <p className="text-[9px] font-bold text-slate-500 uppercase">Atrasos</p>
+                  <p className="text-sm font-black text-slate-800">{selectedChartScore.detalhes.atrasos}</p>
+                  <p className="text-[9px] text-red-500">-{selectedChartScore.deducoes.atrasos}</p>
+                </div>
+                <div className="bg-white rounded-lg border border-gray-200 p-2 text-center">
+                  <p className="text-[9px] font-bold text-slate-500 uppercase">Avarias</p>
+                  <p className="text-sm font-black text-slate-800">{selectedChartScore.detalhes.avarias}</p>
+                  <p className="text-[9px] text-red-500">-{selectedChartScore.deducoes.avarias}</p>
+                </div>
+                <div className="bg-white rounded-lg border border-gray-200 p-2 text-center">
+                  <p className="text-[9px] font-bold text-slate-500 uppercase">Acidentes</p>
+                  <p className="text-sm font-black text-slate-800">{selectedChartScore.detalhes.acidentes}</p>
+                  <p className="text-[9px] text-red-500">-{selectedChartScore.deducoes.acidentes}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setSelectedChartMatricula(null)}
+                className="mt-2 text-[10px] font-bold text-slate-400 hover:text-slate-600 w-full text-center"
+              >
+                Clique novamente na matrícula ou aqui para fechar
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
