@@ -173,18 +173,32 @@ export default function ImportLinesScreen({ viagens, setViagens, userRole }: Imp
 
         for (const svc of sortedEntries) {
           const diasArr = [...svc.dias].sort();
-          const diasKey = (diasArr.length > 0 ? diasArr : [0,1,2,3,4,5,6]).join(',');
-          const mergeKey = `${svc.nomeLinha}|${svc.origem}|${svc.destino}|${svc.sentido}|${svc.horarioSaida}|${diasKey}`;
+          // Merge key: same atendimento (origem×destino), direction and departure time
+          // Do NOT include nomeLinha (route numbers differ) or diasOperantes (get unioned)
+          const mergeKey = [
+            svc.origem.toLowerCase(),
+            svc.destino.toLowerCase(),
+            svc.sentido.toLowerCase(),
+            svc.horarioSaida,
+          ].join('|');
 
           if (mergeMap.has(mergeKey)) {
             const existing = mergeMap.get(mergeKey)!;
             if (!existing.servicos.includes(svc.servico)) {
               existing.servicos.push(svc.servico);
             }
+            // Union operating days
+            const daySet = new Set(existing.diasOperantes);
+            diasArr.forEach(d => daySet.add(d));
+            existing.diasOperantes = [...daySet].sort();
           } else {
+            // Use atendimento as nomeLinha so merged services from different routes group correctly
+            const atendimento = svc.origem && svc.destino
+              ? `${svc.origem} X ${svc.destino}`
+              : svc.nomeLinha;
             mergeMap.set(mergeKey, {
               empresa: svc.empresa,
-              nomeLinha: svc.nomeLinha,
+              nomeLinha: atendimento,
               origem: svc.origem,
               destino: svc.destino,
               servicos: [svc.servico],
@@ -229,7 +243,7 @@ export default function ImportLinesScreen({ viagens, setViagens, userRole }: Imp
         if (novasViagens.length > 0) {
           setViagens(novasViagens);
           const linhasUnicas = new Set(novasViagens.map(v => v.nomeLinha)).size;
-          const servicosUnicos = new Set(novasViagens.map(v => v.servico)).size;
+          const servicosUnicos = new Set(novasViagens.flatMap(v => (v.servico || '').split('/').map(s => s.trim())).filter(Boolean)).size;
           setStats({ linhas: linhasUnicas, servicos: servicosUnicos, viagens: novasViagens.length });
           setUploadStatus('success');
         } else {
@@ -349,7 +363,7 @@ export default function ImportLinesScreen({ viagens, setViagens, userRole }: Imp
             </div>
             <div className="flex-1 p-4 bg-slate-50 rounded-lg">
               <p className="text-xs font-bold text-slate-500 uppercase">Total de Serviços</p>
-              <p className="text-3xl font-black text-slate-800">{new Set(viagens.map(v => v.servico)).size}</p>
+              <p className="text-3xl font-black text-slate-800">{new Set(viagens.flatMap(v => (v.servico || '').split('/').map(s => s.trim())).filter(Boolean)).size}</p>
             </div>
             <div className="flex-1 p-4 bg-slate-50 rounded-lg">
               <p className="text-xs font-bold text-slate-500 uppercase">Total de Viagens</p>
@@ -367,7 +381,11 @@ export default function ImportLinesScreen({ viagens, setViagens, userRole }: Imp
             Planilha com 9 colunas: <strong>Empresa, Linha, Origem, Destino, Serviço, Horário de Saída, Sentido, Dia Operante, Região</strong>
           </p>
           <p className="text-[10px] text-blue-500 mt-2">
-            Cada linha da planilha representa um serviço em um dia específico. O sistema agrupa automaticamente os dias em que cada serviço opera.
+            Cada linha da planilha representa um serviço em um dia específico. O sistema agrupa automaticamente os dias operantes
+            e unifica serviços com mesmo atendimento, sentido e horário de saída (ex: 10201595/10301595).
+          </p>
+          <p className="text-[10px] text-blue-500 mt-1">
+            A importação substitui toda a base de linhas existente.
           </p>
         </div>
       </div>
