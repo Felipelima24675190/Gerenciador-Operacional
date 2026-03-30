@@ -19,7 +19,10 @@
       "Bash(find C:Usersluis.limaDownloads -maxdepth 1 -type f \\\\\\(-name *.png -o -name *.jpg -o -name *.jpeg -o -name *.webp \\\\\\))",
       "Bash(find C:Usersluis.limaDownloads -maxdepth 1 -type f \\\\\\(-name *progresso* -o -name *logo* -o -name *bus* -o -name *onibus* \\\\\\) -iname *.jpg -o -iname *.png -o -iname *.jpeg)",
       "Bash(pkill -f \"vite\")",
-      "Bash(timeout 5)"
+      "Bash(timeout 5)",
+      "Bash(find '/c/Users/luis.lima/Downloads/App Atrasos' -name *.sql -o -name migrations -o -name schema)",
+      "Bash(find '/c/Users/luis.lima/Downloads/App Atrasos' -maxdepth 1 -type f -name .*)",
+      "Bash(grep -r \"usePersistedState\\\\|truncate_table\" '/c/Users/luis.lima/Downloads/App Atrasos/src' --include=*.tsx --include=*.ts)"
     ]
   }
 }

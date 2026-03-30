@@ -3,6 +3,14 @@ import { supabase, isSupabaseConfigured } from '../lib/supabase';
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 
+async function upsertChunked(table: string, rows: any[], chunkSize = 500) {
+  if (!supabase || rows.length === 0) return;
+  for (let i = 0; i < rows.length; i += chunkSize) {
+    const { error } = await supabase.from(table).upsert(rows.slice(i, i + chunkSize), { ignoreDuplicates: false });
+    if (error) console.error(`[supabase] upsert ${table} chunk ${i}:`, error.message);
+  }
+}
+
 async function insertChunked(table: string, rows: any[], chunkSize = 500) {
   if (!supabase || rows.length === 0) return;
   for (let i = 0; i < rows.length; i += chunkSize) {
@@ -14,12 +22,15 @@ async function insertChunked(table: string, rows: any[], chunkSize = 500) {
 /**
  * Fetches ALL rows from a Supabase table, bypassing the default 1000-row cap
  * by paginating with .range() until fewer rows than PAGE_SIZE are returned.
+ * Retries once after a short delay if the first attempt returns empty
+ * (guards against truncate-insert race during another user's sync).
  */
-async function fetchAllRows<T>(table: string): Promise<T[]> {
+async function fetchAllRows<T>(table: string, retry = true): Promise<T[]> {
   if (!supabase) return [];
   const PAGE_SIZE = 1000;
   const all: T[] = [];
   let from = 0;
+  let hadError = false;
   while (true) {
     const { data, error } = await supabase
       .from(table)
@@ -27,11 +38,48 @@ async function fetchAllRows<T>(table: string): Promise<T[]> {
       .range(from, from + PAGE_SIZE - 1);
     if (error) {
       console.error(`[supabase] fetchAllRows ${table}:`, error.message);
+      hadError = true;
       break;
     }
     if (!data || data.length === 0) break;
     all.push(...(data as T[]));
     if (data.length < PAGE_SIZE) break; // last page reached
+    from += PAGE_SIZE;
+  }
+  // Retry once if empty (might be mid-sync from another user)
+  if (all.length === 0 && !hadError && retry) {
+    await new Promise(r => setTimeout(r, 1500));
+    return fetchAllRows<T>(table, false);
+  }
+  return all;
+}
+
+// Tables whose primary key is NOT "id"
+const PK_MAP: Record<string, string> = {
+  motoristas: 'matricula',
+  resumos_avaria: 'key',
+  antt_code_descriptions: 'codigo',
+};
+
+function detectPkColumn(table: string): string {
+  return PK_MAP[table] || 'id';
+}
+
+async function fetchAllPks(table: string): Promise<string[]> {
+  if (!supabase) return [];
+  const pkCol = detectPkColumn(table);
+  const PAGE_SIZE = 1000;
+  const all: string[] = [];
+  let from = 0;
+  while (true) {
+    const { data, error } = await supabase
+      .from(table)
+      .select(pkCol)
+      .range(from, from + PAGE_SIZE - 1);
+    if (error) { console.error(`[supabase] fetchAllPks ${table}:`, error.message); break; }
+    if (!data || data.length === 0) break;
+    all.push(...data.map((r: any) => r[pkCol]));
+    if (data.length < PAGE_SIZE) break;
     from += PAGE_SIZE;
   }
   return all;
@@ -89,8 +137,12 @@ export function usePersistedState<T>(
             const ls = localStorage.getItem(lsKey);
             if (ls) {
               const local: T[] = JSON.parse(ls);
-              const remoteIds = new Set(rows.map((r: any) => r.id));
-              const localOnly = local.filter((item: any) => item.id && !remoteIds.has(item.id));
+              const pkCol = detectPkColumn(table);
+              const remotePkSet = new Set(rows.map((r: any) => r[pkCol]));
+              const localOnly = local.filter((item: any) => {
+                const pk = (item as any)[pkCol];
+                return pk && !remotePkSet.has(pk);
+              });
               if (localOnly.length > 0) merged = [...rows, ...localOnly];
             }
           } catch { /* ignore */ }
@@ -140,13 +192,28 @@ export function usePersistedState<T>(
     }
 
     // Sync to Supabase (fire and forget, queued)
+    // Uses upsert + delete-stale instead of truncate+insert to avoid
+    // a window where the table is empty (race condition for other users).
     if (isSupabaseConfigured && supabase) {
       const snapshot = data;
       chain.current = chain.current.then(async () => {
         try {
-          await supabase!.rpc('truncate_table', { tname: table });
-          if (snapshot.length > 0) {
-            await insertChunked(table, snapshot as any[]);
+          if (snapshot.length === 0) {
+            // All data removed — safe to truncate
+            await supabase!.rpc('truncate_table', { tname: table });
+          } else {
+            // 1) Upsert all current rows (data is always present during this step)
+            await upsertChunked(table, snapshot as any[]);
+            // 2) Fetch remote PKs and delete stale ones
+            const remotePks = await fetchAllPks(table);
+            const localPks = new Set(snapshot.map((r: any) => r.id ?? r.matricula ?? r.key ?? r.codigo));
+            const toDelete = remotePks.filter(pk => !localPks.has(pk));
+            if (toDelete.length > 0) {
+              const pkCol = detectPkColumn(table);
+              for (let i = 0; i < toDelete.length; i += 500) {
+                await supabase!.from(table).delete().in(pkCol, toDelete.slice(i, i + 500));
+              }
+            }
           }
         } catch (e) {
           console.error(`[supabase] sync ${table}:`, e);
