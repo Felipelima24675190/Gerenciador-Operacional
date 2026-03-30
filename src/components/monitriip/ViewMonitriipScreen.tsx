@@ -78,14 +78,18 @@ export default function ViewMonitriipScreen({ monitriips, viagens }: Props) {
   const [servicoBusca, setServicoBusca] = useState('');
   const [page, setPage] = useState(1);
 
+  const [linhaBusca, setLinhaBusca] = useState('');
+
   const resolveLinha = useMemo(() => buildLinhaLookup(viagens), [viagens]);
-  const getLinhaName = (servico: string) => resolveLinha(servico) || servico;
+  // Use linhaAssociada if available, otherwise fallback to servico-based lookup
+  const getLinhaName = (r: Monitriip) => r.linhaAssociada || resolveLinha(r.servico) || r.servico;
 
   // Filter
   const filtered = useMemo(() => {
     const start = dataInicio ? new Date(dataInicio + 'T00:00:00') : null;
     const end = dataFim ? new Date(dataFim + 'T23:59:59') : null;
     const svcTerm = servicoBusca.trim().toLowerCase();
+    const linhaTerm = linhaBusca.trim().toLowerCase();
 
     return monitriips.filter(r => {
       if (start || end) {
@@ -95,9 +99,13 @@ export default function ViewMonitriipScreen({ monitriips, viagens }: Props) {
         if (end && d > end) return false;
       }
       if (svcTerm && !r.servico.toLowerCase().includes(svcTerm)) return false;
+      if (linhaTerm) {
+        const linhaName = getLinhaName(r).toLowerCase();
+        if (!linhaName.includes(linhaTerm)) return false;
+      }
       return true;
     });
-  }, [monitriips, dataInicio, dataFim, servicoBusca]);
+  }, [monitriips, dataInicio, dataFim, servicoBusca, linhaBusca]);
 
   // KPIs
   const kpis = useMemo(() => {
@@ -114,7 +122,7 @@ export default function ViewMonitriipScreen({ monitriips, viagens }: Props) {
   // Chart 1: Top 15 viagens by total count (resolved by line name)
   const topServicosCount = useMemo(() => {
     const acc: Record<string, number> = {};
-    filtered.forEach(r => { const nome = getLinhaName(r.servico); acc[nome] = (acc[nome] || 0) + 1; });
+    filtered.forEach(r => { const nome = getLinhaName(r); acc[nome] = (acc[nome] || 0) + 1; });
     return Object.entries(acc)
       .map(([name, value]) => ({ name: name.length > 35 ? name.slice(0, 34) + '…' : name, value, fullName: name }))
       .sort((a, b) => b.value - a.value)
@@ -124,7 +132,7 @@ export default function ViewMonitriipScreen({ monitriips, viagens }: Props) {
   // Chart 2: Top 10 viagens with most atrasos
   const topServicosAtraso = useMemo(() => {
     const acc: Record<string, number> = {};
-    filtered.filter(r => r.atraso30min).forEach(r => { const nome = getLinhaName(r.servico); acc[nome] = (acc[nome] || 0) + 1; });
+    filtered.filter(r => r.atraso30min).forEach(r => { const nome = getLinhaName(r); acc[nome] = (acc[nome] || 0) + 1; });
     return Object.entries(acc)
       .map(([name, value]) => ({ name: name.length > 35 ? name.slice(0, 34) + '…' : name, value, fullName: name }))
       .sort((a, b) => b.value - a.value)
@@ -134,7 +142,7 @@ export default function ViewMonitriipScreen({ monitriips, viagens }: Props) {
   // Chart 3: Top 10 viagens with most invalid trips
   const topServicosInvalidas = useMemo(() => {
     const acc: Record<string, number> = {};
-    filtered.filter(r => !r.viagemValida).forEach(r => { const nome = getLinhaName(r.servico); acc[nome] = (acc[nome] || 0) + 1; });
+    filtered.filter(r => !r.viagemValida).forEach(r => { const nome = getLinhaName(r); acc[nome] = (acc[nome] || 0) + 1; });
     return Object.entries(acc)
       .map(([name, value]) => ({ name: name.length > 35 ? name.slice(0, 34) + '…' : name, value, fullName: name }))
       .sort((a, b) => b.value - a.value)
@@ -186,7 +194,7 @@ export default function ViewMonitriipScreen({ monitriips, viagens }: Props) {
 
       {/* Filters */}
       <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
           <div>
             <label className="text-xs font-bold text-slate-500 uppercase block mb-1">Data Início</label>
             <div className="relative">
@@ -220,6 +228,19 @@ export default function ViewMonitriipScreen({ monitriips, viagens }: Props) {
                 placeholder="Buscar serviço..."
                 value={servicoBusca}
                 onChange={e => { setServicoBusca(e.target.value); setPage(1); }}
+                className="w-full pl-8 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-300"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="text-xs font-bold text-slate-500 uppercase block mb-1">Linha</label>
+            <div className="relative">
+              <Search className="absolute left-2 top-2.5 text-gray-400" size={14} />
+              <input
+                type="text"
+                placeholder="Buscar linha..."
+                value={linhaBusca}
+                onChange={e => { setLinhaBusca(e.target.value); setPage(1); }}
                 className="w-full pl-8 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-300"
               />
             </div>
@@ -312,7 +333,7 @@ export default function ViewMonitriipScreen({ monitriips, viagens }: Props) {
                     <td className="px-3 py-2 whitespace-nowrap text-slate-600">{r.partida}</td>
                     <td className="px-3 py-2 whitespace-nowrap text-slate-600">{r.chegada}</td>
                     <td className="px-3 py-2 font-bold text-slate-800">{r.servico}</td>
-                    <td className="px-3 py-2 text-slate-600 truncate max-w-[200px]" title={getLinhaName(r.servico)}>{getLinhaName(r.servico)}</td>
+                    <td className="px-3 py-2 text-slate-600 truncate max-w-[200px]" title={getLinhaName(r)}>{getLinhaName(r)}</td>
                     <td className="px-3 py-2 whitespace-nowrap">
                       <span className={`px-1.5 py-0.5 rounded font-bold text-[10px] ${r.viagemValida ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
                         {r.viagemValida ? 'Sim' : 'Não'}

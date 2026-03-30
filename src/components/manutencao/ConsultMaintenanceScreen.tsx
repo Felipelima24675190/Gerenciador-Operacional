@@ -1,10 +1,11 @@
 import { useMemo, useState, Dispatch, SetStateAction } from 'react';
 import { ManutencaoVeiculo, HistoricoManutencao, Veiculo } from '../../types';
-import { Search, Wrench, Clock, TrendingUp, Trash2 } from 'lucide-react';
+import { Search, Wrench, Clock, TrendingUp, Trash2, Bus, CheckCircle } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell,
+  PieChart, Pie, Cell, LineChart, Line, CartesianGrid, Legend,
 } from 'recharts';
+import { subDays, format, addDays } from 'date-fns';
 
 interface ConsultMaintenanceScreenProps {
   manutencoes: ManutencaoVeiculo[];
@@ -59,8 +60,111 @@ export default function ConsultMaintenanceScreen({ manutencoes, historicoManuten
     const avgTempo = totalHistorico > 0
       ? Math.round(historicoManutencao.reduce((acc, h) => acc + h.tempoOficinaHoras, 0) / totalHistorico)
       : 0;
-    return { naOficina, totalHistorico, avgTempo };
-  }, [manutencoes, historicoManutencao]);
+    const totalVeiculos = veiculos.length;
+    const prefixosNaOficina = new Set(manutencoes.map(m => m.prefixo));
+    const disponiveis = veiculos.filter(v => !prefixosNaOficina.has(v.prefixo)).length;
+    return { naOficina, totalHistorico, avgTempo, totalVeiculos, disponiveis };
+  }, [manutencoes, historicoManutencao, veiculos]);
+
+  // Line chart: vehicle types over time
+  const [chartDataInicio, setChartDataInicio] = useState(format(subDays(new Date(), 29), 'yyyy-MM-dd'));
+  const [chartDataFim, setChartDataFim] = useState(format(new Date(), 'yyyy-MM-dd'));
+
+  const tiposDisponiveis = useMemo(() => {
+    const tipos = new Set<string>();
+    veiculos.forEach(v => { if (v.tipo) tipos.add(v.tipo); });
+    return Array.from(tipos).sort();
+  }, [veiculos]);
+
+  const [tiposSelecionados, setTiposSelecionados] = useState<string[]>([]);
+
+  const toggleTipo = (tipo: string) => {
+    setTiposSelecionados(prev => prev.includes(tipo) ? prev.filter(t => t !== tipo) : [...prev, tipo]);
+  };
+
+  const lineChartData = useMemo(() => {
+    if (tiposSelecionados.length === 0) return [];
+    const start = new Date(chartDataInicio + 'T00:00:00');
+    const end = new Date(chartDataFim + 'T23:59:59');
+    const diffDays = Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    if (diffDays < 1 || diffDays > 30) return [];
+
+    const prevStart = subDays(start, diffDays);
+
+    // Build lookup: for each date, which prefixos were in manutencao
+    const parseDtBR = (s: string) => {
+      try { const [d, m, y] = s.split('/').map(Number); return new Date(y, m - 1, d); } catch { return null; }
+    };
+
+    // Active manutencoes: retidoDesde -> still active (no end date in ManutencaoVeiculo)
+    // Historico: dataEntrada -> dataSaida
+    const getMaintenancePrefixosOnDate = (dt: Date): Set<string> => {
+      const pset = new Set<string>();
+      manutencoes.forEach(m => {
+        const entrada = parseDtBR(m.retidoDesde);
+        if (entrada && entrada <= dt) pset.add(m.prefixo);
+      });
+      historicoManutencao.forEach(h => {
+        const entrada = parseDtBR(h.dataEntrada);
+        const saida = parseDtBR(h.dataSaida);
+        if (entrada && saida && entrada <= dt && saida >= dt) pset.add(h.prefixo);
+      });
+      return pset;
+    };
+
+    const veiculosByTipo: Record<string, string[]> = {};
+    tiposSelecionados.forEach(tipo => {
+      veiculosByTipo[tipo] = veiculos.filter(v => v.tipo === tipo).map(v => v.prefixo);
+    });
+
+    const data: any[] = [];
+    // Carry-forward: keep last known value per type (max 2 days)
+    const lastKnown: Record<string, { value: number; daysAgo: number }> = {};
+    const lastKnownPrev: Record<string, { value: number; daysAgo: number }> = {};
+
+    for (let i = 0; i < diffDays; i++) {
+      const currentDate = addDays(start, i);
+      const prevDate = addDays(prevStart, i);
+      const label = format(currentDate, 'dd/MM');
+      const maintenanceCurrent = getMaintenancePrefixosOnDate(currentDate);
+      const maintenancePrev = getMaintenancePrefixosOnDate(prevDate);
+
+      const entry: any = { name: label };
+
+      tiposSelecionados.forEach(tipo => {
+        const prefixos = veiculosByTipo[tipo] || [];
+        const totalTipo = prefixos.length;
+        const inMaintCurrent = prefixos.filter(p => maintenanceCurrent.has(p)).length;
+        const inMaintPrev = prefixos.filter(p => maintenancePrev.has(p)).length;
+
+        // Current period
+        if (inMaintCurrent > 0 || totalTipo > 0) {
+          entry[tipo] = inMaintCurrent;
+          lastKnown[tipo] = { value: inMaintCurrent, daysAgo: 0 };
+        } else if (lastKnown[tipo] && lastKnown[tipo].daysAgo < 2) {
+          entry[tipo] = lastKnown[tipo].value;
+          lastKnown[tipo].daysAgo++;
+        } else {
+          entry[tipo] = 0;
+        }
+
+        // Previous period (dotted)
+        const prevKey = `${tipo} (Anterior)`;
+        if (inMaintPrev > 0 || totalTipo > 0) {
+          entry[prevKey] = inMaintPrev;
+          lastKnownPrev[tipo] = { value: inMaintPrev, daysAgo: 0 };
+        } else if (lastKnownPrev[tipo] && lastKnownPrev[tipo].daysAgo < 2) {
+          entry[prevKey] = lastKnownPrev[tipo].value;
+          lastKnownPrev[tipo].daysAgo++;
+        } else {
+          entry[prevKey] = 0;
+        }
+      });
+
+      data.push(entry);
+    }
+    return data;
+  }, [tiposSelecionados, chartDataInicio, chartDataFim, manutencoes, historicoManutencao, veiculos]);
 
   // Top veiculos mais frequentes (historico + atuais)
   const topVeiculos = useMemo(() => {
@@ -111,7 +215,21 @@ export default function ConsultMaintenanceScreen({ manutencoes, historicoManuten
   return (
     <div className="space-y-4">
       {/* KPIs */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm flex items-center gap-4">
+          <div className="p-3 bg-blue-50 rounded-xl text-blue-600"><Bus size={24} /></div>
+          <div>
+            <p className="text-[10px] font-bold text-slate-500 uppercase">Veículos Totais</p>
+            <p className="text-3xl font-black text-slate-800">{kpis.totalVeiculos}</p>
+          </div>
+        </div>
+        <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm flex items-center gap-4">
+          <div className="p-3 bg-green-50 rounded-xl text-green-600"><CheckCircle size={24} /></div>
+          <div>
+            <p className="text-[10px] font-bold text-slate-500 uppercase">Veículos Disponíveis</p>
+            <p className="text-3xl font-black text-slate-800">{kpis.disponiveis}</p>
+          </div>
+        </div>
         <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm flex items-center gap-4">
           <div className="p-3 bg-brand-50 rounded-xl text-brand-600"><Wrench size={24} /></div>
           <div>
@@ -166,6 +284,51 @@ export default function ConsultMaintenanceScreen({ manutencoes, historicoManuten
             </ResponsiveContainer>
           </div>
         </div>
+      </div>
+
+      {/* Line chart: veículos na manutenção por tipo */}
+      <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+        <h4 className="text-[10px] font-black text-slate-600 uppercase text-center mb-3">Veículos na Manutenção por Tipo</h4>
+        <div className="flex flex-wrap gap-3 items-end mb-4">
+          <div>
+            <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Início</label>
+            <input type="date" value={chartDataInicio} onChange={e => setChartDataInicio(e.target.value)} className="text-xs border border-gray-200 rounded px-2 py-1.5 focus:ring-2 focus:ring-brand-400" />
+          </div>
+          <div>
+            <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Fim</label>
+            <input type="date" value={chartDataFim} onChange={e => setChartDataFim(e.target.value)} className="text-xs border border-gray-200 rounded px-2 py-1.5 focus:ring-2 focus:ring-brand-400" />
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {tiposDisponiveis.map(tipo => (
+              <button key={tipo} onClick={() => toggleTipo(tipo)} className={`px-2.5 py-1 text-[10px] font-bold rounded-full border transition-colors ${tiposSelecionados.includes(tipo) ? 'bg-brand-600 text-white border-brand-600' : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'}`}>
+                {tipo}
+              </button>
+            ))}
+          </div>
+        </div>
+        {tiposSelecionados.length === 0 ? (
+          <p className="text-xs text-slate-400 text-center py-10">Selecione um ou mais tipos de veículo acima</p>
+        ) : lineChartData.length === 0 ? (
+          <p className="text-xs text-slate-400 text-center py-10">Intervalo máximo: 30 dias</p>
+        ) : (
+          <div className="h-72">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={lineChartData} margin={{ top: 5, right: 30, left: 5, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                <XAxis dataKey="name" tick={{ fontSize: 9 }} axisLine={false} />
+                <YAxis allowDecimals={false} tick={{ fontSize: 9 }} axisLine={false} />
+                <Tooltip />
+                <Legend wrapperStyle={{ fontSize: 10 }} />
+                {tiposSelecionados.map((tipo, i) => (
+                  <Line key={tipo} type="monotone" dataKey={tipo} stroke={COLORS[i % COLORS.length]} strokeWidth={2} dot={{ r: 3 }} />
+                ))}
+                {tiposSelecionados.map((tipo, i) => (
+                  <Line key={`${tipo}-prev`} type="monotone" dataKey={`${tipo} (Anterior)`} stroke={COLORS[i % COLORS.length]} strokeWidth={1.5} strokeDasharray="5 5" dot={false} opacity={0.5} />
+                ))}
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        )}
       </div>
 
       {/* Veículos há mais tempo na oficina */}
@@ -239,10 +402,10 @@ export default function ConsultMaintenanceScreen({ manutencoes, historicoManuten
                   return (
                     <tr key={m.id} className="border-b border-gray-50 hover:bg-slate-50 transition-colors">
                       <td className="px-3 py-2 font-bold font-mono text-brand-700">
-                        {veiculoMap.get(m.prefixo)?.tipo && (
-                          <span className="mr-1 text-[9px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-bold">{veiculoMap.get(m.prefixo)!.tipo}</span>
-                        )}
                         {m.prefixo}
+                        {veiculoMap.get(m.prefixo)?.tipo && (
+                          <span className="ml-1 text-[9px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-bold">{veiculoMap.get(m.prefixo)!.tipo}</span>
+                        )}
                       </td>
                       <td className="px-3 py-2 font-mono text-[10px]">{getPlaca(m.prefixo)}</td>
                       <td className="px-3 py-2 font-mono text-[10px]">{m.retidoDesde}</td>

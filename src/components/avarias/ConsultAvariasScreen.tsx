@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { Avaria, Motorista, UserRole, ResumoAvaria } from '../../types';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, LineChart, Line, CartesianGrid } from 'recharts';
 import { subDays, format } from 'date-fns';
@@ -155,8 +155,30 @@ const AvariaDetailModal = ({ group, motoristasMap, onClose, onSave }: { group: A
 };
 
 export default function ConsultAvariasScreen({ avarias, setAvarias, motoristas, resumos, setResumos }: ConsultAvariasScreenProps) {
-  const [dataInicio, setDataInicio] = useState(format(subDays(new Date(), 90), 'yyyy-MM-dd'));
-  const [dataFim, setDataFim] = useState(format(new Date(), 'yyyy-MM-dd'));
+  // Auto-detect date range from actual data
+  const defaultDates = useMemo(() => {
+    if (avarias.length === 0) return { start: format(subDays(new Date(), 90), 'yyyy-MM-dd'), end: format(new Date(), 'yyyy-MM-dd') };
+    let minDate = new Date(9999, 0, 1);
+    let maxDate = new Date(1970, 0, 1);
+    avarias.forEach(a => {
+      try {
+        const [d, m, y] = a.data.split('/').map(Number);
+        const dt = new Date(y, m - 1, d);
+        if (dt < minDate) minDate = dt;
+        if (dt > maxDate) maxDate = dt;
+      } catch {}
+    });
+    return { start: format(minDate, 'yyyy-MM-dd'), end: format(maxDate, 'yyyy-MM-dd') };
+  }, [avarias]);
+
+  const [dataInicio, setDataInicio] = useState(defaultDates.start);
+  const [dataFim, setDataFim] = useState(defaultDates.end);
+
+  // Sync dates when avarias load asynchronously
+  useEffect(() => {
+    setDataInicio(defaultDates.start);
+    setDataFim(defaultDates.end);
+  }, [defaultDates.start, defaultDates.end]);
   const [selectedGroup, setSelectedGroup] = useState<Avaria[] | null>(null);
   const [editingResumoKey, setEditingResumoKey] = useState<string | null>(null);
   const [editResumoForm, setEditResumoForm] = useState<Partial<ResumoAvaria>>({});
