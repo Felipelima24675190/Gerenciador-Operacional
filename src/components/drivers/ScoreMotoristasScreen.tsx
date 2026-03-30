@@ -370,107 +370,106 @@ export default function ScoreMotoristasScreen({
 
       {/* Table */}
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-        <div className="overflow-y-auto max-h-[500px]">
-          <table className="w-full text-xs text-left">
+        <div className="overflow-x-auto overflow-y-auto max-h-[500px]">
+          <table className="w-full text-xs text-left table-fixed">
             <thead className="bg-slate-800 text-white text-[10px] uppercase sticky top-0 z-10">
               <tr>
-                <th className="px-3 py-2.5 w-8">#</th>
-                <th className="px-3 py-2.5 cursor-pointer hover:text-brand-300" onClick={() => toggleSort('nome')}>
+                <th className="px-2 py-2.5 w-[36px]">#</th>
+                <th className="px-2 py-2.5 cursor-pointer hover:text-brand-300" onClick={() => toggleSort('nome')}>
                   Motorista <SortIcon field="nome" />
                 </th>
-                <th className="px-3 py-2.5">Matrícula</th>
-                <th className="px-3 py-2.5">Filial</th>
-                <th className="px-3 py-2.5 text-center cursor-pointer hover:text-brand-300" onClick={() => toggleSort('score')}>
+                <th className="px-2 py-2.5 w-[72px]">Matrícula</th>
+                <th className="px-2 py-2.5 w-[90px]">Filial</th>
+                <th className="px-2 py-2.5 text-center w-[56px] cursor-pointer hover:text-brand-300" onClick={() => toggleSort('score')}>
                   Score <SortIcon field="score" />
                 </th>
-                <th className="px-3 py-2.5 text-center">Faixa</th>
-                <th className="px-3 py-2.5 text-center cursor-pointer hover:text-amber-300" onClick={() => toggleSort('faltas')}>
+                <th className="px-2 py-2.5 text-center w-[72px]">Faixa</th>
+                <th className="px-2 py-2.5 text-center w-[52px] cursor-pointer hover:text-amber-300" onClick={() => toggleSort('faltas')}>
                   Faltas <SortIcon field="faltas" />
                 </th>
-                <th className="px-3 py-2.5 text-center cursor-pointer hover:text-amber-300" onClick={() => toggleSort('excessos')}>
+                <th className="px-2 py-2.5 text-center w-[60px] cursor-pointer hover:text-amber-300" onClick={() => toggleSort('excessos')}>
                   Excessos <SortIcon field="excessos" />
                 </th>
-                <th className="px-3 py-2.5 text-center cursor-pointer hover:text-amber-300" onClick={() => toggleSort('atrasos')}>
+                <th className="px-2 py-2.5 text-center w-[56px] cursor-pointer hover:text-amber-300" onClick={() => toggleSort('atrasos')}>
                   Atrasos <SortIcon field="atrasos" />
                 </th>
-                <th className="px-3 py-2.5 text-center">Avarias</th>
-                <th className="px-3 py-2.5 text-center">Acidentes</th>
-                <th className="px-3 py-2.5 text-center">Deduções</th>
+                <th className="px-2 py-2.5 text-center w-[56px]">Avarias</th>
+                <th className="px-2 py-2.5 text-center w-[64px]">Acidentes</th>
+                <th className="px-2 py-2.5 text-center w-[68px]">Deduções</th>
               </tr>
             </thead>
             <tbody>
               {filtered.slice(0, 300).map((s, idx) => {
                 const isExpanded = expandedMatricula === s.matricula;
-                return (
-                  <tr key={s.matricula}>
-                    <td colSpan={12} className="p-0">
-                      <div>
-                        <div
-                          className={`flex items-center cursor-pointer transition-colors ${isExpanded ? 'bg-slate-50' : 'hover:bg-slate-50'} border-b border-gray-50`}
-                          onClick={() => setExpandedMatricula(isExpanded ? null : s.matricula)}
-                        >
-                          <span className="px-3 py-2.5 w-8 text-[10px] text-slate-400">{idx + 1}</span>
-                          <span className="px-3 py-2.5 font-bold text-slate-700 flex-1 min-w-[150px]">{s.nome}</span>
-                          <span className="px-3 py-2.5 font-mono text-slate-500 w-20">{s.matricula}</span>
-                          <span className="px-3 py-2.5 text-slate-500 w-24">{s.filial}</span>
-                          <span className={`px-3 py-2.5 text-center font-black text-lg w-16 ${getScoreColor(s.score)}`}>{s.score}</span>
-                          <span className="px-3 py-2.5 text-center w-24">
-                            <span className={`inline-block px-2 py-0.5 rounded-full text-[9px] font-black border ${getScoreBg(s.score)} ${getScoreColor(s.score)}`}>
-                              {getScoreLabel(s.score)}
-                            </span>
-                          </span>
-                          <span className="px-3 py-2.5 text-center w-14">{s.detalhes.faltas > 0 ? <span className="text-red-600 font-bold">{s.detalhes.faltas}</span> : <span className="text-slate-300">0</span>}</span>
-                          <span className="px-3 py-2.5 text-center w-16">{s.detalhes.excessos > 0 ? <span className="text-amber-600 font-bold">{s.detalhes.excessos}</span> : <span className="text-slate-300">0</span>}</span>
-                          <span className="px-3 py-2.5 text-center w-14">{s.detalhes.atrasos > 0 ? <span className="text-blue-600 font-bold">{s.detalhes.atrasos}</span> : <span className="text-slate-300">0</span>}</span>
-                          <span className="px-3 py-2.5 text-center w-14">{s.detalhes.avarias > 0 ? <span className="text-orange-600 font-bold">{s.detalhes.avarias}</span> : <span className="text-slate-300">0</span>}</span>
-                          <span className="px-3 py-2.5 text-center w-16">{s.detalhes.acidentes > 0 ? <span className="text-red-700 font-bold">{s.detalhes.acidentes}</span> : <span className="text-slate-300">0</span>}</span>
-                          <span className="px-3 py-2.5 text-center w-16 font-bold text-red-500">
-                            {s.deducoes.total > 0 ? `-${s.deducoes.total}` : <span className="text-slate-300">0</span>}
-                          </span>
-                        </div>
-
-                        {/* Expanded detail */}
-                        {isExpanded && (
-                          <div className="bg-slate-50 border-b border-gray-200 px-6 py-4">
-                            <div className="grid grid-cols-5 gap-3">
-                              {[
-                                { label: 'Faltas', count: s.detalhes.faltas, ded: s.deducoes.faltas, peso: PESOS.falta, color: 'red' },
-                                { label: 'Excessos Vel.', count: s.detalhes.excessos, ded: s.deducoes.excessos, peso: PESOS.excesso, color: 'amber' },
-                                { label: 'Atrasos Linha', count: s.detalhes.atrasos, ded: s.deducoes.atrasos, peso: PESOS.atraso, color: 'blue' },
-                                { label: 'Avarias', count: s.detalhes.avarias, ded: s.deducoes.avarias, peso: PESOS.avaria, color: 'orange' },
-                                { label: 'Acidentes', count: s.detalhes.acidentes, ded: s.deducoes.acidentes, peso: PESOS.acidente, color: 'red' },
-                              ].map((item, i) => (
-                                <div key={i} className={`bg-white rounded-lg border border-${item.color}-100 p-3`}>
-                                  <p className="text-[10px] font-bold text-slate-500 uppercase">{item.label}</p>
-                                  <p className="text-lg font-black text-slate-700">{item.count}</p>
-                                  <p className="text-[10px] text-slate-400">
-                                    {item.count} × {item.peso}pts = <span className="font-bold text-red-500">−{item.ded}pts</span>
-                                  </p>
-                                </div>
-                              ))}
-                            </div>
-                            <div className="mt-3 flex items-center gap-4">
-                              <div className="flex items-center gap-2">
-                                <span className="text-xs font-bold text-slate-600">Score Final:</span>
-                                <span className="text-xs text-slate-500">100 − {s.deducoes.total} =</span>
-                                <span className={`text-lg font-black ${getScoreColor(s.score)}`}>{s.score}</span>
-                              </div>
-                              {s.score < 50 && (
-                                <div className="flex items-center gap-1 text-[10px] text-red-500 font-bold">
-                                  <AlertTriangle size={12} /> Atenção: Score crítico
-                                </div>
-                              )}
-                              {s.score >= 90 && (
-                                <div className="flex items-center gap-1 text-[10px] text-emerald-600 font-bold">
-                                  <TrendingUp size={12} /> Desempenho excelente
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        )}
-                      </div>
+                return (<>
+                  <tr
+                    key={s.matricula}
+                    className={`cursor-pointer transition-colors border-b border-gray-50 ${isExpanded ? 'bg-slate-50' : 'hover:bg-slate-50'}`}
+                    onClick={() => setExpandedMatricula(isExpanded ? null : s.matricula)}
+                  >
+                    <td className="px-2 py-2.5 text-[10px] text-slate-400">{idx + 1}</td>
+                    <td className="px-2 py-2.5 font-bold text-slate-700 truncate" title={s.nome}>{s.nome}</td>
+                    <td className="px-2 py-2.5 font-mono text-slate-500">{s.matricula}</td>
+                    <td className="px-2 py-2.5 text-slate-500 truncate" title={s.filial}>{s.filial}</td>
+                    <td className={`px-2 py-2.5 text-center font-black text-lg ${getScoreColor(s.score)}`}>{s.score}</td>
+                    <td className="px-2 py-2.5 text-center">
+                      <span className={`inline-block px-2 py-0.5 rounded-full text-[9px] font-black border ${getScoreBg(s.score)} ${getScoreColor(s.score)}`}>
+                        {getScoreLabel(s.score)}
+                      </span>
+                    </td>
+                    <td className="px-2 py-2.5 text-center">{s.detalhes.faltas > 0 ? <span className="text-red-600 font-bold">{s.detalhes.faltas}</span> : <span className="text-slate-300">0</span>}</td>
+                    <td className="px-2 py-2.5 text-center">{s.detalhes.excessos > 0 ? <span className="text-amber-600 font-bold">{s.detalhes.excessos}</span> : <span className="text-slate-300">0</span>}</td>
+                    <td className="px-2 py-2.5 text-center">{s.detalhes.atrasos > 0 ? <span className="text-blue-600 font-bold">{s.detalhes.atrasos}</span> : <span className="text-slate-300">0</span>}</td>
+                    <td className="px-2 py-2.5 text-center">{s.detalhes.avarias > 0 ? <span className="text-orange-600 font-bold">{s.detalhes.avarias}</span> : <span className="text-slate-300">0</span>}</td>
+                    <td className="px-2 py-2.5 text-center">{s.detalhes.acidentes > 0 ? <span className="text-red-700 font-bold">{s.detalhes.acidentes}</span> : <span className="text-slate-300">0</span>}</td>
+                    <td className="px-2 py-2.5 text-center font-bold text-red-500">
+                      {s.deducoes.total > 0 ? `-${s.deducoes.total}` : <span className="text-slate-300">0</span>}
                     </td>
                   </tr>
+                  {/* Expanded detail */}
+                  {isExpanded && (
+                    <tr key={`${s.matricula}-detail`}>
+                      <td colSpan={12} className="p-0">
+                        <div className="bg-slate-50 border-b border-gray-200 px-6 py-4">
+                          <div className="grid grid-cols-5 gap-3">
+                            {[
+                              { label: 'Faltas', count: s.detalhes.faltas, ded: s.deducoes.faltas, peso: PESOS.falta, color: 'red' },
+                              { label: 'Excessos Vel.', count: s.detalhes.excessos, ded: s.deducoes.excessos, peso: PESOS.excesso, color: 'amber' },
+                              { label: 'Atrasos Linha', count: s.detalhes.atrasos, ded: s.deducoes.atrasos, peso: PESOS.atraso, color: 'blue' },
+                              { label: 'Avarias', count: s.detalhes.avarias, ded: s.deducoes.avarias, peso: PESOS.avaria, color: 'orange' },
+                              { label: 'Acidentes', count: s.detalhes.acidentes, ded: s.deducoes.acidentes, peso: PESOS.acidente, color: 'red' },
+                            ].map((item, i) => (
+                              <div key={i} className={`bg-white rounded-lg border border-${item.color}-100 p-3`}>
+                                <p className="text-[10px] font-bold text-slate-500 uppercase">{item.label}</p>
+                                <p className="text-lg font-black text-slate-700">{item.count}</p>
+                                <p className="text-[10px] text-slate-400">
+                                  {item.count} × {item.peso}pts = <span className="font-bold text-red-500">−{item.ded}pts</span>
+                                </p>
+                              </div>
+                            ))}
+                          </div>
+                          <div className="mt-3 flex items-center gap-4">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-bold text-slate-600">Score Final:</span>
+                              <span className="text-xs text-slate-500">100 − {s.deducoes.total} =</span>
+                              <span className={`text-lg font-black ${getScoreColor(s.score)}`}>{s.score}</span>
+                            </div>
+                            {s.score < 50 && (
+                              <div className="flex items-center gap-1 text-[10px] text-red-500 font-bold">
+                                <AlertTriangle size={12} /> Atenção: Score crítico
+                              </div>
+                            )}
+                            {s.score >= 90 && (
+                              <div className="flex items-center gap-1 text-[10px] text-emerald-600 font-bold">
+                                <TrendingUp size={12} /> Desempenho excelente
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </>
                 );
               })}
             </tbody>
