@@ -1,0 +1,14 @@
+import { Viagem } from '../types';
+
+export const mockViagens: Viagem[] = [
+  { id: 'v1', numeroLinha: '12003-2', atendimento: 'REC X SCZ', nomeLinha: 'RECIFE(PE) - SANTA CRUZ DO CAPIBARIBE(PE)', sentido: 'Volta', pontoInicio: 'SCZ', pontoFim: 'REC Tip', prevInicio: '18/03/2026 04:00', prevFim: '18/03/2026 09:00', ordem: 1, diasOperantes: [0,1,2,3,4,5,6] },
+  { id: 'v2', numeroLinha: '12004', atendimento: 'REC X CAU', nomeLinha: 'RECIFE(PE) - CARUARU(PE) - EXPRESSO', sentido: 'Ida', pontoInicio: 'REC Tip', pontoFim: 'CAU', prevInicio: '18/03/2026 05:30', prevFim: '18/03/2026 07:30', ordem: 1, diasOperantes: [0,1,2,3,4,5,6] },
+  { id: 'v3', numeroLinha: '12004', atendimento: 'REC X CAU', nomeLinha: 'RECIFE(PE) - CARUARU(PE) - EXPRESSO', sentido: 'Volta', pontoInicio: 'CAU', pontoFim: 'REC Tip', prevInicio: '18/03/2026 05:30', prevFim: '18/03/2026 07:30', ordem: 2, diasOperantes: [0,1,2,3,4,5,6] },
+  { id: 'v4', numeroLinha: '12004', atendimento: 'REC X CAU', nomeLinha: 'RECIFE(PE) - CARUARU(PE) - EXPRESSO', sentido: 'Volta', pontoInicio: 'CAU', pontoFim: 'REC Tip', prevInicio: '18/03/2026 06:30', prevFim: '18/03/2026 08:30', ordem: 3, diasOperantes: [0,1,2,3,4,5,6] },
+  { id: 'v5', numeroLinha: '12004', atendimento: 'REC X CAU', nomeLinha: 'RECIFE(PE) - CARUARU(PE) - EXPRESSO', sentido: 'Ida', pontoInicio: 'REC Tip', pontoFim: 'CAU', prevInicio: '18/03/2026 06:30', prevFim: '18/03/2026 08:30', ordem: 4, diasOperantes: [0,1,2,3,4,5,6] },
+  { id: 'v6', numeroLinha: '12004', atendimento: 'REC X CAU', nomeLinha: 'RECIFE(PE) - CARUARU(PE) - EXPRESSO', sentido: 'Ida', pontoInicio: 'REC Tip', pontoFim: 'CAU', prevInicio: '18/03/2026 07:30', prevFim: '18/03/2026 09:30', ordem: 5, diasOperantes: [0,1,2,3,4,5,6] },
+  { id: 'v7', numeroLinha: '12004', atendimento: 'REC X CAU', nomeLinha: 'RECIFE(PE) - CARUARU(PE) - EXPRESSO', sentido: 'Volta', pontoInicio: 'CAU', pontoFim: 'REC Tip', prevInicio: '18/03/2026 07:30', prevFim: '18/03/2026 09:30', ordem: 6, diasOperantes: [0,1,2,3,4,5,6] },
+  { id: 'v8', numeroLinha: '12044', atendimento: 'REC X CAU', nomeLinha: 'RECIFE(PE) - CARUARU(PE) - PINGA', sentido: 'Volta', pontoInicio: 'CAU', pontoFim: 'REC Tip', prevInicio: '18/03/2026 06:00', prevFim: '18/03/2026 09:30', ordem: 1, diasOperantes: [0,1,2,3,4,5,6] },
+  { id: 'v9', numeroLinha: '12044', atendimento: 'REC X CAU', nomeLinha: 'RECIFE(PE) - CARUARU(PE) - PINGA', sentido: 'Ida', pontoInicio: 'REC Tip', pontoFim: 'CAU', prevInicio: '18/03/2026 06:00', prevFim: '18/03/2026 09:30', ordem: 2, diasOperantes: [0,1,2,3,4,5,6] },
+  { id: 'v10', numeroLinha: '12044', atendimento: 'REC X CAU', nomeLinha: 'RECIFE(PE) - CARUARU(PE) - PINGA', sentido: 'Ida', pontoInicio: 'REC Tip', pontoFim: 'CAU', prevInicio: '18/03/2026 07:00', prevFim: '18/03/2026 10:30', ordem: 3, diasOperantes: [0,1,2,3,4,5,6] },
+];
