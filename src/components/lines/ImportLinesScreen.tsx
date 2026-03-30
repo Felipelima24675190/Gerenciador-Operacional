@@ -152,39 +152,77 @@ export default function ImportLinesScreen({ viagens, setViagens, userRole }: Imp
           }
         }
 
-        // Convert to Viagem[]
-        const novasViagens: Viagem[] = [];
-        let ordem = 1;
+        // ── Pass 2: merge trips that share (nomeLinha, origem, destino, sentido, horarioSaida, diasOperantes) ──
+        // These are different service codes for the same physical trip — combine service codes with "/"
+        interface MergedTrip {
+          empresa: string;
+          nomeLinha: string;
+          origem: string;
+          destino: string;
+          servicos: string[];   // multiple service codes
+          horarioSaida: string;
+          sentido: string;
+          regiao: string;
+          diasOperantes: number[];
+        }
 
-        // Sort by nomeLinha then horarioSaida for nice ordering
+        const mergeMap = new Map<string, MergedTrip>();
         const sortedEntries = [...serviceMap.values()].sort((a, b) =>
           a.nomeLinha.localeCompare(b.nomeLinha) || a.horarioSaida.localeCompare(b.horarioSaida)
         );
 
         for (const svc of sortedEntries) {
           const diasArr = [...svc.dias].sort();
-          const atendimento = svc.origem && svc.destino
-            ? `${svc.origem} X ${svc.destino}`
-            : svc.nomeLinha;
+          const diasKey = (diasArr.length > 0 ? diasArr : [0,1,2,3,4,5,6]).join(',');
+          const mergeKey = `${svc.nomeLinha}|${svc.origem}|${svc.destino}|${svc.sentido}|${svc.horarioSaida}|${diasKey}`;
+
+          if (mergeMap.has(mergeKey)) {
+            const existing = mergeMap.get(mergeKey)!;
+            if (!existing.servicos.includes(svc.servico)) {
+              existing.servicos.push(svc.servico);
+            }
+          } else {
+            mergeMap.set(mergeKey, {
+              empresa: svc.empresa,
+              nomeLinha: svc.nomeLinha,
+              origem: svc.origem,
+              destino: svc.destino,
+              servicos: [svc.servico],
+              horarioSaida: svc.horarioSaida,
+              sentido: svc.sentido,
+              regiao: svc.regiao,
+              diasOperantes: diasArr.length > 0 ? diasArr : [0, 1, 2, 3, 4, 5, 6],
+            });
+          }
+        }
+
+        // Convert to Viagem[]
+        const novasViagens: Viagem[] = [];
+        let ordem = 1;
+
+        for (const trip of mergeMap.values()) {
+          const atendimento = trip.origem && trip.destino
+            ? `${trip.origem} X ${trip.destino}`
+            : trip.nomeLinha;
 
           novasViagens.push({
             id: crypto.randomUUID(),
-            numeroLinha: svc.nomeLinha,          // Use full line name as the identifier
-            nomeLinha: svc.nomeLinha,
+            numeroLinha: trip.nomeLinha,
+            nomeLinha: trip.nomeLinha,
             atendimento,
-            sentido: svc.sentido === 'IDA' ? 'Ida' : svc.sentido === 'VOLTA' ? 'Volta' : svc.sentido,
-            pontoInicio: svc.origem,
-            pontoFim: svc.destino,
-            prevInicio: svc.horarioSaida,
+            sentido: trip.sentido === 'IDA' ? 'Ida' : trip.sentido === 'VOLTA' ? 'Volta' : trip.sentido,
+            pontoInicio: trip.origem,
+            pontoFim: trip.destino,
+            prevInicio: trip.horarioSaida,
             prevFim: '',
             ordem: ordem++,
-            diasOperantes: diasArr.length > 0 ? diasArr : [0, 1, 2, 3, 4, 5, 6],
-            servico: svc.servico,
-            empresa: svc.empresa,
-            regiao: svc.regiao,
-            origem: svc.origem,
-            destino: svc.destino,
-            horarioSaida: svc.horarioSaida,
+            diasOperantes: trip.diasOperantes,
+            servico: trip.servicos.join('/'),
+            empresa: trip.empresa,
+            regiao: trip.regiao,
+            origem: trip.origem,
+            destino: trip.destino,
+            horarioSaida: trip.horarioSaida,
           });
         }
 
