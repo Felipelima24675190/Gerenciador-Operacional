@@ -92,7 +92,6 @@ export default function ViewOciosoScreen({ registros, linhas, viagens }: ViewOci
     const totalOcio = registrosFiltrados.reduce((s, r) => s + r.ociosaKm, 0);
     const totalKm = registrosFiltrados.reduce((s, r) => s + r.totalKm, 0);
     const totalFretamento = linhas.filter(l => isFretamento(l.numeroLinha)).reduce((s, l) => s + l.km, 0);
-    // KM Operacional das linhas regulares (exclui fretamento)
     const totalLinhasRegular = linhas.filter(l => !isFretamento(l.numeroLinha)).reduce((s, l) => s + l.km, 0);
     return { veiculosUnicos, totalOp, totalOcio, totalKm, totalFretamento, totalLinhasRegular };
   }, [registrosFiltrados, linhas]);
@@ -220,6 +219,27 @@ export default function ViewOciosoScreen({ registros, linhas, viagens }: ViewOci
 
   return (
     <div className="space-y-4">
+      {/* Date Filter — first so user selects range before seeing KPIs */}
+      <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+          <div>
+            <label className="text-xs font-bold text-slate-500 uppercase block mb-1">Data Início</label>
+            <div className="relative">
+              <Calendar className="absolute left-2 top-2.5 text-gray-400" size={14} />
+              <input type="date" value={dataInicio} onChange={e => setDataInicio(e.target.value)} className="w-full pl-8 pr-3 py-2 text-sm border border-gray-300 rounded-lg" />
+            </div>
+          </div>
+          <div>
+            <label className="text-xs font-bold text-slate-500 uppercase block mb-1">Data Fim</label>
+            <div className="relative">
+              <Calendar className="absolute left-2 top-2.5 text-gray-400" size={14} />
+              <input type="date" value={dataFim} onChange={e => setDataFim(e.target.value)} className="w-full pl-8 pr-3 py-2 text-sm border border-gray-300 rounded-lg" />
+            </div>
+          </div>
+          <p className="text-sm text-slate-500 pb-2">{registrosFiltrados.length} registros no período</p>
+        </div>
+      </div>
+
       {/* KPIs — Veículos */}
       <div className="bg-slate-800 p-4 flex gap-3 overflow-x-auto rounded-xl">
         {[
@@ -251,49 +271,6 @@ export default function ViewOciosoScreen({ registros, linhas, viagens }: ViewOci
           ))}
         </div>
       )}
-
-      {/* % Operante / Ociosa */}
-      {kpis.totalKm > 0 && (
-        <div className="grid grid-cols-2 gap-4">
-          <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 flex items-center gap-4">
-            <div className="flex-1">
-              <p className="text-xs font-bold text-emerald-600 uppercase tracking-tighter">% Operante</p>
-              <p className="text-3xl font-black text-emerald-700">{((kpis.totalOp / kpis.totalKm) * 100).toFixed(1)}%</p>
-              <p className="text-[10px] text-emerald-500 mt-0.5">{fmtKm(kpis.totalOp)} operacional</p>
-            </div>
-            <div className="w-16 h-16 rounded-full flex items-center justify-center bg-emerald-100 text-emerald-600 font-black text-sm">OP</div>
-          </div>
-          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-center gap-4">
-            <div className="flex-1">
-              <p className="text-xs font-bold text-amber-600 uppercase tracking-tighter">% Ociosa</p>
-              <p className="text-3xl font-black text-amber-700">{((kpis.totalOcio / kpis.totalKm) * 100).toFixed(1)}%</p>
-              <p className="text-[10px] text-amber-500 mt-0.5">{fmtKm(kpis.totalOcio)} ociosa</p>
-            </div>
-            <div className="w-16 h-16 rounded-full flex items-center justify-center bg-amber-100 text-amber-600 font-black text-sm">OC</div>
-          </div>
-        </div>
-      )}
-
-      {/* Date Filter */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-          <div>
-            <label className="text-xs font-bold text-slate-500 uppercase block mb-1">Data Início</label>
-            <div className="relative">
-              <Calendar className="absolute left-2 top-2.5 text-gray-400" size={14} />
-              <input type="date" value={dataInicio} onChange={e => setDataInicio(e.target.value)} className="w-full pl-8 pr-3 py-2 text-sm border border-gray-300 rounded-lg" />
-            </div>
-          </div>
-          <div>
-            <label className="text-xs font-bold text-slate-500 uppercase block mb-1">Data Fim</label>
-            <div className="relative">
-              <Calendar className="absolute left-2 top-2.5 text-gray-400" size={14} />
-              <input type="date" value={dataFim} onChange={e => setDataFim(e.target.value)} className="w-full pl-8 pr-3 py-2 text-sm border border-gray-300 rounded-lg" />
-            </div>
-          </div>
-          <p className="text-sm text-slate-500 pb-2">{registrosFiltrados.length} registros no período</p>
-        </div>
-      </div>
 
       {/* Charts row 1: Operacional e Ociosa por veículo */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

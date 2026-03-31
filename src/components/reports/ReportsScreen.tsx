@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Calendar, Filter, FileBarChart, Users, Bus, FileDown } from 'lucide-react';
-import { Motorista, Ocorrencia, ExcessoVelocidade, MultaANTT, Avaria, ParadaIndevida, MultaTransito, RegistroOciosidade } from '../../types';
+import { Motorista, Ocorrencia, ExcessoVelocidade, MultaANTT, Avaria, ParadaIndevida, MultaTransito, OciosidadeMotorista } from '../../types';
 import StatCard from '../dashboard/StatCard';
 import { isWithinInterval, startOfDay, endOfDay } from 'date-fns';
 
@@ -13,7 +13,7 @@ interface ReportsScreenProps {
   avarias?: Avaria[];
   paradas?: ParadaIndevida[];
   multasTransito?: MultaTransito[];
-  registrosOciosidade?: RegistroOciosidade[];
+  ociosidades?: OciosidadeMotorista[];
 }
 
 type Tab = 'pontualidade' | 'velocidade' | 'antt' | 'avarias' | 'paradas' | 'transito' | 'quilometragem';
@@ -444,7 +444,7 @@ function TransitoTab({ motoristas, multas }: { motoristas: Motorista[]; multas: 
 }
 
 // ── Quilometragem ────────────────────────────────────────────────────────────
-function QuilometragemTab({ registros }: { registros: RegistroOciosidade[] }) {
+function QuilometragemTab({ registros }: { registros: OciosidadeMotorista[] }) {
   const [dataInicio, setDataInicio] = useState('2026-01-01');
   const [dataFim, setDataFim] = useState('2026-12-31');
 
@@ -458,19 +458,35 @@ function QuilometragemTab({ registros }: { registros: RegistroOciosidade[] }) {
   }, [registros, dataInicio, dataFim]);
 
   const metricas = useMemo(() => {
-    const totalOp = filtered.reduce((s, r) => s + r.operacionalKm, 0);
-    const totalOcio = filtered.reduce((s, r) => s + r.ociosaKm, 0);
-    const totalKm = filtered.reduce((s, r) => s + r.totalKm, 0);
+    const totalKm = filtered.reduce((s, r) => s + (r.distanciaKm || 0), 0);
+    const totalTempoMov = filtered.reduce((s, r) => s + Math.max(r.tempoMovimentoMin || 0, 0), 0);
+    const totalMotorParado = filtered.reduce((s, r) => s + Math.max(r.paradoMotorLigadoMin || 0, 0), 0);
+    const totalTempoParado = filtered.reduce((s, r) => s + Math.max(r.tempoParadoMin || 0, 0), 0);
+    let totalTempoMin = filtered.reduce((s, r) => s + Math.max(r.tempoTotalMin || 0, 0), 0);
+    if (totalTempoMin === 0 && (totalTempoMov > 0 || totalMotorParado > 0)) {
+      totalTempoMin = totalTempoMov + totalTempoParado;
+    }
+    const pctMovimento = totalTempoMin > 0 ? ((totalTempoMov / totalTempoMin) * 100).toFixed(1) : '0';
+    const pctMotorParado = totalTempoMin > 0 ? ((totalMotorParado / totalTempoMin) * 100).toFixed(1) : '0';
+    const totalCombustivelL = filtered.reduce((s, r) => s + (r.combustivelMl || 0), 0) / 1000;
+    const eficienciaMedia = totalCombustivelL > 0 ? totalKm / totalCombustivelL : 0;
     const veiculos = new Set(filtered.map(r => r.prefixo)).size;
-    const percOp = totalKm > 0 ? ((totalOp / totalKm) * 100).toFixed(1) : '0';
-    const percOcio = totalKm > 0 ? ((totalOcio / totalKm) * 100).toFixed(1) : '0';
-    return { totalOp, totalOcio, totalKm, veiculos, percOp, percOcio };
+    return { totalKm, totalTempoMov, totalMotorParado, pctMovimento, pctMotorParado, eficienciaMedia, totalCombustivelL, veiculos };
   }, [filtered]);
 
   const handleExport = () => {
     if (!filtered.length) return;
-    const headers = ['Data', 'Prefixo', 'Km Operacional', 'Km Ociosa', 'Km Total'];
-    const rows = filtered.map(r => [r.data, r.prefixo, r.operacionalKm.toFixed(2).replace('.', ','), r.ociosaKm.toFixed(2).replace('.', ','), r.totalKm.toFixed(2).replace('.', ',')]);
+    const headers = ['Data', 'Prefixo', 'Distância (km)', 'Tempo Movimento (min)', 'Motor Parado (min)', 'Tempo Total (min)', 'Eficiência (km/l)', 'Combustível (ml)'];
+    const rows = filtered.map(r => [
+      r.data,
+      r.prefixo,
+      (r.distanciaKm || 0).toFixed(2).replace('.', ','),
+      String(r.tempoMovimentoMin || 0),
+      String(r.paradoMotorLigadoMin || 0),
+      String(r.tempoTotalMin || 0),
+      (r.eficiencia || 0).toFixed(2).replace('.', ','),
+      String(r.combustivelMl || 0),
+    ]);
     downloadCSV([headers, ...rows].map(r => r.join(';')).join('\n'), `quilometragem_${dataInicio}_${dataFim}.csv`);
   };
 
@@ -485,11 +501,11 @@ function QuilometragemTab({ registros }: { registros: RegistroOciosidade[] }) {
       </div>
       <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
         {[
-          { label: 'Total Km', value: metricas.totalKm.toLocaleString('pt-BR', { maximumFractionDigits: 0 }) },
-          { label: 'Km Operacional', value: metricas.totalOp.toLocaleString('pt-BR', { maximumFractionDigits: 0 }) },
-          { label: 'Km Ociosa', value: metricas.totalOcio.toLocaleString('pt-BR', { maximumFractionDigits: 0 }) },
-          { label: '% Operante', value: `${metricas.percOp}%` },
-          { label: '% Ociosa', value: `${metricas.percOcio}%` },
+          { label: 'KM Total', value: metricas.totalKm.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' km' },
+          { label: 'Tempo em Movimento', value: `${metricas.pctMovimento}%` },
+          { label: 'Motor Ligado Parado', value: `${metricas.pctMotorParado}%` },
+          { label: 'Eficiência Média (km/l)', value: metricas.eficienciaMedia.toFixed(2) + ' km/l' },
+          { label: 'Combustível Total (L)', value: metricas.totalCombustivelL.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' L' },
           { label: 'Veículos', value: metricas.veiculos },
         ].map((k, i) => (
           <div key={i} className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
@@ -508,7 +524,7 @@ function QuilometragemTab({ registros }: { registros: RegistroOciosidade[] }) {
 }
 
 // ── Main ──────────────────────────────────────────────────────────────────────
-export default function ReportsScreen({ motoristas, ocorrencias, excessos = [], multasAntt = [], avarias = [], paradas = [], multasTransito = [], registrosOciosidade = [] }: ReportsScreenProps) {
+export default function ReportsScreen({ motoristas, ocorrencias, excessos = [], multasAntt = [], avarias = [], paradas = [], multasTransito = [], ociosidades = [] }: ReportsScreenProps) {
   const [activeTab, setActiveTab] = useState<Tab>('pontualidade');
 
   return (
@@ -536,7 +552,7 @@ export default function ReportsScreen({ motoristas, ocorrencias, excessos = [], 
       {activeTab === 'avarias' && <AvariasTab avarias={avarias} />}
       {activeTab === 'paradas' && <ParadasTab paradas={paradas} />}
       {activeTab === 'transito' && <TransitoTab motoristas={motoristas} multas={multasTransito} />}
-      {activeTab === 'quilometragem' && <QuilometragemTab registros={registrosOciosidade} />}
+      {activeTab === 'quilometragem' && <QuilometragemTab registros={ociosidades} />}
     </div>
   );
 }

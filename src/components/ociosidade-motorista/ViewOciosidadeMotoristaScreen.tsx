@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { OciosidadeMotorista } from '../../types';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { Search } from 'lucide-react';
+import { Search, Calendar } from 'lucide-react';
 
 interface Props {
   ociosidades: OciosidadeMotorista[];
@@ -27,53 +27,82 @@ function fmtKm(km: number): string {
   return km.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' km';
 }
 
+function parseDataBR(s: string): Date | null {
+  try {
+    const [d, m, y] = s.split('/').map(Number);
+    return new Date(y, m - 1, d);
+  } catch { return null; }
+}
+
 export default function ViewOciosidadeMotoristaScreen({ ociosidades }: Props) {
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState<'km' | 'ocioso' | 'viagens'>('km');
+  const [dataInicio, setDataInicio] = useState('');
+  const [dataFim, setDataFim] = useState('');
 
   // Detect stale data (old format had 'tempoMinutos' instead of 'paradoMotorLigadoMin')
   const isStaleFormat = useMemo(() =>
     ociosidades.length > 0 && (ociosidades[0] as any).tempoMinutos !== undefined,
   [ociosidades]);
 
+  // Filter by date range
+  const filteredByDate = useMemo(() => {
+    if (!dataInicio && !dataFim) return ociosidades;
+    const start = dataInicio ? new Date(dataInicio + 'T00:00:00') : null;
+    const end = dataFim ? new Date(dataFim + 'T23:59:59') : null;
+    return ociosidades.filter(r => {
+      const d = parseDataBR(r.data);
+      if (!d) return false;
+      if (start && d < start) return false;
+      if (end && d > end) return false;
+      return true;
+    });
+  }, [ociosidades, dataInicio, dataFim]);
+
   // KPIs
   const kpis = useMemo(() => {
-    const kmTotal        = ociosidades.reduce((s, r) => s + (r.distanciaKm || 0), 0);
-    // KM Ociosa: sum of all distances in the dataset
-    const kmOciosa       = ociosidades.reduce((s, r) => s + (r.distanciaKm || 0), 0);
-    const tempoOcioso    = ociosidades.reduce((s, r) => s + (r.paradoMotorLigadoMin || 0), 0);
-    const combustivelTotal = ociosidades.reduce((s, r) => s + (r.combustivelMl || 0), 0);
-    const eficienciaMedia = ociosidades.length > 0
-      ? ociosidades.reduce((s, r) => s + (r.eficiencia || 0), 0) / ociosidades.length
-      : 0;
-    const veiculosUnicos = new Set(ociosidades.map(r => r.prefixo)).size;
-    return { kmTotal, kmOciosa, tempoOcioso, combustivelTotal, eficienciaMedia, veiculosUnicos };
-  }, [ociosidades]);
+    const kmTotal = filteredByDate.reduce((s, r) => s + (r.distanciaKm || 0), 0);
+    const totalTempoMov = filteredByDate.reduce((s, r) => s + Math.max(r.tempoMovimentoMin || 0, 0), 0);
+    const totalMotorParado = filteredByDate.reduce((s, r) => s + Math.max(r.paradoMotorLigadoMin || 0, 0), 0);
+    const totalTempoParado = filteredByDate.reduce((s, r) => s + Math.max(r.tempoParadoMin || 0, 0), 0);
+    let totalTempoMin = filteredByDate.reduce((s, r) => s + Math.max(r.tempoTotalMin || 0, 0), 0);
+    // Fallback: if tempoTotalMin is not populated, compute from components
+    if (totalTempoMin === 0 && (totalTempoMov > 0 || totalMotorParado > 0)) {
+      totalTempoMin = totalTempoMov + totalTempoParado;
+    }
+    const pctMovimento = totalTempoMin > 0 ? (totalTempoMov / totalTempoMin) * 100 : 0;
+    const pctMotorParado = totalTempoMin > 0 ? (totalMotorParado / totalTempoMin) * 100 : 0;
+    const combustivelTotal = filteredByDate.reduce((s, r) => s + (r.combustivelMl || 0), 0);
+    const combustivelL = combustivelTotal / 1000;
+    const eficienciaMedia = combustivelL > 0 ? kmTotal / combustivelL : 0;
+    const veiculosUnicos = new Set(filteredByDate.map(r => r.prefixo)).size;
+    return { kmTotal, pctMovimento, pctMotorParado, totalMotorParado, eficienciaMedia, combustivelL, veiculosUnicos };
+  }, [filteredByDate]);
 
   // Top 10 by idle time (Parado c/ Motor Ligado)
   const topOcioso = useMemo(() => {
     const acc: Record<string, number> = {};
-    ociosidades.forEach(r => { acc[r.prefixo] = (acc[r.prefixo] || 0) + (r.paradoMotorLigadoMin || 0); });
+    filteredByDate.forEach(r => { acc[r.prefixo] = (acc[r.prefixo] || 0) + (r.paradoMotorLigadoMin || 0); });
     return Object.entries(acc)
       .map(([name, value]) => ({ name, value }))
       .sort((a, b) => b.value - a.value)
       .slice(0, 10);
-  }, [ociosidades]);
+  }, [filteredByDate]);
 
   // Top 10 by KM (most traveled)
   const topKm = useMemo(() => {
     const acc: Record<string, number> = {};
-    ociosidades.forEach(r => { acc[r.prefixo] = (acc[r.prefixo] || 0) + r.distanciaKm; });
+    filteredByDate.forEach(r => { acc[r.prefixo] = (acc[r.prefixo] || 0) + r.distanciaKm; });
     return Object.entries(acc)
       .map(([name, value]) => ({ name, value }))
       .sort((a, b) => b.value - a.value)
       .slice(0, 10);
-  }, [ociosidades]);
+  }, [filteredByDate]);
 
   // Per-vehicle aggregated data for table
   const veiculoStats = useMemo(() => {
     const acc: Record<string, { viagens: number; kmTotal: number; paradoMin: number; movMin: number }> = {};
-    ociosidades.forEach(r => {
+    filteredByDate.forEach(r => {
       if (!acc[r.prefixo]) acc[r.prefixo] = { viagens: 0, kmTotal: 0, paradoMin: 0, movMin: 0 };
       acc[r.prefixo].viagens++;
       acc[r.prefixo].kmTotal    += r.distanciaKm;
@@ -81,7 +110,7 @@ export default function ViewOciosidadeMotoristaScreen({ ociosidades }: Props) {
       acc[r.prefixo].movMin     += r.tempoMovimentoMin;
     });
     return Object.entries(acc).map(([prefixo, s]) => ({ prefixo, ...s }));
-  }, [ociosidades]);
+  }, [filteredByDate]);
 
   const filtered = useMemo(() => {
     let list = veiculoStats;
@@ -112,14 +141,35 @@ export default function ViewOciosidadeMotoristaScreen({ ociosidades }: Props) {
         </div>
       )}
 
+      {/* Date Filter */}
+      <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+          <div>
+            <label className="text-xs font-bold text-slate-500 uppercase block mb-1">Data Início</label>
+            <div className="relative">
+              <Calendar className="absolute left-2 top-2.5 text-gray-400" size={14} />
+              <input type="date" value={dataInicio} onChange={e => setDataInicio(e.target.value)} className="w-full pl-8 pr-3 py-2 text-sm border border-gray-300 rounded-lg" />
+            </div>
+          </div>
+          <div>
+            <label className="text-xs font-bold text-slate-500 uppercase block mb-1">Data Fim</label>
+            <div className="relative">
+              <Calendar className="absolute left-2 top-2.5 text-gray-400" size={14} />
+              <input type="date" value={dataFim} onChange={e => setDataFim(e.target.value)} className="w-full pl-8 pr-3 py-2 text-sm border border-gray-300 rounded-lg" />
+            </div>
+          </div>
+          <p className="text-sm text-slate-500 pb-2">{filteredByDate.length} registros no período</p>
+        </div>
+      </div>
+
       {/* KPI bar */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         {[
           { label: 'KM Total',                  value: fmtKm(kpis.kmTotal),            color: 'text-brand-700' },
-          { label: 'KM Ociosa',                   value: fmtKm(kpis.kmOciosa),           color: 'text-amber-600' },
-          { label: 'Motor Ligado Parado',        value: fmtMinutes(kpis.tempoOcioso),   color: 'text-red-600' },
-          { label: 'Eficiência Média (km/l)',    value: kpis.eficienciaMedia.toFixed(2) + ' km/l', color: 'text-emerald-600' },
-          { label: 'Combustível Total (L)',       value: (kpis.combustivelTotal / 1000).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' L', color: 'text-purple-600' },
+          { label: 'Tempo em Movimento',         value: `${kpis.pctMovimento.toFixed(1)}%`, color: 'text-emerald-600' },
+          { label: 'Motor Ligado Parado',        value: `${kpis.pctMotorParado.toFixed(1)}%`, color: 'text-red-600' },
+          { label: 'Eficiência Média (km/l)',    value: kpis.eficienciaMedia.toFixed(2) + ' km/l', color: 'text-purple-600' },
+          { label: 'Combustível Total (L)',       value: kpis.combustivelL.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' L', color: 'text-amber-600' },
           { label: 'Veículos',                   value: kpis.veiculosUnicos.toString(), color: 'text-slate-700' },
         ].map((k, i) => (
           <div key={i} className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
