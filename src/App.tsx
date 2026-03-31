@@ -160,7 +160,7 @@ function App() {
       case 'consult-speed-driver':
         return <ConsultSpeedDriverScreen motoristas={motoristas} excessos={excessosVelocidade} />;
       case 'reports':
-        return <ReportsScreen motoristas={motoristas} ocorrencias={ocorrencias} excessos={excessosVelocidade} multasAntt={multasAntt} avarias={avarias} paradas={paradasIndevidas} multasTransito={multasTransito} />;
+        return <ReportsScreen motoristas={motoristas} ocorrencias={ocorrencias} excessos={excessosVelocidade} multasAntt={multasAntt} avarias={avarias} paradas={paradasIndevidas} multasTransito={multasTransito} registrosOciosidade={registrosOciosidade} />;
       case 'manual-driver':
         return <ManualDriverScreen setMotoristas={setMotoristasN} />;
       case 'users':

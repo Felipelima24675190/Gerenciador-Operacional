@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Calendar, Filter, FileBarChart, Users, Bus, FileDown } from 'lucide-react';
-import { Motorista, Ocorrencia, ExcessoVelocidade, MultaANTT, Avaria, ParadaIndevida, MultaTransito } from '../../types';
+import { Motorista, Ocorrencia, ExcessoVelocidade, MultaANTT, Avaria, ParadaIndevida, MultaTransito, RegistroOciosidade } from '../../types';
 import StatCard from '../dashboard/StatCard';
 import { isWithinInterval, startOfDay, endOfDay } from 'date-fns';
 
@@ -13,9 +13,10 @@ interface ReportsScreenProps {
   avarias?: Avaria[];
   paradas?: ParadaIndevida[];
   multasTransito?: MultaTransito[];
+  registrosOciosidade?: RegistroOciosidade[];
 }
 
-type Tab = 'pontualidade' | 'velocidade' | 'antt' | 'avarias' | 'paradas' | 'transito';
+type Tab = 'pontualidade' | 'velocidade' | 'antt' | 'avarias' | 'paradas' | 'transito' | 'quilometragem';
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'pontualidade', label: 'Pontualidade' },
@@ -24,6 +25,7 @@ const TABS: { id: Tab; label: string }[] = [
   { id: 'avarias', label: 'Avarias' },
   { id: 'paradas', label: 'Paradas Indevidas' },
   { id: 'transito', label: 'Multas de Trânsito' },
+  { id: 'quilometragem', label: 'Quilometragem' },
 ];
 
 function parseDate(str: string): Date | null {
@@ -441,8 +443,72 @@ function TransitoTab({ motoristas, multas }: { motoristas: Motorista[]; multas: 
   );
 }
 
+// ── Quilometragem ────────────────────────────────────────────────────────────
+function QuilometragemTab({ registros }: { registros: RegistroOciosidade[] }) {
+  const [dataInicio, setDataInicio] = useState('2026-01-01');
+  const [dataFim, setDataFim] = useState('2026-12-31');
+
+  const filtered = useMemo(() => {
+    const start = new Date(dataInicio + 'T00:00:00');
+    const end = new Date(dataFim + 'T23:59:59');
+    return registros.filter(r => {
+      const d = parseDate(r.data);
+      return d && d >= start && d <= end;
+    });
+  }, [registros, dataInicio, dataFim]);
+
+  const metricas = useMemo(() => {
+    const totalOp = filtered.reduce((s, r) => s + r.operacionalKm, 0);
+    const totalOcio = filtered.reduce((s, r) => s + r.ociosaKm, 0);
+    const totalKm = filtered.reduce((s, r) => s + r.totalKm, 0);
+    const veiculos = new Set(filtered.map(r => r.prefixo)).size;
+    const percOp = totalKm > 0 ? ((totalOp / totalKm) * 100).toFixed(1) : '0';
+    const percOcio = totalKm > 0 ? ((totalOcio / totalKm) * 100).toFixed(1) : '0';
+    return { totalOp, totalOcio, totalKm, veiculos, percOp, percOcio };
+  }, [filtered]);
+
+  const handleExport = () => {
+    if (!filtered.length) return;
+    const headers = ['Data', 'Prefixo', 'Km Operacional', 'Km Ociosa', 'Km Total'];
+    const rows = filtered.map(r => [r.data, r.prefixo, r.operacionalKm.toFixed(2).replace('.', ','), r.ociosaKm.toFixed(2).replace('.', ','), r.totalKm.toFixed(2).replace('.', ',')]);
+    downloadCSV([headers, ...rows].map(r => r.join(';')).join('\n'), `quilometragem_${dataInicio}_${dataFim}.csv`);
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+        <div className="flex items-center gap-2 mb-4"><Filter className="text-gray-500" size={18} /><h3 className="font-bold text-slate-800">Filtros</h3></div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div><label className="block text-sm font-medium text-gray-700 mb-1">Data Início</label><div className="relative"><input type="date" value={dataInicio} onChange={e => setDataInicio(e.target.value)} className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm bg-slate-50" /><Calendar className="absolute left-3 top-2.5 text-gray-400" size={18} /></div></div>
+          <div><label className="block text-sm font-medium text-gray-700 mb-1">Data Fim</label><div className="relative"><input type="date" value={dataFim} onChange={e => setDataFim(e.target.value)} className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm bg-slate-50" /><Calendar className="absolute left-3 top-2.5 text-gray-400" size={18} /></div></div>
+        </div>
+      </div>
+      <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+        {[
+          { label: 'Total Km', value: metricas.totalKm.toLocaleString('pt-BR', { maximumFractionDigits: 0 }) },
+          { label: 'Km Operacional', value: metricas.totalOp.toLocaleString('pt-BR', { maximumFractionDigits: 0 }) },
+          { label: 'Km Ociosa', value: metricas.totalOcio.toLocaleString('pt-BR', { maximumFractionDigits: 0 }) },
+          { label: '% Operante', value: `${metricas.percOp}%` },
+          { label: '% Ociosa', value: `${metricas.percOcio}%` },
+          { label: 'Veículos', value: metricas.veiculos },
+        ].map((k, i) => (
+          <div key={i} className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+            <p className="text-xs text-gray-500">{k.label}</p>
+            <p className="text-2xl font-bold text-slate-800">{k.value}</p>
+          </div>
+        ))}
+      </div>
+      <div className="flex justify-end">
+        <button onClick={handleExport} disabled={!filtered.length} className="flex items-center gap-2 bg-brand-500 hover:bg-brand-600 text-white px-6 py-3 rounded-xl font-bold transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
+          <FileDown size={20} /> Exportar CSV
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ── Main ──────────────────────────────────────────────────────────────────────
-export default function ReportsScreen({ motoristas, ocorrencias, excessos = [], multasAntt = [], avarias = [], paradas = [], multasTransito = [] }: ReportsScreenProps) {
+export default function ReportsScreen({ motoristas, ocorrencias, excessos = [], multasAntt = [], avarias = [], paradas = [], multasTransito = [], registrosOciosidade = [] }: ReportsScreenProps) {
   const [activeTab, setActiveTab] = useState<Tab>('pontualidade');
 
   return (
@@ -470,6 +536,7 @@ export default function ReportsScreen({ motoristas, ocorrencias, excessos = [], 
       {activeTab === 'avarias' && <AvariasTab avarias={avarias} />}
       {activeTab === 'paradas' && <ParadasTab paradas={paradas} />}
       {activeTab === 'transito' && <TransitoTab motoristas={motoristas} multas={multasTransito} />}
+      {activeTab === 'quilometragem' && <QuilometragemTab registros={registrosOciosidade} />}
     </div>
   );
 }

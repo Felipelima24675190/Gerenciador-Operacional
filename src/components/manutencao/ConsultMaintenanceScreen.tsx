@@ -249,9 +249,9 @@ export default function ConsultMaintenanceScreen({ manutencoes, historicoManuten
           <h4 className="text-[10px] font-black text-slate-600 uppercase text-center mb-3">Distribuicao por Servico</h4>
           <div style={{ height: Math.max(200, motivoChart.length * 32) }}>
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={motivoChart} layout="vertical" margin={{ left: 10, right: 40 }}>
+              <BarChart data={motivoChart} layout="vertical" margin={{ left: 0, right: 40 }}>
                 <XAxis type="number" hide />
-                <YAxis dataKey="name" type="category" tick={{ fontSize: 9 }} width={180} interval={0} axisLine={false} />
+                <YAxis dataKey="name" type="category" tick={{ fontSize: 9, width: 200 }} width={200} interval={0} axisLine={false} tickLine={false} />
                 <Tooltip />
                 <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={16} label={{ position: 'right', fontSize: 9 }}>
                   {motivoChart.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
