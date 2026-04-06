@@ -21,6 +21,8 @@ import ViewOciosidadeMotoristaScreen from './components/ociosidade-motorista/Vie
 import ImportMonitriipScreen from './components/monitriip/ImportMonitriipScreen';
 import ViewMonitriipScreen from './components/monitriip/ViewMonitriipScreen';
 import ManualDriverScreen from './components/drivers/ManualDriverScreen';
+import ManualLineScreen from './components/lines/ManualLineScreen';
+import ManualVehicleScreen from './components/vehicles/ManualVehicleScreen';
 import UserManagementScreen from './components/admin/UserManagementScreen';
 import LoginScreen from './components/auth/LoginScreen';
 import ImportAnttScreen from './components/antt/ImportAnttScreen';
@@ -141,10 +143,14 @@ function App() {
         return <ImportLinesScreen viagens={viagens} setViagens={setViagens} userRole={currentUser.role} />;
       case 'consult-lines':
         return <ConsultLinesScreen viagens={viagens} setViagens={setViagens} userRole={currentUser.role} />;
+      case 'manual-line':
+        return <ManualLineScreen setViagens={setViagens} />;
       case 'import-vehicles':
         return <ImportVehiclesScreen setVeiculos={setVeiculosN} userRole={currentUser.role} />;
       case 'consult-vehicles':
         return <ConsultVehiclesScreen veiculos={veiculos} multasAntt={multasAntt} avarias={avarias} multasTransito={multasTransito} registrosOciosidade={registrosOciosidade} motoristas={motoristas} />;
+      case 'manual-vehicle':
+        return <ManualVehicleScreen setVeiculos={setVeiculosN} />;
       case 'import-stops':
         return <ImportStopsScreen setParadas={setParadasIndevidas} motoristas={motoristas} viagens={viagens} userRole={currentUser.role} />;
       case 'view-stops':
@@ -240,9 +246,11 @@ function App() {
     'manual-driver': { title: 'Cadastro Manual', breadcrumb: 'Base Motoristas' },
     'consult-base': { title: 'Consultar Base', breadcrumb: 'Base Motoristas' },
     'import-lines': { title: 'Importar Linhas', breadcrumb: 'Base Linhas' },
+    'manual-line': { title: 'Cadastro Manual', breadcrumb: 'Base Linhas' },
     'consult-lines': { title: 'Consultar Linhas', breadcrumb: 'Base Linhas' },
     'line-dictionary': { title: 'Dicionário de Linhas', breadcrumb: 'Base Linhas' },
     'import-vehicles': { title: 'Importar Veículos', breadcrumb: 'Base Veículos' },
+    'manual-vehicle': { title: 'Cadastro Manual', breadcrumb: 'Base Veículos' },
     'consult-vehicles': { title: 'Consultar Veículos', breadcrumb: 'Base Veículos' },
     'users': { title: 'Gerenciamento de Usuários', breadcrumb: 'Configurações' },
   };

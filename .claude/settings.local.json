@@ -30,7 +30,8 @@
       "Bash(for f:*)",
       "Bash(do echo:*)",
       "Read(//c/Users/luis.lima/Downloads/App Atrasos/**)",
-      "Bash(done)"
+      "Bash(done)",
+      "Bash(xargs grep:*)"
     ]
   }
 }

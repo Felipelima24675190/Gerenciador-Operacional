@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback } from 'react';
 import {
-  BarChart3, UploadCloud, Users, FileText, Database, UserPlus,
+  BarChart3, UploadCloud, Users, FileText, Database, UserPlus, PlusCircle,
   ChevronDown, ChevronUp, Map, UserCog, LogOut, Gauge, FileWarning,
   AlertTriangle, StopCircle, Bus, CarFront, RadioTower, LayoutDashboard,
   BookOpen, Wrench, ShieldAlert, Award, Search, PanelLeftClose, PanelLeftOpen,
@@ -125,6 +125,7 @@ const SECTIONS: MenuSection[] = [
     id: 'linhas', label: 'Base Linhas', icon: Map,
     items: [
       { tab: 'import-lines', label: 'Importar Linhas', icon: Database, adminOnly: true },
+      { tab: 'manual-line', label: 'Cadastrar Manual', icon: PlusCircle, adminOnly: true },
       { tab: 'consult-lines', label: 'Consultar Linhas', icon: Map },
       { tab: 'line-dictionary', label: 'Dicionário de Linhas', icon: BookOpen },
     ],
@@ -133,6 +134,7 @@ const SECTIONS: MenuSection[] = [
     id: 'veiculos', label: 'Base Veículos', icon: Bus,
     items: [
       { tab: 'import-vehicles', label: 'Importar Veículos', icon: Database, adminOnly: true },
+      { tab: 'manual-vehicle', label: 'Cadastrar Manual', icon: PlusCircle, adminOnly: true },
       { tab: 'consult-vehicles', label: 'Consultar Veículos', icon: Bus },
     ],
   },

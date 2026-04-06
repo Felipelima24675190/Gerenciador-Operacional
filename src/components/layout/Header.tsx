@@ -27,7 +27,9 @@ const SEARCH_PAGES = [
   { tab: 'reports', label: 'Relatórios e Métricas', section: 'Relatórios' },
   { tab: 'consult-base', label: 'Base de Motoristas', section: 'Cadastros' },
   { tab: 'consult-lines', label: 'Base de Linhas', section: 'Cadastros' },
+  { tab: 'manual-line', label: 'Cadastrar Linha Manual', section: 'Cadastros' },
   { tab: 'consult-vehicles', label: 'Base de Veículos', section: 'Cadastros' },
+  { tab: 'manual-vehicle', label: 'Cadastrar Veículo Manual', section: 'Cadastros' },
   { tab: 'score-motoristas', label: 'Score de Motoristas', section: 'Dashboard' },
 ];
 
