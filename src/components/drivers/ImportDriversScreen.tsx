@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { UploadCloud, CheckCircle, AlertTriangle } from 'lucide-react';
 import { Motorista } from '../../types';
+import ManualDriverScreen from './ManualDriverScreen';
 
 interface ImportDriversScreenProps {
   motoristas: Motorista[];
@@ -10,6 +11,7 @@ interface ImportDriversScreenProps {
 }
 
 export default function ImportDriversScreen({ setMotoristas }: ImportDriversScreenProps) {
+  const [activeSubTab, setActiveSubTab] = useState<'import' | 'manual'>('import');
   const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [stats, setStats] = useState<{ total: number } | null>(null);
   const [errorMsg, setErrorMsg] = useState('');
@@ -84,6 +86,20 @@ export default function ImportDriversScreen({ setMotoristas }: ImportDriversScre
 
   return (
     <div className="max-w-2xl mx-auto space-y-5">
+      {/* Sub-tab bar */}
+      <div className="flex gap-1 bg-slate-100 p-1 rounded-lg w-fit">
+        {([['import', 'Importar Arquivo'], ['manual', 'Cadastrar Manual']] as const).map(([key, label]) => (
+          <button key={key} onClick={() => setActiveSubTab(key)}
+            className={`px-4 py-2 text-xs font-bold rounded-md transition-colors ${activeSubTab === key ? 'bg-white text-brand-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {activeSubTab === 'manual' ? (
+        <ManualDriverScreen setMotoristas={setMotoristas} />
+      ) : (
+      <>
       <div className="bg-white rounded-card border border-gray-200 shadow-card p-8 text-center">
         <h2 className="text-xl font-bold text-slate-800 mb-2">Importar Base de Motoristas</h2>
         <p className="text-sm text-gray-500 mb-1">
@@ -129,6 +145,8 @@ export default function ImportDriversScreen({ setMotoristas }: ImportDriversScre
           )}
         </div>
       </div>
+      </>
+      )}
     </div>
   );
 }

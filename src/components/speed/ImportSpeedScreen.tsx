@@ -1,18 +1,29 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useMemo } from 'react';
 import { UploadCloud, CheckCircle, AlertTriangle, FileText } from 'lucide-react';
-import { ExcessoVelocidade, UserRole } from '../../types';
+import { ExcessoVelocidade, UserRole, Viagem } from '../../types';
 
 interface ImportSpeedScreenProps {
   setExcessos: React.Dispatch<React.SetStateAction<ExcessoVelocidade[]>>;
   userRole?: UserRole;
+  viagens?: Viagem[];
 }
 
-export default function ImportSpeedScreen({ setExcessos, userRole }: ImportSpeedScreenProps) {
+export default function ImportSpeedScreen({ setExcessos, userRole, viagens = [] }: ImportSpeedScreenProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [stats, setStats] = useState<{ count: number } | null>(null);
   const [errorMessage, setErrorMessage] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const linhaCodeToName = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const v of viagens) {
+      if (v.numeroLinha && v.nomeLinha) {
+        map.set(v.numeroLinha.toUpperCase(), v.nomeLinha);
+      }
+    }
+    return map;
+  }, [viagens]);
 
   if (userRole !== 'admin') {
     return (
@@ -50,6 +61,8 @@ export default function ImportSpeedScreen({ setExcessos, userRole }: ImportSpeed
 
             if (parts.length < 8) continue;
 
+            const codigoLinha = parts[6];
+            const nomeLinha = linhaCodeToName.get(codigoLinha.toUpperCase()) || codigoLinha;
             const excesso: ExcessoVelocidade = {
               id: crypto.randomUUID(),
               matricula: parts[0],
@@ -58,7 +71,7 @@ export default function ImportSpeedScreen({ setExcessos, userRole }: ImportSpeed
               endereco: parts[3],
               dataOcorrencia: parts[4],
               inicioFimOcorrencia: parts[5],
-              nomeLinha: parts[6],
+              nomeLinha,
               veiculo: parts[7],
             };
             novosExcessos.push(excesso);
@@ -156,7 +169,7 @@ export default function ImportSpeedScreen({ setExcessos, userRole }: ImportSpeed
           </p>
           <p className="text-xs text-blue-600 mt-2">
             A primeira linha do arquivo (cabeçalho) será ignorada. As colunas devem seguir a ordem: <br/>
-            <strong>Matrícula, Tempo Excedido em Minutos, Velocidade Média em Km/h, Endereço, Data da Ocorrência, Início e Fim da Ocorrência, Nome da Linha, Veículo</strong>
+            <strong>Matrícula, Tempo Excedido em Minutos, Velocidade Média em Km/h, Endereço, Data da Ocorrência, Início e Fim da Ocorrência, Código da Linha, Veículo</strong>
           </p>
         </div>
       </div>

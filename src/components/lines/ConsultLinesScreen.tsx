@@ -489,7 +489,7 @@ export default function ConsultLinesScreen({ viagens, setViagens, userRole }: Co
                 {isExpanded && (
                   <div className="p-4 bg-slate-50">
                     {/* Line summary info */}
-                    <div className="mb-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-3">
+                    <div className="mb-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
                       <div className="bg-white p-3 rounded-lg border border-gray-100">
                         <p className="text-2xs font-bold text-slate-400 uppercase">Código</p>
                         <p className="text-sm font-bold font-mono text-brand-700">{linha.numeroLinha || '-'}</p>
@@ -503,12 +503,8 @@ export default function ConsultLinesScreen({ viagens, setViagens, userRole }: Co
                         <p className="text-sm font-bold text-slate-700">{linha.regiao || '-'}</p>
                       </div>
                       <div className="bg-white p-3 rounded-lg border border-gray-100">
-                        <p className="text-2xs font-bold text-slate-400 uppercase">Origem</p>
-                        <p className="text-sm font-bold text-slate-700">{linha.origem || '-'}</p>
-                      </div>
-                      <div className="bg-white p-3 rounded-lg border border-gray-100">
-                        <p className="text-2xs font-bold text-slate-400 uppercase">Destino</p>
-                        <p className="text-sm font-bold text-slate-700">{linha.destino || '-'}</p>
+                        <p className="text-2xs font-bold text-slate-400 uppercase">Viagens</p>
+                        <p className="text-sm font-bold text-brand-700">{linha.totalViagens}</p>
                       </div>
                       <div className="bg-white p-3 rounded-lg border border-gray-100 md:col-span-2">
                         <p className="text-2xs font-bold text-slate-400 uppercase">Serviços ({linha.servicos.length})</p>

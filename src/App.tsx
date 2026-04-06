@@ -20,9 +20,6 @@ import ImportOciosidadeMotoristaScreen from './components/ociosidade-motorista/I
 import ViewOciosidadeMotoristaScreen from './components/ociosidade-motorista/ViewOciosidadeMotoristaScreen';
 import ImportMonitriipScreen from './components/monitriip/ImportMonitriipScreen';
 import ViewMonitriipScreen from './components/monitriip/ViewMonitriipScreen';
-import ManualDriverScreen from './components/drivers/ManualDriverScreen';
-import ManualLineScreen from './components/lines/ManualLineScreen';
-import ManualVehicleScreen from './components/vehicles/ManualVehicleScreen';
 import UserManagementScreen from './components/admin/UserManagementScreen';
 import LoginScreen from './components/auth/LoginScreen';
 import ImportAnttScreen from './components/antt/ImportAnttScreen';
@@ -144,13 +141,13 @@ function App() {
       case 'consult-lines':
         return <ConsultLinesScreen viagens={viagens} setViagens={setViagens} userRole={currentUser.role} />;
       case 'manual-line':
-        return <ManualLineScreen setViagens={setViagens} />;
+        return <ImportLinesScreen viagens={viagens} setViagens={setViagens} userRole={currentUser.role} />;
       case 'import-vehicles':
-        return <ImportVehiclesScreen setVeiculos={setVeiculosN} userRole={currentUser.role} />;
+        return <ImportVehiclesScreen veiculos={veiculos} setVeiculos={setVeiculosN} userRole={currentUser.role} />;
       case 'consult-vehicles':
         return <ConsultVehiclesScreen veiculos={veiculos} multasAntt={multasAntt} avarias={avarias} multasTransito={multasTransito} registrosOciosidade={registrosOciosidade} motoristas={motoristas} />;
       case 'manual-vehicle':
-        return <ManualVehicleScreen setVeiculos={setVeiculosN} />;
+        return <ImportVehiclesScreen veiculos={veiculos} setVeiculos={setVeiculosN} userRole={currentUser.role} />;
       case 'import-stops':
         return <ImportStopsScreen setParadas={setParadasIndevidas} motoristas={motoristas} viagens={viagens} userRole={currentUser.role} />;
       case 'view-stops':
@@ -160,7 +157,7 @@ function App() {
       case 'view-avaria':
         return <ConsultAvariasScreen avarias={avarias} setAvarias={setAvarias} motoristas={motoristas} resumos={resumosAvaria} setResumos={setResumosAvaria} acidentes={acidentes} />;
       case 'import-speed':
-        return <ImportSpeedScreen setExcessos={setExcessosN} userRole={currentUser.role} />;
+        return <ImportSpeedScreen setExcessos={setExcessosN} userRole={currentUser.role} viagens={viagens} />;
       case 'view-speed':
         return <ViewSpeedScreen excessos={excessosVelocidade} motoristas={motoristas} userRole={currentUser.role} />;
       case 'consult-speed-driver':
@@ -168,7 +165,7 @@ function App() {
       case 'reports':
         return <ReportsScreen motoristas={motoristas} ocorrencias={ocorrencias} excessos={excessosVelocidade} multasAntt={multasAntt} avarias={avarias} paradas={paradasIndevidas} multasTransito={multasTransito} ociosidades={ociosidadesMotorista} />;
       case 'manual-driver':
-        return <ManualDriverScreen setMotoristas={setMotoristasN} />;
+        return <ImportDriversScreen motoristas={motoristas} setMotoristas={setMotoristasN} userRole={currentUser.role} onNavigate={setActiveTab} />;
       case 'users':
         return <UserManagementScreen users={users} setUsers={setUsers} />;
       case 'import-antt':

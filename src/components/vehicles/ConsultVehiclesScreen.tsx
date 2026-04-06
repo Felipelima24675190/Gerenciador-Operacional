@@ -2,6 +2,33 @@ import { useMemo, useState } from 'react';
 import { Veiculo, MultaANTT, Avaria, MultaTransito, RegistroOciosidade, Motorista } from '../../types';
 import { Search, X, Truck, Info, AlertCircle } from 'lucide-react';
 
+function parseDateBR(s?: string): Date | null {
+  if (!s) return null;
+  const [d, m, y] = s.split('/').map(Number);
+  if (!d || !m || !y) return null;
+  return new Date(y, m - 1, d);
+}
+
+function getValidityColor(dateStr?: string): 'green' | 'red' | 'yellow' | 'gray' {
+  if (!dateStr) return 'gray';
+  const d = parseDateBR(dateStr);
+  if (!d) return 'gray';
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  const diff = d.getTime() - now.getTime();
+  const days = diff / (1000 * 60 * 60 * 24);
+  if (days < 0) return 'red';
+  if (days <= 30) return 'yellow';
+  return 'green';
+}
+
+const VALIDITY_STYLES: Record<string, string> = {
+  green: 'bg-emerald-100 text-emerald-700 border-emerald-300',
+  red: 'bg-red-100 text-red-700 border-red-300',
+  yellow: 'bg-amber-100 text-amber-700 border-amber-300',
+  gray: 'bg-slate-100 text-slate-400 border-slate-200',
+};
+
 interface ConsultVehiclesScreenProps {
   veiculos: Veiculo[];
   multasAntt: MultaANTT[];
@@ -304,7 +331,22 @@ export default function ConsultVehiclesScreen({ veiculos, multasAntt, avarias, m
                 </td>
                 <td className="px-4 py-3 text-center font-bold text-slate-600 text-sm">{vehicle.anoModelo}</td>
                 <td className="px-4 py-3 text-center">
-                  <span className={`px-2.5 py-1 text-2xs font-black rounded-full ${vehicle.status === 'ATIVO' ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' : 'bg-red-100 text-red-700 border border-red-200'}`}>{vehicle.status}</span>
+                  <div className="flex flex-col items-center gap-1.5">
+                    <span className={`px-2.5 py-1 text-2xs font-black rounded-full ${vehicle.status === 'ATIVO' ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' : 'bg-red-100 text-red-700 border border-red-200'}`}>{vehicle.status}</span>
+                    <div className="flex gap-1">
+                      {(['LIT', 'TCO'] as const).map(tag => {
+                        const dateStr = tag === 'LIT' ? vehicle.litValidade : vehicle.tcoValidade;
+                        const color = getValidityColor(dateStr);
+                        const d = parseDateBR(dateStr);
+                        const tooltip = !dateStr ? 'Sem data' : d && d.getTime() < Date.now() ? `Vencido em: ${dateStr}` : `Vence em: ${dateStr}`;
+                        return (
+                          <span key={tag} title={tooltip} className={`px-1.5 py-0.5 text-[9px] font-black rounded border cursor-default ${VALIDITY_STYLES[color]}`}>
+                            {tag}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  </div>
                 </td>
                 <td className="px-4 py-3 text-right">
                   <button onClick={() => setSelectedVehicle(vehicle)} className="font-black text-2xs text-slate-600 hover:text-white bg-slate-100 hover:bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-200 uppercase tracking-tighter transition-colors">Histórico</button>

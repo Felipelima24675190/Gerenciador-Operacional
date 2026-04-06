@@ -52,6 +52,8 @@ export interface Veiculo {
   potencia: number;
   chassi: string;
   renavam: string;
+  litValidade?: string;  // DD/MM/YYYY
+  tcoValidade?: string;  // DD/MM/YYYY
 }
 
 export interface ExcessoVelocidade {

@@ -99,12 +99,31 @@ const DriverChartsModal = ({ motorista, ocorrencias, multasTransito, onClose }: 
             <div className="bg-white border border-gray-200 rounded-card p-5 shadow-card">
               <h4 className="text-xs font-bold text-slate-500 uppercase mb-4">Distribuição de Status</h4>
               {pieData.length > 0 ? (
-                <ResponsiveContainer width="100%" height={220}>
+                <ResponsiveContainer width="100%" height={280}>
                   <PieChart>
-                    <Pie data={pieData} cx="50%" cy="50%" innerRadius={55} outerRadius={85} dataKey="value" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false}>
+                    <Pie
+                      data={pieData}
+                      cx="50%"
+                      cy="45%"
+                      innerRadius={50}
+                      outerRadius={80}
+                      dataKey="value"
+                      label={({ cx, cy, midAngle, outerRadius: oR, name, percent }) => {
+                        const RADIAN = Math.PI / 180;
+                        const radius = oR + 22;
+                        const x = cx + radius * Math.cos(-midAngle * RADIAN);
+                        const y = cy + radius * Math.sin(-midAngle * RADIAN);
+                        return (
+                          <text x={x} y={y} fill="#334155" textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central" fontSize={11} fontWeight={600}>
+                            {`${name} ${(percent * 100).toFixed(0)}%`}
+                          </text>
+                        );
+                      }}
+                      labelLine
+                    >
                       {pieData.map((_, index) => <Cell key={index} fill={COLORS[index % COLORS.length]} />)}
                     </Pie>
-                    <Legend />
+                    <Legend wrapperStyle={{ paddingTop: 8 }} />
                     <Tooltip />
                   </PieChart>
                 </ResponsiveContainer>

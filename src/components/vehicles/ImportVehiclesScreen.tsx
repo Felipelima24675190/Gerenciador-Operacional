@@ -1,16 +1,20 @@
 import React, { useState } from 'react';
 import { UploadCloud, CheckCircle, AlertTriangle, FileText } from 'lucide-react';
 import { Veiculo, UserRole } from '../../types';
+import ManualVehicleScreen from './ManualVehicleScreen';
+import ImportLitTcoScreen from './ImportLitTcoScreen';
 
 interface ImportVehiclesScreenProps {
+  veiculos: Veiculo[];
   setVeiculos: React.Dispatch<React.SetStateAction<Veiculo[]>>;
   userRole?: UserRole;
 }
 
-export default function ImportVehiclesScreen({ setVeiculos, userRole }: ImportVehiclesScreenProps) {
+export default function ImportVehiclesScreen({ veiculos, setVeiculos, userRole }: ImportVehiclesScreenProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [stats, setStats] = useState<{ count: number; empresas: number } | null>(null);
+  const [activeSubTab, setActiveSubTab] = useState<'import' | 'manual' | 'littco'>('import');
 
   if (userRole !== 'admin') {
     return (
@@ -93,6 +97,22 @@ export default function ImportVehiclesScreen({ setVeiculos, userRole }: ImportVe
 
   return (
     <div className="max-w-4xl mx-auto space-y-5">
+      {/* Sub-tab bar */}
+      <div className="flex gap-1 bg-slate-100 p-1 rounded-lg w-fit">
+        {([['import', 'Importar Arquivo'], ['manual', 'Cadastrar Manual'], ['littco', 'Importar LIT/TCO']] as const).map(([key, label]) => (
+          <button key={key} onClick={() => setActiveSubTab(key)}
+            className={`px-4 py-2 text-xs font-bold rounded-md transition-colors ${activeSubTab === key ? 'bg-white text-brand-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {activeSubTab === 'manual' ? (
+        <ManualVehicleScreen setVeiculos={setVeiculos} />
+      ) : activeSubTab === 'littco' ? (
+        <ImportLitTcoScreen veiculos={veiculos} setVeiculos={setVeiculos} />
+      ) : (
+      <>
       <div className="bg-white rounded-card border border-gray-200 shadow-card p-8 text-center">
         <h3 className="text-xl font-bold text-slate-800">Importar Base de Veículos</h3>
         <p className="text-sm text-gray-500 mt-2">
@@ -151,6 +171,8 @@ export default function ImportVehiclesScreen({ setVeiculos, userRole }: ImportVe
           </p>
         </div>
       </div>
+      </>
+      )}
     </div>
   );
 }

@@ -115,7 +115,11 @@ export default function ImportMaintenanceScreen({ manutencoes, setManutencoes, s
         }
 
         if (novoHistorico.length > 0) {
-          setHistoricoManutencao(prev => [...novoHistorico, ...prev]);
+          setHistoricoManutencao(prev => {
+            const existingKeys = new Set(prev.map(h => `${h.prefixo}|${h.dataEntrada}|${h.dataSaida}`));
+            const deduped = novoHistorico.filter(h => !existingKeys.has(`${h.prefixo}|${h.dataEntrada}|${h.dataSaida}`));
+            return [...deduped, ...prev];
+          });
         }
 
         setManutencoes(novosVeiculos);

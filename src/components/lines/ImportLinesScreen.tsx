@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { UploadCloud, CheckCircle, AlertTriangle, FileText, Trash2 } from 'lucide-react';
 import { Viagem, UserRole } from '../../types';
 import * as XLSX from 'xlsx';
+import ManualLineScreen from './ManualLineScreen';
 
 interface ImportLinesScreenProps {
   viagens: Viagem[];
@@ -46,6 +47,7 @@ export default function ImportLinesScreen({ viagens, setViagens, userRole }: Imp
   const [errorMessage, setErrorMessage] = useState('');
   const [stats, setStats] = useState<{ linhas: number; servicos: number; viagens: number } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [activeSubTab, setActiveSubTab] = useState<'import' | 'manual'>('import');
 
   if (userRole !== 'admin') {
     return (
@@ -291,6 +293,20 @@ export default function ImportLinesScreen({ viagens, setViagens, userRole }: Imp
 
   return (
     <div className="max-w-4xl mx-auto space-y-5">
+      {/* Sub-tab bar */}
+      <div className="flex gap-1 bg-slate-100 p-1 rounded-lg w-fit">
+        {([['import', 'Importar Arquivo'], ['manual', 'Cadastrar Manual']] as const).map(([key, label]) => (
+          <button key={key} onClick={() => setActiveSubTab(key)}
+            className={`px-4 py-2 text-xs font-bold rounded-md transition-colors ${activeSubTab === key ? 'bg-white text-brand-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {activeSubTab === 'manual' ? (
+        <ManualLineScreen setViagens={setViagens} />
+      ) : (
+      <>
       <div className="bg-white rounded-card border border-gray-200 shadow-card p-8 text-center">
         <div className="mb-6">
           <h3 className="text-xl font-bold text-slate-800">Importar Base de Linhas</h3>
@@ -398,6 +414,8 @@ export default function ImportLinesScreen({ viagens, setViagens, userRole }: Imp
           </p>
         </div>
       </div>
+      </>
+      )}
     </div>
   );
 }
