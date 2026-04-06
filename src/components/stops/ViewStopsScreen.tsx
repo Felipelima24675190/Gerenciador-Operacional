@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { ParadaIndevida, UserRole } from '../../types';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { subDays, format, parse } from 'date-fns';
+import { Calendar } from 'lucide-react';
 
 interface ViewStopsScreenProps {
   paradas: ParadaIndevida[];
@@ -9,8 +10,8 @@ interface ViewStopsScreenProps {
 }
 
 const StatCard = ({ title, value }: { title: string, value: string | number }) => (
-  <div className="bg-white p-4 rounded-lg shadow border">
-    <p className="text-sm text-gray-500">{title}</p>
+  <div className="bg-white rounded-card border border-gray-200 shadow-card p-4">
+    <p className="text-2xs text-gray-500 font-bold uppercase tracking-wide">{title}</p>
     <p className="text-2xl font-bold">{value}</p>
   </div>
 );
@@ -110,27 +111,37 @@ export default function ViewStopsScreen({ paradas }: ViewStopsScreenProps) {
   }, [paradasFiltradas]);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       {/* Filtros */}
-      <div className="bg-white p-4 rounded-xl border shadow-sm">
+      <div className="bg-white rounded-card border border-gray-200 shadow-card p-4">
         <div className="flex items-center gap-4">
           <div>
-            <label className="text-sm font-medium">Data Início</label>
-            <input
-              type="date"
-              value={format(dataInicio, 'yyyy-MM-dd')}
-              onChange={e => setDataInicio(new Date(e.target.value + 'T00:00:00'))}
-              className="w-full border rounded-lg text-sm p-2"
-            />
+            <label htmlFor="stops-data-inicio" className="text-2xs font-bold text-slate-500 uppercase tracking-wide block mb-1">Data Início</label>
+            <div className="relative">
+              <Calendar size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+              <input
+                id="stops-data-inicio"
+                type="date"
+                value={format(dataInicio, 'yyyy-MM-dd')}
+                onChange={e => setDataInicio(new Date(e.target.value + 'T00:00:00'))}
+                aria-label="Data de início do filtro"
+                className="px-3 py-2 pl-8 text-xs font-medium border border-gray-200 rounded-button bg-slate-50 focus:ring-2 focus:ring-brand-400 focus:outline-none"
+              />
+            </div>
           </div>
           <div>
-            <label className="text-sm font-medium">Data Fim</label>
-            <input
-              type="date"
-              value={format(dataFim, 'yyyy-MM-dd')}
-              onChange={e => setDataFim(new Date(e.target.value + 'T23:59:59'))}
-              className="w-full border rounded-lg text-sm p-2"
-            />
+            <label htmlFor="stops-data-fim" className="text-2xs font-bold text-slate-500 uppercase tracking-wide block mb-1">Data Fim</label>
+            <div className="relative">
+              <Calendar size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+              <input
+                id="stops-data-fim"
+                type="date"
+                value={format(dataFim, 'yyyy-MM-dd')}
+                onChange={e => setDataFim(new Date(e.target.value + 'T23:59:59'))}
+                aria-label="Data de fim do filtro"
+                className="px-3 py-2 pl-8 text-xs font-medium border border-gray-200 rounded-button bg-slate-50 focus:ring-2 focus:ring-brand-400 focus:outline-none"
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -143,104 +154,112 @@ export default function ViewStopsScreen({ paradas }: ViewStopsScreenProps) {
       </div>
 
       {/* Tendência */}
-      <div className="bg-white p-4 rounded-xl border shadow-sm h-72">
+      <div className="bg-white rounded-card border border-gray-200 shadow-card p-4 h-72">
         <h3 className="font-bold mb-4">Tendência de Paradas Indevidas</h3>
-        <ResponsiveContainer width="100%" height="90%">
-          <BarChart data={trendData}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="date" />
-            <YAxis />
-            <Tooltip />
-            <Legend />
-            <Bar dataKey="count" fill="#ef4444" name="Paradas" />
-          </BarChart>
-        </ResponsiveContainer>
+        {trendData.length > 0 ? (
+          <ResponsiveContainer width="100%" height="90%">
+            <BarChart data={trendData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="date" />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              <Bar dataKey="count" fill="#ef4444" name="Paradas" />
+            </BarChart>
+          </ResponsiveContainer>
+        ) : (
+          <p className="text-2xs text-slate-400 text-center py-10">Sem dados no período</p>
+        )}
       </div>
 
       {/* Top 10 Gráficos */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Top 10 Motoristas */}
-        <div className="bg-white p-6 rounded-xl border shadow-sm">
-          <h4 className="text-[10px] font-bold text-slate-500 uppercase mb-4">Top 10 - Motoristas</h4>
+        <div className="bg-white rounded-card border border-gray-200 shadow-card p-6">
+          <h4 className="text-2xs font-bold text-slate-500 uppercase tracking-wide mb-4">Top 10 - Motoristas</h4>
           {top10Motoristas.length > 0 ? (
             <ResponsiveContainer width="100%" height={280}>
               <BarChart data={top10Motoristas} layout="vertical" margin={{ left: 5, right: 25 }}>
                 <XAxis type="number" hide />
-                <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 9 }} width={120} interval={0} />
+                <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 11 }} width={120} interval={0} />
                 <Tooltip cursor={{ fill: '#f1f5f9' }} />
-                <Bar dataKey="count" fill="#ef4444" radius={[0, 4, 4, 0]} barSize={14} label={{ position: 'right', fontSize: 10 }} />
+                <Bar dataKey="count" fill="#ef4444" radius={[0, 4, 4, 0]} barSize={14} label={{ position: 'right', fontSize: 11 }} />
               </BarChart>
             </ResponsiveContainer>
           ) : (
-            <div className="h-40 flex items-center justify-center text-slate-400 text-sm">Sem dados</div>
+            <p className="text-2xs text-slate-400 text-center py-10">Sem dados no período</p>
           )}
         </div>
 
         {/* Top 10 Veículos */}
-        <div className="bg-white p-6 rounded-xl border shadow-sm">
-          <h4 className="text-[10px] font-bold text-slate-500 uppercase mb-4">Top 10 - Veículos</h4>
+        <div className="bg-white rounded-card border border-gray-200 shadow-card p-6">
+          <h4 className="text-2xs font-bold text-slate-500 uppercase tracking-wide mb-4">Top 10 - Veículos</h4>
           {top10Veiculos.length > 0 ? (
             <ResponsiveContainer width="100%" height={280}>
               <BarChart data={top10Veiculos} layout="vertical" margin={{ left: 5, right: 25 }}>
                 <XAxis type="number" hide />
-                <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 9 }} width={80} interval={0} />
+                <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 11 }} width={80} interval={0} />
                 <Tooltip cursor={{ fill: '#f1f5f9' }} />
-                <Bar dataKey="count" fill="#3b82f6" radius={[0, 4, 4, 0]} barSize={14} label={{ position: 'right', fontSize: 10 }} />
+                <Bar dataKey="count" fill="#3b82f6" radius={[0, 4, 4, 0]} barSize={14} label={{ position: 'right', fontSize: 11 }} />
               </BarChart>
             </ResponsiveContainer>
           ) : (
-            <div className="h-40 flex items-center justify-center text-slate-400 text-sm">Sem dados de veículo</div>
+            <p className="text-2xs text-slate-400 text-center py-10">Sem dados de veículo</p>
           )}
         </div>
 
         {/* Top 10 Locais */}
-        <div className="bg-white p-6 rounded-xl border shadow-sm">
-          <h4 className="text-[10px] font-bold text-slate-500 uppercase mb-4">Top 10 - Locais</h4>
-          <p className="text-[9px] text-slate-400 mb-2">Agrupado por nome da rua/avenida, sem número</p>
+        <div className="bg-white rounded-card border border-gray-200 shadow-card p-6">
+          <h4 className="text-2xs font-bold text-slate-500 uppercase tracking-wide mb-4">Top 10 - Locais</h4>
+          <p className="text-2xs text-slate-400 mb-2">Agrupado por nome da rua/avenida, sem número</p>
           {top10Locais.length > 0 ? (
             <ResponsiveContainer width="100%" height={280}>
               <BarChart data={top10Locais} layout="vertical" margin={{ left: 5, right: 25 }}>
                 <XAxis type="number" hide />
-                <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 8 }} width={130} interval={0} />
+                <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 11 }} width={130} interval={0} />
                 <Tooltip cursor={{ fill: '#f1f5f9' }} />
-                <Bar dataKey="count" fill="#8b5cf6" radius={[0, 4, 4, 0]} barSize={14} label={{ position: 'right', fontSize: 10 }} />
+                <Bar dataKey="count" fill="#8b5cf6" radius={[0, 4, 4, 0]} barSize={14} label={{ position: 'right', fontSize: 11 }} />
               </BarChart>
             </ResponsiveContainer>
           ) : (
-            <div className="h-40 flex items-center justify-center text-slate-400 text-sm">Sem dados de local</div>
+            <p className="text-2xs text-slate-400 text-center py-10">Sem dados de local</p>
           )}
         </div>
       </div>
 
       {/* Tabela */}
-      <div className="bg-white rounded-xl border shadow-sm overflow-hidden">
-        <table className="w-full text-sm text-left">
-          <thead className="text-xs uppercase bg-gray-50">
-            <tr>
-              <th className="px-6 py-3">Data</th>
-              <th className="px-6 py-3">Motorista</th>
-              <th className="px-6 py-3">Linha</th>
-              <th className="px-6 py-3">Local</th>
-              <th className="px-6 py-3">Tempo Parado</th>
-            </tr>
-          </thead>
-          <tbody>
-            {paradasFiltradas.map(p => (
-              <tr key={p.id} className="bg-white border-b hover:bg-gray-50">
-                <td className="px-6 py-4">{p.data}</td>
-                <td className="px-6 py-4">{p.motorista}</td>
-                <td className="px-6 py-4">{p.linha}</td>
-                <td className="px-6 py-4 max-w-[250px] truncate" title={p.local}>{p.local}</td>
-                <td className="px-6 py-4">{p.tempoParado}</td>
+      <div className="bg-white rounded-card border border-gray-200 shadow-card overflow-hidden">
+        <div className="overflow-x-auto max-h-[500px] overflow-y-auto">
+          <table className="w-full text-xs text-left">
+            <thead className="sticky top-0 z-10">
+              <tr className="bg-slate-800 text-white text-2xs uppercase tracking-wide">
+                <th className="px-3 py-2.5">Data</th>
+                <th className="px-3 py-2.5">Motorista</th>
+                <th className="px-3 py-2.5">Linha</th>
+                <th className="px-3 py-2.5">Local</th>
+                <th className="px-3 py-2.5">Tempo Parado</th>
               </tr>
-            ))}
-            {paradasFiltradas.length === 0 && (
-              <tr>
-                <td colSpan={5} className="px-6 py-8 text-center text-gray-500">Nenhuma parada indevida no período selecionado.</td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {paradasFiltradas.map(p => (
+                <tr key={p.id} className="hover:bg-slate-50 transition-colors border-b border-gray-100">
+                  <td className="px-3 py-2">{p.data}</td>
+                  <td className="px-3 py-2">{p.motorista}</td>
+                  <td className="px-3 py-2">{p.linha}</td>
+                  <td className="px-3 py-2 max-w-[250px] truncate" title={p.local}>{p.local}</td>
+                  <td className="px-3 py-2">{p.tempoParado}</td>
+                </tr>
+              ))}
+              {paradasFiltradas.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
+                    <p className="text-2xs text-slate-400 text-center py-10">Sem dados no período</p>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

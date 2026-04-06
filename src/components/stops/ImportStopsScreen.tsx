@@ -115,7 +115,7 @@ export default function ImportStopsScreen({ setParadas, motoristas, viagens, use
       setTimeout(() => setUploadStatus('idle'), 10000);
     } else {
       setUploadStatus('error');
-      setTimeout(() => setUploadStatus('idle'), 5000);
+      setTimeout(() => setUploadStatus('idle'), 8000);
     }
   };
 
@@ -132,7 +132,7 @@ export default function ImportStopsScreen({ setParadas, motoristas, viagens, use
       reader.readAsText(file, 'UTF-8');
     } else {
       setUploadStatus('error');
-      setTimeout(() => setUploadStatus('idle'), 5000);
+      setTimeout(() => setUploadStatus('idle'), 8000);
     }
   };
 
@@ -146,15 +146,15 @@ export default function ImportStopsScreen({ setParadas, motoristas, viagens, use
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-4xl mx-auto space-y-5">
       {/* Legenda do formato */}
-      <div className="bg-blue-50 border border-blue-200 rounded-xl p-5">
+      <div className="bg-blue-50 border border-blue-200 rounded-card p-5">
         <div className="flex items-start gap-3">
           <Info size={18} className="text-blue-500 mt-0.5 shrink-0" />
           <div>
             <p className="text-sm font-bold text-blue-800 mb-2">Formato esperado do arquivo (CSV/TXT com separador ponto-e-v\u00edrgula):</p>
             <div className="overflow-x-auto">
-              <table className="text-[10px] text-blue-700 font-mono">
+              <table className="text-2xs text-blue-700 font-mono">
                 <thead><tr className="font-black uppercase text-blue-900">
                   {['Data','Linha','Sentido','Hor\u00e1rio da Linha','Matr\u00edcula','Ve\u00edculo','Local','In\u00edcio','Fim','Tempo Parado'].map((h,i) => (
                     <th key={i} className="px-2 py-1 bg-blue-100 border border-blue-200">{`[${i}] ${h}`}</th>
@@ -167,21 +167,22 @@ export default function ImportStopsScreen({ setParadas, motoristas, viagens, use
                 </tr></tbody>
               </table>
             </div>
-            <p className="text-[10px] text-blue-600 mt-2">O nome do motorista e a \u00e1rea ser\u00e3o buscados automaticamente na base de motoristas pela matr\u00edcula.</p>
+            <p className="text-2xs text-blue-600 mt-2">O nome do motorista e a \u00e1rea ser\u00e3o buscados automaticamente na base de motoristas pela matr\u00edcula.</p>
           </div>
         </div>
       </div>
 
-      <div className="bg-white p-8 rounded-xl border border-gray-200 shadow-sm text-center">
+      <div className="bg-white rounded-card border border-gray-200 shadow-card p-8 text-center">
         <h3 className="text-xl font-bold text-slate-800">Importar Paradas Indevidas</h3>
         <p className="text-sm text-gray-500 mt-2">Arraste o arquivo ou clique para selecionar.</p>
 
         <label
-          className={`mt-6 border-2 border-dashed rounded-xl p-10 flex flex-col items-center justify-center transition-colors cursor-pointer
-            ${isDragging ? 'border-brand-500 bg-brand-50' : 'border-gray-300 bg-gray-50 hover:bg-gray-100'}`}
+          className={`mt-6 border-2 border-dashed rounded-card p-8 text-center flex flex-col items-center justify-center transition-colors cursor-pointer
+            ${isDragging ? 'border-brand-400' : 'border-gray-300 hover:border-brand-400'}`}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
+          aria-label="Área de upload de paradas indevidas"
         >
           <input type="file" accept=".csv,.txt" className="hidden" onChange={handleFileInput} />
           {uploadStatus === 'idle' && (

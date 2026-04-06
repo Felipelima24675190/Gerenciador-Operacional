@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { ExcessoVelocidade, UserRole, Motorista } from '../../types';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { subDays, format, parse } from 'date-fns';
+import { Calendar } from 'lucide-react';
 
 interface ViewSpeedScreenProps {
   excessos: ExcessoVelocidade[];
@@ -10,10 +11,10 @@ interface ViewSpeedScreenProps {
 }
 
 const StatCard = ({ title, value, subValue }: { title: string, value: string | number, subValue?: string }) => (
-  <div className="bg-white p-4 rounded-lg shadow-md border flex-1">
-    <p className="text-xs text-gray-500 font-bold uppercase">{title}</p>
+  <div className="bg-white rounded-card border border-gray-200 shadow-card p-4 flex-1">
+    <p className="text-2xs text-gray-500 font-bold uppercase tracking-wide">{title}</p>
     <p className="text-3xl font-black">{value}</p>
-    {subValue && <p className="text-xs text-gray-400">{subValue}</p>}
+    {subValue && <p className="text-2xs text-gray-400">{subValue}</p>}
   </div>
 );
 
@@ -30,12 +31,12 @@ export default function ViewSpeedScreen({ excessos, motoristas }: ViewSpeedScree
       return dataOcorrencia >= dataInicio && dataOcorrencia <= dataFim && e.velocidadeMediaKmh > 85;
     });
   }, [excessos, dataInicio, dataFim]);
-  
+
   const kpis = useMemo(() => {
     const motoristasEnvolvidos = new Set(excessosFiltrados.map(e => e.matricula)).size;
     const tempoTotalMin = excessosFiltrados.reduce((acc, e) => acc + e.tempoExcedidoMinutos, 0);
     const tempoTotalStr = `${Math.floor(tempoTotalMin / 60)}h ${tempoTotalMin % 60}min`;
-    
+
     return {
       totalOcorrencias: excessosFiltrados.length,
       motoristasEnvolvidos,
@@ -94,18 +95,38 @@ export default function ViewSpeedScreen({ excessos, motoristas }: ViewSpeedScree
   }, [excessosFiltrados, motoristasMap]);
 
   return (
-    <div className="space-y-6">
-      <div className="bg-white p-4 rounded-xl border shadow-sm flex items-center gap-4">
+    <div className="space-y-5">
+      <div className="bg-white rounded-card border border-gray-200 shadow-card p-4 flex items-center gap-4">
         <div>
-          <label className="text-sm font-medium">Data Início</label>
-          <input type="date" value={format(dataInicio, 'yyyy-MM-dd')} onChange={e => setDataInicio(new Date(e.target.value + 'T00:00:00'))} className="w-full border rounded-lg p-2" />
+          <label htmlFor="speed-data-inicio" className="text-2xs font-bold text-slate-500 uppercase tracking-wide block mb-1">Data Início</label>
+          <div className="relative">
+            <Calendar size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+            <input
+              id="speed-data-inicio"
+              type="date"
+              value={format(dataInicio, 'yyyy-MM-dd')}
+              onChange={e => setDataInicio(new Date(e.target.value + 'T00:00:00'))}
+              aria-label="Data de início do filtro"
+              className="px-3 py-2 pl-8 text-xs font-medium border border-gray-200 rounded-button bg-slate-50 focus:ring-2 focus:ring-brand-400 focus:outline-none"
+            />
+          </div>
         </div>
         <div>
-          <label className="text-sm font-medium">Data Fim</label>
-          <input type="date" value={format(dataFim, 'yyyy-MM-dd')} onChange={e => setDataFim(new Date(e.target.value + 'T23:59:59'))} className="w-full border rounded-lg p-2" />
+          <label htmlFor="speed-data-fim" className="text-2xs font-bold text-slate-500 uppercase tracking-wide block mb-1">Data Fim</label>
+          <div className="relative">
+            <Calendar size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+            <input
+              id="speed-data-fim"
+              type="date"
+              value={format(dataFim, 'yyyy-MM-dd')}
+              onChange={e => setDataFim(new Date(e.target.value + 'T23:59:59'))}
+              aria-label="Data de fim do filtro"
+              className="px-3 py-2 pl-8 text-xs font-medium border border-gray-200 rounded-button bg-slate-50 focus:ring-2 focus:ring-brand-400 focus:outline-none"
+            />
+          </div>
         </div>
       </div>
-      
+
       <div className="flex gap-4">
         <StatCard title="Total de Ocorrências" value={kpis.totalOcorrencias} />
         <StatCard title="Motoristas Envolvidos" value={kpis.motoristasEnvolvidos} />
@@ -113,18 +134,22 @@ export default function ViewSpeedScreen({ excessos, motoristas }: ViewSpeedScree
       </div>
 
       <div className="grid grid-cols-3 gap-6">
-        <div className="col-span-2 bg-white p-6 rounded-xl border shadow-sm">
+        <div className="col-span-2 bg-white rounded-card border border-gray-200 shadow-card p-6">
           <h4 className="font-bold mb-4">Ocorrências por Dia</h4>
-          <ResponsiveContainer width="100%" height={250}>
-            <BarChart data={analiseGrafica.ocorrenciasPorDia}>
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip />
-              <Bar dataKey="count" fill="#8884d8" name="Ocorrências"/>
-            </BarChart>
-          </ResponsiveContainer>
+          {analiseGrafica.ocorrenciasPorDia.length > 0 ? (
+            <ResponsiveContainer width="100%" height={250}>
+              <BarChart data={analiseGrafica.ocorrenciasPorDia}>
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="count" fill="#8884d8" name="Ocorrências"/>
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <p className="text-2xs text-slate-400 text-center py-10">Sem dados no período</p>
+          )}
         </div>
-        <div className="bg-white p-6 rounded-xl border shadow-sm">
+        <div className="bg-white rounded-card border border-gray-200 shadow-card p-6">
           <h4 className="font-bold mb-4">Dias Mais Críticos</h4>
           <ul className="space-y-2">
             {analiseGrafica.diasMaisCriticos.map((dia, i) => (
@@ -136,96 +161,141 @@ export default function ViewSpeedScreen({ excessos, motoristas }: ViewSpeedScree
           </ul>
         </div>
       </div>
-      
-      <div className="bg-white p-6 rounded-xl border shadow-sm">
+
+      <div className="bg-white rounded-card border border-gray-200 shadow-card p-6">
         <h4 className="font-bold mb-4">Distribuição por Faixa de Velocidade</h4>
-        <ResponsiveContainer width="100%" height={250}>
-          <BarChart data={rankings.distribuicaoVelocidade} layout="vertical" margin={{ left: 20, right: 30 }}>
-            <XAxis type="number" hide />
-            <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 11 }} width={90} interval={0} />
-            <Tooltip cursor={{ fill: '#f1f5f9' }} formatter={(val: number) => [val, 'Ocorrências']} />
-            <Bar dataKey="count" fill="#ef4444" radius={[0, 4, 4, 0]} barSize={18} label={{ position: 'right', fontSize: 11 }} />
-          </BarChart>
-        </ResponsiveContainer>
+        {rankings.distribuicaoVelocidade.some(d => d.count > 0) ? (
+          <ResponsiveContainer width="100%" height={250}>
+            <BarChart data={rankings.distribuicaoVelocidade} layout="vertical" margin={{ left: 20, right: 30 }}>
+              <XAxis type="number" hide />
+              <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 11 }} width={90} interval={0} />
+              <Tooltip cursor={{ fill: '#f1f5f9' }} formatter={(val: number) => [val, 'Ocorrências']} />
+              <Bar dataKey="count" fill="#ef4444" radius={[0, 4, 4, 0]} barSize={18} label={{ position: 'right', fontSize: 11 }} />
+            </BarChart>
+          </ResponsiveContainer>
+        ) : (
+          <p className="text-2xs text-slate-400 text-center py-10">Sem dados no período</p>
+        )}
       </div>
 
-       <div className="bg-white p-6 rounded-xl border shadow-sm">
+      <div className="bg-white rounded-card border border-gray-200 shadow-card p-6">
         <h4 className="font-bold mb-4">Top 10 - Linhas com Mais Excessos</h4>
-         <ResponsiveContainer width="100%" height={Math.max(300, rankings.topLinhas.length * 40)}>
+        {rankings.topLinhas.length > 0 ? (
+          <ResponsiveContainer width="100%" height={Math.max(300, rankings.topLinhas.length * 40)}>
             <BarChart data={rankings.topLinhas} layout="vertical" margin={{ left: 10, right: 50 }}>
               <XAxis type="number" hide />
               <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} width={260} interval={0} tick={({ x, y, payload }: any) => {
                 const label = payload.value.length > 35 ? payload.value.substring(0, 35) + '...' : payload.value;
-                return <text x={x} y={y} dy={4} textAnchor="end" fontSize={10} fill="#334155">{label}</text>;
+                return <text x={x} y={y} dy={4} textAnchor="end" fontSize={11} fill="#334155">{label}</text>;
               }} />
               <Tooltip />
               <Bar dataKey="count" fill="#3b82f6" label={{ position: 'right', fontSize: 11 }} barSize={22} radius={[0, 4, 4, 0]} />
             </BarChart>
           </ResponsiveContainer>
+        ) : (
+          <p className="text-2xs text-slate-400 text-center py-10">Sem dados no período</p>
+        )}
       </div>
 
       <div className="grid grid-cols-2 gap-6">
-        <div className="bg-white p-6 rounded-xl border shadow-sm">
+        <div className="bg-white rounded-card border border-gray-200 shadow-card p-6">
           <h4 className="font-bold mb-4">Top 10 - Mais Ocorrências</h4>
-          <table className="w-full text-sm">
-            <thead><tr className="text-left"><th>#</th><th>Matrícula</th><th>Nome</th><th>Ocorr.</th></tr></thead>
-            <tbody>
-              {rankings.topMotoristasOcorrencias.map((m, i) => (
-                <tr key={m.matricula} className="border-b">
-                  <td>{i+1}º</td><td>{m.matricula}</td><td>{m.nome}</td><td>{m.ocorrencias}</td>
+          <div className="overflow-x-auto max-h-[500px] overflow-y-auto">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="bg-slate-800 text-white text-2xs uppercase tracking-wide">
+                  <th className="px-3 py-2.5 text-left">#</th>
+                  <th className="px-3 py-2.5 text-left">Matrícula</th>
+                  <th className="px-3 py-2.5 text-left">Nome</th>
+                  <th className="px-3 py-2.5 text-left">Ocorr.</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {rankings.topMotoristasOcorrencias.map((m, i) => (
+                  <tr key={m.matricula} className="hover:bg-slate-50 transition-colors border-b border-gray-100">
+                    <td className="px-3 py-2">{i+1}º</td>
+                    <td className="px-3 py-2">{m.matricula}</td>
+                    <td className="px-3 py-2">{m.nome}</td>
+                    <td className="px-3 py-2">{m.ocorrencias}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
-        <div className="bg-white p-6 rounded-xl border shadow-sm">
+        <div className="bg-white rounded-card border border-gray-200 shadow-card p-6">
           <h4 className="font-bold mb-4">Top 10 - Maior Tempo em Excesso</h4>
-           <table className="w-full text-sm">
-            <thead><tr className="text-left"><th>#</th><th>Matrícula</th><th>Nome</th><th>Tempo Total</th></tr></thead>
-            <tbody>
-              {rankings.topMotoristasTempo.map((m, i) => (
-                <tr key={m.matricula} className="border-b">
-                  <td>{i+1}º</td><td>{m.matricula}</td><td>{m.nome}</td><td>{Math.floor(m.tempoTotal/60)}h {m.tempoTotal%60}min</td>
+          <div className="overflow-x-auto max-h-[500px] overflow-y-auto">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="bg-slate-800 text-white text-2xs uppercase tracking-wide">
+                  <th className="px-3 py-2.5 text-left">#</th>
+                  <th className="px-3 py-2.5 text-left">Matrícula</th>
+                  <th className="px-3 py-2.5 text-left">Nome</th>
+                  <th className="px-3 py-2.5 text-left">Tempo Total</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {rankings.topMotoristasTempo.map((m, i) => (
+                  <tr key={m.matricula} className="hover:bg-slate-50 transition-colors border-b border-gray-100">
+                    <td className="px-3 py-2">{i+1}º</td>
+                    <td className="px-3 py-2">{m.matricula}</td>
+                    <td className="px-3 py-2">{m.nome}</td>
+                    <td className="px-3 py-2">{Math.floor(m.tempoTotal/60)}h {m.tempoTotal%60}min</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
-      <div className="bg-white rounded-xl border shadow-sm overflow-hidden">
+      <div className="bg-white rounded-card border border-gray-200 shadow-card overflow-hidden">
         <h4 className="font-bold p-6">Detalhamento das Ocorrências</h4>
-        <table className="w-full text-sm">
-           <thead><tr className="text-left bg-gray-50"><th>Data/Hora</th><th>Motorista</th><th>Linha</th><th>Local</th><th>Duração</th><th>Vel. Média</th></tr></thead>
-           <tbody>
-            {excessosFiltrados.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map(e => (
-              <tr key={e.id} className="border-b">
-                <td>{e.dataOcorrencia} {e.inicioFimOcorrencia.split(' - ')[0]}</td>
-                <td>{motoristasMap.get(e.matricula)?.nome || e.matricula}</td>
-                <td>{e.nomeLinha}</td>
-                <td>{e.endereco}</td>
-                <td>{e.tempoExcedidoMinutos} min</td>
-                <td>{e.velocidadeMediaKmh} km/h</td>
+        <div className="overflow-x-auto max-h-[500px] overflow-y-auto">
+          <table className="w-full text-xs">
+            <thead className="sticky top-0 z-10">
+              <tr className="bg-slate-800 text-white text-2xs uppercase tracking-wide">
+                <th className="px-3 py-2.5 text-left">Data/Hora</th>
+                <th className="px-3 py-2.5 text-left">Motorista</th>
+                <th className="px-3 py-2.5 text-left">Linha</th>
+                <th className="px-3 py-2.5 text-left">Local</th>
+                <th className="px-3 py-2.5 text-left">Duração</th>
+                <th className="px-3 py-2.5 text-left">Vel. Média</th>
               </tr>
-            ))}
-           </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {excessosFiltrados.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map(e => (
+                <tr key={e.id} className="hover:bg-slate-50 transition-colors border-b border-gray-100">
+                  <td className="px-3 py-2">{e.dataOcorrencia} {e.inicioFimOcorrencia.split(' - ')[0]}</td>
+                  <td className="px-3 py-2">{motoristasMap.get(e.matricula)?.nome || e.matricula}</td>
+                  <td className="px-3 py-2">{e.nomeLinha}</td>
+                  <td className="px-3 py-2">{e.endereco}</td>
+                  <td className="px-3 py-2">{e.tempoExcedidoMinutos} min</td>
+                  <td className="px-3 py-2">{e.velocidadeMediaKmh} km/h</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
         {excessosFiltrados.length > itemsPerPage && (
           <div className="p-4 border-t border-gray-100 flex justify-between items-center bg-slate-50">
-            <button 
+            <button
               onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
               disabled={currentPage === 1}
-              className="px-3 py-1 bg-white border border-gray-200 rounded text-sm disabled:opacity-50"
+              aria-label="Página anterior"
+              className="px-3 py-1 bg-white border border-gray-200 rounded text-xs disabled:opacity-50"
             >
               Anterior
             </button>
-            <span className="text-xs text-gray-500">
+            <span className="text-2xs text-gray-500">
               Página {currentPage} de {Math.ceil(excessosFiltrados.length / itemsPerPage)}
             </span>
-            <button 
+            <button
               onClick={() => setCurrentPage(p => Math.min(Math.ceil(excessosFiltrados.length / itemsPerPage), p + 1))}
               disabled={currentPage === Math.ceil(excessosFiltrados.length / itemsPerPage)}
-              className="px-3 py-1 bg-white border border-gray-200 rounded text-sm disabled:opacity-50"
+              aria-label="Próxima página"
+              className="px-3 py-1 bg-white border border-gray-200 rounded text-xs disabled:opacity-50"
             >
               Próxima
             </button>

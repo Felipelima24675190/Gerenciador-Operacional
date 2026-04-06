@@ -61,7 +61,7 @@ export default function ImportMonitriipScreen({ monitriips, setMonitriips, userR
   const processFile = (file: File, linha: string) => {
     if (!file.name.endsWith('.csv') && !file.name.endsWith('.txt')) {
       setUploadStatus('error');
-      setTimeout(() => setUploadStatus('idle'), 3000);
+      setTimeout(() => setUploadStatus('idle'), 8000);
       return;
     }
 
@@ -193,9 +193,9 @@ export default function ImportMonitriipScreen({ monitriips, setMonitriips, userR
   };
 
   return (
-    <div className="space-y-6 max-w-3xl mx-auto">
+    <div className="space-y-5 max-w-3xl mx-auto">
       {/* Info banner */}
-      <div className="flex items-start gap-3 bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm text-blue-800">
+      <div className="flex items-start gap-3 bg-blue-50 border border-blue-200 rounded-card p-4 text-sm text-blue-800">
         <Info size={18} className="mt-0.5 shrink-0 text-blue-500" />
         <div>
           <p className="font-bold">Importação — Monitriip</p>
@@ -208,7 +208,7 @@ export default function ImportMonitriipScreen({ monitriips, setMonitriips, userR
 
       {/* Line selection */}
       {linhasDisponiveis.length > 0 && (
-        <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
+        <div className="bg-white rounded-card border border-gray-200 shadow-card p-5">
           <h4 className="text-sm font-bold text-slate-800 mb-2">Linha Associada</h4>
           <p className="text-xs text-slate-500 mb-3">Selecione a linha (da Base de Linhas) à qual esses dados Monitriip se referem.</p>
           <div className="relative">
@@ -243,7 +243,7 @@ export default function ImportMonitriipScreen({ monitriips, setMonitriips, userR
                     className={`w-full text-left px-3 py-2 text-xs hover:bg-brand-50 transition-colors flex items-center justify-between ${linhaSelecionada === l.nome ? 'bg-brand-50 font-bold text-brand-700' : 'text-slate-700'}`}
                   >
                     <span>{l.nome}</span>
-                    {l.numero && <span className="text-[10px] text-slate-400 font-mono">{l.numero}</span>}
+                    {l.numero && <span className="text-2xs text-slate-400 font-mono">{l.numero}</span>}
                   </button>
                 ))}
               </div>
@@ -252,7 +252,7 @@ export default function ImportMonitriipScreen({ monitriips, setMonitriips, userR
           {linhaSelecionada && (
             <div className="mt-2 flex items-center gap-2">
               <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded">{linhaSelecionada}</span>
-              <button onClick={() => { setLinhaSelecionada(''); setLinhaSearch(''); }} className="text-[10px] text-red-500 hover:underline">Limpar</button>
+              <button onClick={() => { setLinhaSelecionada(''); setLinhaSearch(''); }} className="text-2xs text-red-500 hover:underline" aria-label="Limpar linha selecionada">Limpar</button>
             </div>
           )}
         </div>
@@ -281,18 +281,19 @@ export default function ImportMonitriipScreen({ monitriips, setMonitriips, userR
       )}
 
       {/* Upload area */}
-      <div className="bg-white p-8 rounded-xl border border-gray-200 shadow-sm">
+      <div className="bg-white rounded-card border border-gray-200 shadow-card p-8">
         <div className="mb-6 text-center">
           <h3 className="text-xl font-bold text-slate-800">Importar Dados Monitriip</h3>
           <p className="text-sm text-gray-500 mt-1">Arraste o arquivo ou clique para selecionar</p>
         </div>
 
         <label
-          className={`border-2 border-dashed rounded-xl p-10 flex flex-col items-center justify-center transition-colors cursor-pointer
-            ${isDragging ? 'border-blue-400 bg-blue-50' : 'border-gray-300 bg-gray-50 hover:bg-gray-100'}`}
+          className={`border-2 border-dashed rounded-card p-8 text-center flex flex-col items-center justify-center transition-colors cursor-pointer
+            ${isDragging ? 'border-brand-400' : 'border-gray-300 hover:border-brand-400'}`}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
+          aria-label="Área de upload Monitriip"
         >
           <input
             ref={fileInputRef}
@@ -360,7 +361,7 @@ export default function ImportMonitriipScreen({ monitriips, setMonitriips, userR
 
       {/* Active base summary */}
       {monitriips.length > 0 && (
-        <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm flex items-center justify-between gap-4">
+        <div className="bg-white rounded-card border border-gray-200 shadow-card p-4 flex items-center justify-between gap-4">
           <div>
             <p className="text-sm font-bold text-slate-700">
               Base ativa: <span className="text-slate-900">{monitriips.length}</span> viagens
@@ -376,7 +377,8 @@ export default function ImportMonitriipScreen({ monitriips, setMonitriips, userR
           </div>
           <button
             onClick={handleClear}
-            className="flex items-center gap-2 px-3 py-1.5 border border-red-400 text-red-600 text-xs font-bold rounded-lg hover:bg-red-50 shrink-0"
+            className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-button text-xs font-bold transition-colors shrink-0"
+            aria-label="Limpar dados Monitriip"
           >
             <Trash2 size={14} /> Limpar
           </button>

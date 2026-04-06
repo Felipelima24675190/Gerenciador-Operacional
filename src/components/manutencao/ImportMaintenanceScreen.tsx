@@ -45,7 +45,7 @@ export default function ImportMaintenanceScreen({ manutencoes, setManutencoes, s
 
     if (!file.name.endsWith('.txt') && !file.name.endsWith('.csv')) {
       setUploadStatus('error');
-      setTimeout(() => setUploadStatus('idle'), 3000);
+      setTimeout(() => setUploadStatus('idle'), 8000);
       return;
     }
 
@@ -137,8 +137,8 @@ export default function ImportMaintenanceScreen({ manutencoes, setManutencoes, s
   };
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto">
-      <div className="bg-white p-8 rounded-xl border border-gray-200 shadow-sm text-center">
+    <div className="space-y-5 max-w-4xl mx-auto">
+      <div className="bg-white rounded-card border border-gray-200 shadow-card p-8 text-center">
         <div className="mb-6">
           <h3 className="text-xl font-bold text-slate-800">Importar Status de Manutencao Atual</h3>
           <p className="text-sm text-gray-500 mt-2">
@@ -150,9 +150,10 @@ export default function ImportMaintenanceScreen({ manutencoes, setManutencoes, s
           </p>
         </div>
 
-        <div className="mb-4 flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-xl p-3">
-          <label className="text-xs font-bold text-amber-700 whitespace-nowrap">Data de Referência:</label>
+        <div className="mb-4 flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-card p-3">
+          <label htmlFor="data-referencia" className="text-xs font-bold text-amber-700 whitespace-nowrap">Data de Referência:</label>
           <input
+            id="data-referencia"
             type="date"
             value={dataReferencia}
             onChange={e => setDataReferencia(e.target.value)}
@@ -162,11 +163,12 @@ export default function ImportMaintenanceScreen({ manutencoes, setManutencoes, s
         </div>
 
         <div
-          className={`border-2 border-dashed rounded-xl p-10 flex flex-col items-center justify-center transition-colors cursor-pointer
-            ${isDragging ? 'border-brand-500 bg-brand-50' : 'border-gray-300 bg-gray-50 hover:bg-gray-100'}`}
+          className={`border-2 border-dashed rounded-card p-8 text-center flex flex-col items-center justify-center transition-colors cursor-pointer
+            ${isDragging ? 'border-brand-400' : 'border-gray-300 hover:border-brand-400'}`}
           onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
           onDragLeave={(e) => { e.preventDefault(); setIsDragging(false); }}
           onDrop={handleDrop}
+          aria-label="Área de upload de status de manutenção"
         >
           {uploadStatus === 'idle' && (
             <>
@@ -213,7 +215,7 @@ export default function ImportMaintenanceScreen({ manutencoes, setManutencoes, s
       </div>
 
       {manutencoes.length > 0 && (
-        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+        <div className="bg-white rounded-card border border-gray-200 shadow-card p-6">
           <div className="flex items-center justify-between">
             <div>
               <h4 className="text-lg font-bold text-slate-800">Veiculos na Oficina ({manutencoes.length})</h4>
@@ -221,7 +223,8 @@ export default function ImportMaintenanceScreen({ manutencoes, setManutencoes, s
             </div>
             <button
               onClick={handleLimpar}
-              className="flex items-center gap-2 px-4 py-2 bg-white border border-red-500 text-red-600 text-sm font-bold rounded-lg hover:bg-red-50 transition-colors"
+              className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-button text-xs font-bold transition-colors"
+              aria-label="Limpar registros de manutenção"
             >
               <Trash2 size={16} />
               Limpar

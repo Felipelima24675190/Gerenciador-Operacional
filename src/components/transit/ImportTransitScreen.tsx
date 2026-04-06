@@ -37,7 +37,7 @@ export default function ImportTransitScreen({ multas, setMultas, motoristas, use
   const processFile = (file: File) => {
     if (!file.name.endsWith('.txt') && !file.name.endsWith('.csv')) {
       setUploadStatus('error');
-      setTimeout(() => setUploadStatus('idle'), 3000);
+      setTimeout(() => setUploadStatus('idle'), 8000);
       return;
     }
 
@@ -164,8 +164,8 @@ export default function ImportTransitScreen({ multas, setMultas, motoristas, use
   };
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto">
-      <div className="bg-white p-8 rounded-xl border border-gray-200 shadow-sm">
+    <div className="space-y-5 max-w-4xl mx-auto">
+      <div className="bg-white rounded-card border border-gray-200 shadow-card p-8">
         <div className="mb-6 text-center">
           <h3 className="text-xl font-bold text-slate-800">Importar Multas de Trânsito</h3>
           <p className="text-sm text-gray-500 mt-1">
@@ -183,7 +183,7 @@ export default function ImportTransitScreen({ multas, setMultas, motoristas, use
               'MATRÍCULA', 'GESTOR', 'ENVIADO AO GERENTE?', 'GERENTE DEVOLVEU?',
               'LANÇADO NO GLOBUS?', 'OBSERVAÇÃO',
             ].map((col, i) => (
-              <span key={i} className="text-[10px] bg-white border border-slate-200 rounded px-2 py-1 text-slate-600 font-mono truncate" title={col}>
+              <span key={i} className="text-2xs bg-white border border-slate-200 rounded px-2 py-1 text-slate-600 font-mono truncate" title={col}>
                 {i + 1}. {col}
               </span>
             ))}
@@ -191,11 +191,12 @@ export default function ImportTransitScreen({ multas, setMultas, motoristas, use
         </div>
 
         <label
-          className={`border-2 border-dashed rounded-xl p-10 flex flex-col items-center justify-center transition-colors cursor-pointer
-            ${isDragging ? 'border-blue-500 bg-blue-50' : 'border-gray-300 bg-gray-50 hover:bg-gray-100'}`}
+          className={`border-2 border-dashed rounded-card p-8 text-center flex flex-col items-center justify-center transition-colors cursor-pointer
+            ${isDragging ? 'border-brand-400' : 'border-gray-300 hover:border-brand-400'}`}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
+          aria-label="Área de upload de multas de trânsito"
         >
           <input type="file" accept=".csv,.txt" className="hidden" onChange={handleFileInput} />
 
@@ -230,7 +231,7 @@ export default function ImportTransitScreen({ multas, setMultas, motoristas, use
                   <div className="bg-amber-50 p-3 rounded-lg border border-amber-100">
                     <p className="text-xs text-amber-600 font-bold uppercase tracking-wider">Não na Base</p>
                     <p className="text-2xl font-bold text-amber-700">{stats.notFound}</p>
-                    <p className="text-[10px] text-amber-500">motoristas desligados</p>
+                    <p className="text-2xs text-amber-500">motoristas desligados</p>
                   </div>
                 )}
               </div>
@@ -250,7 +251,7 @@ export default function ImportTransitScreen({ multas, setMultas, motoristas, use
       </div>
 
       {multas.length > 0 && (
-        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+        <div className="bg-white rounded-card border border-gray-200 shadow-card p-6">
           <div className="flex items-center justify-between">
             <div>
               <h4 className="text-lg font-bold text-slate-800">Base Ativa</h4>
@@ -261,7 +262,8 @@ export default function ImportTransitScreen({ multas, setMultas, motoristas, use
             </div>
             <button
               onClick={handleLimpar}
-              className="flex items-center gap-2 px-4 py-2 bg-white border border-red-500 text-red-600 text-sm font-bold rounded-lg hover:bg-red-50 transition-colors"
+              className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-button text-xs font-bold transition-colors"
+              aria-label="Limpar todas as multas de trânsito"
             >
               <Trash2 size={16} />
               Limpar Multas

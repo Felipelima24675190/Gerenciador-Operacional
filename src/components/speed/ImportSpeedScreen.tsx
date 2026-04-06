@@ -82,13 +82,13 @@ export default function ImportSpeedScreen({ setExcessos, userRole }: ImportSpeed
       reader.onerror = () => {
         setErrorMessage("Não foi possível ler o arquivo.");
         setUploadStatus('error');
-        setTimeout(() => setUploadStatus('idle'), 5000);
+        setTimeout(() => setUploadStatus('idle'), 8000);
       };
       reader.readAsText(file);
     } else {
       setErrorMessage("Por favor, selecione um arquivo .csv ou .txt.");
       setUploadStatus('error');
-      setTimeout(() => setUploadStatus('idle'), 5000);
+      setTimeout(() => setUploadStatus('idle'), 8000);
     }
   };
 
@@ -110,19 +110,20 @@ export default function ImportSpeedScreen({ setExcessos, userRole }: ImportSpeed
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      <div className="bg-white p-8 rounded-xl border border-gray-200 shadow-sm text-center">
+    <div className="max-w-4xl mx-auto space-y-5">
+      <div className="bg-white rounded-card border border-gray-200 shadow-card p-8 text-center">
         <h3 className="text-xl font-bold text-slate-800">Importar Excesso de Velocidade</h3>
 
         <input ref={fileInputRef} type="file" accept=".csv,.txt" className="hidden" onChange={handleFileChange} />
 
         <div
-          className={`mt-6 border-2 border-dashed rounded-xl p-10 flex flex-col items-center justify-center transition-colors cursor-pointer
-            ${isDragging ? 'border-brand-500 bg-brand-50' : 'border-gray-300 bg-gray-50 hover:bg-gray-100'}`}
+          className={`mt-6 border-2 border-dashed rounded-card p-8 text-center flex flex-col items-center justify-center transition-colors cursor-pointer
+            ${isDragging ? 'border-brand-400' : 'border-gray-300 hover:border-brand-400'}`}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
           onClick={handleClick}
+          aria-label="Área de upload de arquivo"
         >
           {uploadStatus === 'idle' && (
             <>
@@ -146,7 +147,7 @@ export default function ImportSpeedScreen({ setExcessos, userRole }: ImportSpeed
           )}
         </div>
       </div>
-      <div className="bg-blue-50 border border-blue-200 p-6 rounded-xl flex items-start gap-4">
+      <div className="bg-blue-50 border border-blue-200 p-6 rounded-card flex items-start gap-4">
         <FileText className="text-blue-600 h-8 w-8 mt-1" />
         <div>
           <h4 className="font-bold text-blue-800">Instruções de Formato</h4>

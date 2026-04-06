@@ -33,14 +33,14 @@ const ChartCard = ({ title, data, yAxisWidth = 90, valueFormatter, valueLabel = 
   valueFormatter?: (v: number) => string;
   valueLabel?: string;
 }) => (
-  <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+  <div className="bg-white rounded-card border border-gray-200 p-4 shadow-card">
     <h4 className="text-xs font-black text-slate-600 uppercase tracking-tighter mb-3">{title}</h4>
     {data.length > 0 ? (
       <div className="h-64">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} layout="vertical" margin={{ left: 8 }}>
             <XAxis type="number" hide />
-            <YAxis dataKey="name" type="category" tick={{ fontSize: 9 }} width={yAxisWidth} interval={0} axisLine={false} />
+            <YAxis dataKey="name" type="category" tick={{ fontSize: 11 }} width={yAxisWidth} interval={0} axisLine={false} />
             <Tooltip
               formatter={(v: number) => [valueFormatter ? valueFormatter(v) : fmtKm(v), valueLabel]}
               labelFormatter={(label: string, payload: any[]) => {
@@ -60,7 +60,7 @@ const ChartCard = ({ title, data, yAxisWidth = 90, valueFormatter, valueLabel = 
           </BarChart>
         </ResponsiveContainer>
       </div>
-    ) : <p className="text-xs text-slate-400 text-center py-10">Sem dados no período</p>}
+    ) : <p className="text-2xs text-slate-400 text-center py-10">Sem dados no período</p>}
   </div>
 );
 
@@ -210,7 +210,7 @@ export default function ViewOciosoScreen({ registros, linhas, viagens }: ViewOci
 
   if (registros.length === 0 && linhas.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-[60vh] text-center p-8 bg-white rounded-3xl border border-gray-100 shadow-sm">
+      <div className="flex flex-col items-center justify-center h-[60vh] text-center p-8 bg-white rounded-card border border-gray-100 shadow-card">
         <h2 className="text-2xl font-black text-slate-800">Nenhum Dado Importado</h2>
         <p className="text-slate-500 max-w-md mt-2">Importe os arquivos de Quilometragem Operacional para visualizar o dashboard.</p>
       </div>
@@ -218,22 +218,22 @@ export default function ViewOciosoScreen({ registros, linhas, viagens }: ViewOci
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       {/* Date Filter — first so user selects range before seeing KPIs */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+      <div className="bg-white rounded-card border border-gray-200 p-4 shadow-card">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
           <div>
-            <label className="text-xs font-bold text-slate-500 uppercase block mb-1">Data Início</label>
+            <label htmlFor="oc-data-inicio" className="text-2xs font-bold text-slate-500 uppercase tracking-wide block mb-1">Data Início</label>
             <div className="relative">
               <Calendar className="absolute left-2 top-2.5 text-gray-400" size={14} />
-              <input type="date" value={dataInicio} onChange={e => setDataInicio(e.target.value)} className="w-full pl-8 pr-3 py-2 text-sm border border-gray-300 rounded-lg" />
+              <input id="oc-data-inicio" type="date" value={dataInicio} onChange={e => setDataInicio(e.target.value)} aria-label="Data de início do filtro" className="w-full pl-8 pr-3 py-2 text-xs font-medium border border-gray-200 rounded-button bg-slate-50 focus:ring-2 focus:ring-brand-400 focus:outline-none" />
             </div>
           </div>
           <div>
-            <label className="text-xs font-bold text-slate-500 uppercase block mb-1">Data Fim</label>
+            <label htmlFor="oc-data-fim" className="text-2xs font-bold text-slate-500 uppercase tracking-wide block mb-1">Data Fim</label>
             <div className="relative">
               <Calendar className="absolute left-2 top-2.5 text-gray-400" size={14} />
-              <input type="date" value={dataFim} onChange={e => setDataFim(e.target.value)} className="w-full pl-8 pr-3 py-2 text-sm border border-gray-300 rounded-lg" />
+              <input id="oc-data-fim" type="date" value={dataFim} onChange={e => setDataFim(e.target.value)} aria-label="Data de fim do filtro" className="w-full pl-8 pr-3 py-2 text-xs font-medium border border-gray-200 rounded-button bg-slate-50 focus:ring-2 focus:ring-brand-400 focus:outline-none" />
             </div>
           </div>
           <p className="text-sm text-slate-500 pb-2">{registrosFiltrados.length} registros no período</p>
@@ -241,7 +241,7 @@ export default function ViewOciosoScreen({ registros, linhas, viagens }: ViewOci
       </div>
 
       {/* KPIs — Veículos */}
-      <div className="bg-slate-800 p-4 flex gap-3 overflow-x-auto rounded-xl">
+      <div className="bg-slate-800 p-4 flex gap-3 overflow-x-auto rounded-card">
         {[
           { l: 'Veículos', v: kpis.veiculosUnicos },
           { l: 'KM Operacional', v: fmtKm(kpis.totalOp) },
@@ -249,7 +249,7 @@ export default function ViewOciosoScreen({ registros, linhas, viagens }: ViewOci
           { l: 'KM Total (Veículos)', v: fmtKm(kpis.totalKm) },
         ].map((k, i) => (
           <div key={i} className="bg-slate-700 rounded-lg p-3 text-center min-w-[130px] flex-1">
-            <p className="text-[10px] font-bold text-slate-400 uppercase">{k.l}</p>
+            <p className="text-2xs font-bold text-slate-400 uppercase">{k.l}</p>
             <p className="text-lg font-black text-white mt-0.5">{k.v}</p>
           </div>
         ))}
@@ -257,7 +257,7 @@ export default function ViewOciosoScreen({ registros, linhas, viagens }: ViewOci
 
       {/* KPIs — Linhas (separado) */}
       {linhas.length > 0 && (
-        <div className="bg-brand-800 p-4 flex gap-3 overflow-x-auto rounded-xl">
+        <div className="bg-brand-800 p-4 flex gap-3 overflow-x-auto rounded-card">
           {[
             { l: 'Total Linhas', v: linhas.length },
             { l: 'KM Linhas Regulares', v: fmtKm(kpis.totalLinhasRegular) },
@@ -265,7 +265,7 @@ export default function ViewOciosoScreen({ registros, linhas, viagens }: ViewOci
             { l: 'KM Total Linhas', v: fmtKm(kpis.totalLinhasRegular + kpis.totalFretamento) },
           ].map((k, i) => (
             <div key={i} className="bg-brand-700 rounded-lg p-3 text-center min-w-[130px] flex-1">
-              <p className="text-[10px] font-bold text-brand-300 uppercase">{k.l}</p>
+              <p className="text-2xs font-bold text-brand-300 uppercase">{k.l}</p>
               <p className="text-lg font-black text-white mt-0.5">{k.v}</p>
             </div>
           ))}
@@ -300,7 +300,7 @@ export default function ViewOciosoScreen({ registros, linhas, viagens }: ViewOci
           <div>
             <ChartCard title="Top 10 Linhas — Mais KM Rodados" data={topLinhasKm} yAxisWidth={130} />
             {linhas.some(l => l.pendenteCadastro) && (
-              <p className="text-[10px] text-amber-600 mt-1 flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-400 inline-block" /> Barras amarelas = linha pendente de cadastro</p>
+              <p className="text-2xs text-amber-600 mt-1 flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-400 inline-block" /> Barras amarelas = linha pendente de cadastro</p>
             )}
           </div>
           <ChartCard title="Top 10 Linhas — Mais KM Ociosa (Soma dos Veículos)" data={topLinhasOcio} yAxisWidth={130} />
@@ -316,7 +316,7 @@ export default function ViewOciosoScreen({ registros, linhas, viagens }: ViewOci
 
       {/* Vehicle lookup */}
       {linhas.length > 0 && (
-        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+        <div className="bg-white rounded-card border border-gray-200 p-6 shadow-card">
           <h4 className="text-sm font-black text-slate-700 uppercase tracking-tighter mb-4">Consulta por Veículo — Linhas que Opera</h4>
           <div className="relative max-w-sm mb-4">
             <Search size={14} className="absolute left-3 top-2.5 text-gray-400" />
@@ -325,7 +325,8 @@ export default function ViewOciosoScreen({ registros, linhas, viagens }: ViewOci
               placeholder="Digite o prefixo do veículo..."
               value={veiculoBusca}
               onChange={e => setVeiculoBusca(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-400"
+              aria-label="Buscar veículo por prefixo"
+              className="w-full pl-9 pr-4 py-2 text-xs font-medium border border-gray-200 rounded-button bg-slate-50 focus:ring-2 focus:ring-brand-400 focus:outline-none"
             />
           </div>
 
@@ -335,29 +336,29 @@ export default function ViewOciosoScreen({ registros, linhas, viagens }: ViewOci
           {veiculoBuscaLinhas !== null && typeof veiculoBuscaLinhas === 'object' && !Array.isArray(veiculoBuscaLinhas) && (
             <div>
               <p className="text-xs font-bold text-slate-500 mb-3">Veículo <span className="text-slate-800 font-black">{veiculoBuscaLinhas.prefixo}</span> opera nas seguintes linhas:</p>
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto max-h-[500px] overflow-y-auto">
                 <table className="w-full text-sm text-left">
-                  <thead className="bg-slate-800 text-white text-xs">
+                  <thead className="bg-slate-800 text-white text-2xs sticky top-0">
                     <tr>
-                      <th className="px-4 py-2 font-bold uppercase">Código Linha</th>
-                      <th className="px-4 py-2 font-bold uppercase">Nome</th>
-                      <th className="px-4 py-2 font-bold uppercase text-right">KM Total</th>
-                      <th className="px-4 py-2 font-bold uppercase">Status</th>
+                      <th className="px-3 py-2.5 font-bold uppercase tracking-wide">Código Linha</th>
+                      <th className="px-3 py-2.5 font-bold uppercase tracking-wide">Nome</th>
+                      <th className="px-3 py-2.5 font-bold uppercase tracking-wide text-right">KM Total</th>
+                      <th className="px-3 py-2.5 font-bold uppercase tracking-wide">Status</th>
                     </tr>
                   </thead>
                   <tbody>
                     {veiculoBuscaLinhas.linhasList.sort((a, b) => b.km - a.km).map(l => (
-                      <tr key={l.id} className="border-b border-gray-100 hover:bg-slate-50">
-                        <td className="px-4 py-2 font-mono font-bold text-slate-800">{l.numeroLinha}</td>
-                        <td className="px-4 py-2 text-slate-600">{resolveLinha(l.numeroLinha) || <span className="text-slate-400 italic">Não cadastrada</span>}</td>
-                        <td className="px-4 py-2 text-right font-bold text-slate-700">{fmtKm(l.km)}</td>
-                        <td className="px-4 py-2">
+                      <tr key={l.id} className="hover:bg-slate-50 transition-colors border-b border-gray-100">
+                        <td className="px-3 py-2 font-mono font-bold text-slate-800">{l.numeroLinha}</td>
+                        <td className="px-3 py-2 text-slate-600">{resolveLinha(l.numeroLinha) || <span className="text-slate-400 italic">Não cadastrada</span>}</td>
+                        <td className="px-3 py-2 text-right font-bold text-slate-700">{fmtKm(l.km)}</td>
+                        <td className="px-3 py-2">
                           {l.pendenteCadastro ? (
-                            <span className="flex items-center gap-1 text-[10px] font-black text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full w-max">
+                            <span className="flex items-center gap-1 text-2xs font-black text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full w-max">
                               <AlertCircle size={10} /> Pendente
                             </span>
                           ) : (
-                            <span className="text-[10px] font-black text-green-700 bg-green-50 border border-green-200 px-2 py-0.5 rounded-full w-max">Cadastrada</span>
+                            <span className="text-2xs font-black text-green-700 bg-green-50 border border-green-200 px-2 py-0.5 rounded-full w-max">Cadastrada</span>
                           )}
                         </td>
                       </tr>

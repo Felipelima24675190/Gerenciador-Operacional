@@ -2,8 +2,10 @@ import { useMemo, useState } from 'react';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts';
-import { Calendar } from 'lucide-react';
+import { Calendar, TrendingDown, AlertTriangle, Gauge, FileWarning, StopCircle, RadioTower, Car } from 'lucide-react';
 import { Ocorrencia, ExcessoVelocidade, MultaANTT, MultaTransito, Avaria, ParadaIndevida, Monitriip } from '../../types';
+import MetricCard from '../shared/MetricCard';
+import ChartCard from '../shared/ChartCard';
 
 interface DashboardOperacionalProps {
   ocorrencias: Ocorrencia[];
@@ -38,32 +40,11 @@ function fmtDateBR(d: Date): string {
   return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
 }
 
-const COLORS = ['#0f172a', '#3b82f6'];
-
-function KpiCard({ label, current, prev, unit = '' }: { label: string; current: number; prev: number; unit?: string }) {
-  const diff = current - prev;
-  const pct = prev > 0 ? ((diff / prev) * 100).toFixed(1) : current > 0 ? '100.0' : '0.0';
-  const isUp = diff > 0;
-  return (
-    <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-      <p className="text-[10px] font-black text-slate-500 uppercase tracking-tighter">{label}</p>
-      <p className="text-2xl font-black text-slate-800 mt-1">{current.toLocaleString('pt-BR')}{unit && <span className="text-sm font-bold text-slate-400 ml-1">{unit}</span>}</p>
-      <div className="flex items-center gap-2 mt-1">
-        <span className="text-xs text-slate-400">Período anterior: {prev.toLocaleString('pt-BR')}</span>
-        {diff !== 0 && (
-          <span className={`text-[10px] font-black px-1.5 py-0.5 rounded ${isUp ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}`}>
-            {isUp ? '▲' : '▼'} {Math.abs(+pct)}%
-          </span>
-        )}
-      </div>
-    </div>
-  );
-}
+const CHART_COLORS = { current: '#082f55', previous: '#3d7fd2' }; // brand-800, brand-400
 
 export default function DashboardOperacionalScreen({
   ocorrencias, excessos, multasAntt, multasTransito, avarias, paradas, monitriips,
 }: DashboardOperacionalProps) {
-  // Default: last 7 days
   const defaultEnd = new Date();
   const defaultStart = new Date();
   defaultStart.setDate(defaultStart.getDate() - 7);
@@ -71,12 +52,11 @@ export default function DashboardOperacionalScreen({
   const [dataInicio, setDataInicio] = useState(defaultStart.toISOString().split('T')[0]);
   const [dataFim, setDataFim] = useState(defaultEnd.toISOString().split('T')[0]);
 
-  // Current period and previous period (same duration)
   const periods = useMemo(() => {
     const start = new Date(dataInicio + 'T00:00:00');
     const end = new Date(dataFim + 'T23:59:59');
     const durationMs = end.getTime() - start.getTime();
-    const prevEnd = new Date(start.getTime() - 1); // 1ms before current start
+    const prevEnd = new Date(start.getTime() - 1);
     prevEnd.setHours(23, 59, 59, 999);
     const prevStart = new Date(prevEnd.getTime() - durationMs);
     prevStart.setHours(0, 0, 0, 0);
@@ -86,59 +66,22 @@ export default function DashboardOperacionalScreen({
     };
   }, [dataInicio, dataFim]);
 
-  // ─── Compute stats per period ────────────────────────────────────────────────
   const computeStats = (start: Date, end: Date) => {
-    const ocWeek = ocorrencias.filter(o => {
-      const d = parseDateBR(o.prevInicio);
-      return d && dateInRange(d, start, end);
-    });
+    const ocWeek = ocorrencias.filter(o => { const d = parseDateBR(o.prevInicio); return d && dateInRange(d, start, end); });
     const totalViagens = ocWeek.length;
     const atrasosInicio = ocWeek.filter(o => o.statusInicio === 'Atraso').length;
     const atrasosPerc = totalViagens > 0 ? +((atrasosInicio / totalViagens) * 100).toFixed(1) : 0;
-
-    const exWeek = excessos.filter(e => {
-      const d = parseDateBR(e.dataOcorrencia);
-      return d && dateInRange(d, start, end);
-    });
-
-    const anttWeek = multasAntt.filter(m => {
-      const d = parseDateBR(m.dataHora) || parseDateISO(m.dataHora);
-      return d && dateInRange(d, start, end);
-    });
+    const exWeek = excessos.filter(e => { const d = parseDateBR(e.dataOcorrencia); return d && dateInRange(d, start, end); });
+    const anttWeek = multasAntt.filter(m => { const d = parseDateBR(m.dataHora) || parseDateISO(m.dataHora); return d && dateInRange(d, start, end); });
     const anttValor = anttWeek.reduce((s, m) => s + m.valor, 0);
-
-    const transitWeek = multasTransito.filter(m => {
-      const d = parseDateBR(m.dataInfracao);
-      return d && dateInRange(d, start, end);
-    });
+    const transitWeek = multasTransito.filter(m => { const d = parseDateBR(m.dataInfracao); return d && dateInRange(d, start, end); });
     const transitValor = transitWeek.reduce((s, m) => s + m.valorCobrado, 0);
-
-    const avarWeek = avarias.filter(a => {
-      const d = parseDateBR(a.data);
-      return d && dateInRange(d, start, end);
-    });
+    const avarWeek = avarias.filter(a => { const d = parseDateBR(a.data); return d && dateInRange(d, start, end); });
     const avarValor = avarWeek.reduce((s, a) => s + a.valorAvaria, 0);
-
-    const parWeek = paradas.filter(p => {
-      const d = parseDateBR(p.data);
-      return d && dateInRange(d, start, end);
-    });
-
-    const monWeek = monitriips.filter(m => {
-      const d = parseDateBR(m.data);
-      return d && dateInRange(d, start, end);
-    });
+    const parWeek = paradas.filter(p => { const d = parseDateBR(p.data); return d && dateInRange(d, start, end); });
+    const monWeek = monitriips.filter(m => { const d = parseDateBR(m.data); return d && dateInRange(d, start, end); });
     const monInvalidas = monWeek.filter(m => !m.viagemValida).length;
-
-    return {
-      totalViagens, atrasosInicio, atrasosPerc,
-      excessos: exWeek.length,
-      multasAntt: anttWeek.length, anttValor,
-      multasTransito: transitWeek.length, transitValor,
-      avarias: avarWeek.length, avarValor,
-      paradas: parWeek.length,
-      monitriip: monWeek.length, monInvalidas,
-    };
+    return { totalViagens, atrasosInicio, atrasosPerc, excessos: exWeek.length, multasAntt: anttWeek.length, anttValor, multasTransito: transitWeek.length, transitValor, avarias: avarWeek.length, avarValor, paradas: parWeek.length, monitriip: monWeek.length, monInvalidas };
   };
 
   const periodStats = useMemo(() => ({
@@ -149,7 +92,11 @@ export default function DashboardOperacionalScreen({
   const cur = periodStats.current;
   const prev = periodStats.previous;
 
-  // ─── Comparison chart data ─────────────────────────────────────────────────
+  function trendPct(c: number, p: number): number {
+    if (p === 0) return c > 0 ? 100 : 0;
+    return +((c - p) / p * 100).toFixed(1);
+  }
+
   const chartData = useMemo(() => [
     { name: 'Atrasos', current: cur.atrasosInicio, previous: prev.atrasosInicio },
     { name: 'Excessos Vel.', current: cur.excessos, previous: prev.excessos },
@@ -161,111 +108,126 @@ export default function DashboardOperacionalScreen({
   ], [cur, prev]);
 
   const valorChartData = useMemo(() => [
-    { name: 'ANTT (R$)', current: cur.anttValor, previous: prev.anttValor },
-    { name: 'Trânsito (R$)', current: cur.transitValor, previous: prev.transitValor },
-    { name: 'Avarias (R$)', current: cur.avarValor, previous: prev.avarValor },
+    { name: 'ANTT', current: cur.anttValor, previous: prev.anttValor },
+    { name: 'Trânsito', current: cur.transitValor, previous: prev.transitValor },
+    { name: 'Avarias', current: cur.avarValor, previous: prev.avarValor },
   ], [cur, prev]);
 
+  const trendLabel = 'vs período anterior';
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* Header with date filters */}
-      <div className="bg-slate-900 rounded-xl p-5 text-white">
-        <h2 className="text-lg font-black">Dashboard Operacional</h2>
-        <div className="flex items-center gap-4 mt-3 flex-wrap">
-          <Calendar size={16} className="text-slate-400" />
+      <div className="bg-white rounded-card border border-gray-200 shadow-card p-4">
+        <div className="flex items-center gap-4 flex-wrap">
           <div className="flex items-center gap-2">
-            <label className="text-[10px] font-bold text-slate-400 uppercase">Início</label>
-            <input
-              type="date"
-              value={dataInicio}
-              onChange={e => setDataInicio(e.target.value)}
-              className="px-2 py-1.5 text-xs font-bold bg-slate-800 border border-slate-700 rounded-lg text-white focus:ring-2 focus:ring-brand-400 focus:outline-none"
-            />
+            <label htmlFor="dash-op-inicio" className="text-2xs font-bold text-slate-500 uppercase">Início</label>
+            <div className="relative">
+              <Calendar size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+              <input
+                id="dash-op-inicio"
+                type="date"
+                value={dataInicio}
+                onChange={e => setDataInicio(e.target.value)}
+                className="pl-8 pr-3 py-2 text-xs font-medium border border-gray-200 rounded-button bg-slate-50 focus:ring-2 focus:ring-brand-400 focus:outline-none"
+              />
+            </div>
           </div>
           <div className="flex items-center gap-2">
-            <label className="text-[10px] font-bold text-slate-400 uppercase">Fim</label>
-            <input
-              type="date"
-              value={dataFim}
-              onChange={e => setDataFim(e.target.value)}
-              className="px-2 py-1.5 text-xs font-bold bg-slate-800 border border-slate-700 rounded-lg text-white focus:ring-2 focus:ring-brand-400 focus:outline-none"
-            />
+            <label htmlFor="dash-op-fim" className="text-2xs font-bold text-slate-500 uppercase">Fim</label>
+            <div className="relative">
+              <Calendar size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+              <input
+                id="dash-op-fim"
+                type="date"
+                value={dataFim}
+                onChange={e => setDataFim(e.target.value)}
+                className="pl-8 pr-3 py-2 text-xs font-medium border border-gray-200 rounded-button bg-slate-50 focus:ring-2 focus:ring-brand-400 focus:outline-none"
+              />
+            </div>
           </div>
-          <span className="text-[10px] text-slate-500 ml-auto">
-            Comparando com período anterior: <span className="text-slate-400 font-bold">{periods.previous.label}</span>
+          <span className="text-2xs text-slate-400 ml-auto">
+            Comparando: <span className="font-bold text-slate-500">{periods.previous.label}</span>
           </span>
         </div>
       </div>
 
-      {/* KPI Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-        <KpiCard label="Atrasos na Partida" current={cur.atrasosInicio} prev={prev.atrasosInicio} />
-        <KpiCard label="% Atraso" current={cur.atrasosPerc} prev={prev.atrasosPerc} unit="%" />
-        <KpiCard label="Excessos de Velocidade" current={cur.excessos} prev={prev.excessos} />
+      {/* KPI Grid — unified 4-column layout */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <MetricCard label="Atrasos na Partida" value={cur.atrasosInicio} icon={TrendingDown} variant="danger"
+          trend={{ value: trendPct(cur.atrasosInicio, prev.atrasosInicio), label: trendLabel, invertColor: true }} />
+        <MetricCard label="% Atraso" value={`${cur.atrasosPerc}%`} icon={TrendingDown} variant="warning"
+          trend={{ value: trendPct(cur.atrasosPerc, prev.atrasosPerc), label: trendLabel, invertColor: true }} />
+        <MetricCard label="Excessos de Velocidade" value={cur.excessos} icon={Gauge} variant="danger"
+          trend={{ value: trendPct(cur.excessos, prev.excessos), label: trendLabel, invertColor: true }} />
+        <MetricCard label="Paradas Indevidas" value={cur.paradas} icon={StopCircle}
+          trend={{ value: trendPct(cur.paradas, prev.paradas), label: trendLabel, invertColor: true }} />
       </div>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <KpiCard label="Multas ANTT" current={cur.multasAntt} prev={prev.multasAntt} />
-        <KpiCard label="Multas Trânsito" current={cur.multasTransito} prev={prev.multasTransito} />
-        <KpiCard label="Avarias" current={cur.avarias} prev={prev.avarias} />
-        <KpiCard label="Paradas Indevidas" current={cur.paradas} prev={prev.paradas} />
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <MetricCard label="Multas ANTT" value={cur.multasAntt} icon={FileWarning} variant="warning"
+          trend={{ value: trendPct(cur.multasAntt, prev.multasAntt), label: trendLabel, invertColor: true }} />
+        <MetricCard label="Multas Trânsito" value={cur.multasTransito} icon={AlertTriangle} variant="warning"
+          trend={{ value: trendPct(cur.multasTransito, prev.multasTransito), label: trendLabel, invertColor: true }} />
+        <MetricCard label="Avarias" value={cur.avarias} icon={Car}
+          trend={{ value: trendPct(cur.avarias, prev.avarias), label: trendLabel, invertColor: true }} />
+        <MetricCard label="Monitriip Inválidas" value={cur.monInvalidas} icon={RadioTower}
+          trend={{ value: trendPct(cur.monInvalidas, prev.monInvalidas), label: trendLabel, invertColor: true }} />
       </div>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <KpiCard label="Monitriip Inválidas" current={cur.monInvalidas} prev={prev.monInvalidas} />
-        <KpiCard label="Valor ANTT" current={Math.round(cur.anttValor)} prev={Math.round(prev.anttValor)} unit="R$" />
-        <KpiCard label="Valor Trânsito" current={Math.round(cur.transitValor)} prev={Math.round(prev.transitValor)} unit="R$" />
-        <KpiCard label="Valor Avarias" current={Math.round(cur.avarValor)} prev={Math.round(prev.avarValor)} unit="R$" />
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <MetricCard label="Valor ANTT" value={Math.round(cur.anttValor)} unit="R$" icon={FileWarning} variant="info"
+          trend={{ value: trendPct(cur.anttValor, prev.anttValor), label: trendLabel, invertColor: true }} />
+        <MetricCard label="Valor Trânsito" value={Math.round(cur.transitValor)} unit="R$" icon={AlertTriangle} variant="info"
+          trend={{ value: trendPct(cur.transitValor, prev.transitValor), label: trendLabel, invertColor: true }} />
+        <MetricCard label="Valor Avarias" value={Math.round(cur.avarValor)} unit="R$" icon={Car} variant="info"
+          trend={{ value: trendPct(cur.avarValor, prev.avarValor), label: trendLabel, invertColor: true }} />
       </div>
 
       {/* Comparison Chart — Ocorrências */}
-      <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
-        <h4 className="text-xs font-black text-slate-600 uppercase tracking-tighter mb-4">Comparativo de Ocorrências — Período Atual vs Anterior</h4>
-        <div className="h-72">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={chartData} layout="vertical" margin={{ left: 10 }}>
-              <XAxis type="number" />
-              <YAxis dataKey="name" type="category" tick={{ fontSize: 10 }} width={110} interval={0} />
-              <Tooltip />
-              <Legend />
-              <Bar dataKey="current" name={periods.current.label} fill={COLORS[0]} radius={[0, 3, 3, 0]} />
-              <Bar dataKey="previous" name={periods.previous.label} fill={COLORS[1]} radius={[0, 3, 3, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
+      <ChartCard title="Comparativo de Ocorrências — Período Atual vs Anterior" height="h-72" isEmpty={chartData.every(d => d.current === 0 && d.previous === 0)}>
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={chartData} layout="vertical" margin={{ left: 10 }}>
+            <XAxis type="number" tick={{ fontSize: 11 }} />
+            <YAxis dataKey="name" type="category" tick={{ fontSize: 11 }} width={110} interval={0} />
+            <Tooltip contentStyle={{ fontSize: 12 }} />
+            <Legend wrapperStyle={{ fontSize: 11 }} />
+            <Bar dataKey="current" name={periods.current.label} fill={CHART_COLORS.current} radius={[0, 3, 3, 0]} />
+            <Bar dataKey="previous" name={periods.previous.label} fill={CHART_COLORS.previous} radius={[0, 3, 3, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+      </ChartCard>
 
       {/* Comparison Chart — Valores */}
-      <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
-        <h4 className="text-xs font-black text-slate-600 uppercase tracking-tighter mb-4">Comparativo de Valores (R$) — Período Atual vs Anterior</h4>
-        <div className="h-48">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={valorChartData} layout="vertical" margin={{ left: 10 }}>
-              <XAxis type="number" tickFormatter={(v: number) => `R$ ${(v / 1000).toFixed(0)}k`} />
-              <YAxis dataKey="name" type="category" tick={{ fontSize: 10 }} width={110} interval={0} />
-              <Tooltip formatter={(v: number) => [`R$ ${v.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, '']} />
-              <Legend />
-              <Bar dataKey="current" name={periods.current.label} fill={COLORS[0]} radius={[0, 3, 3, 0]} />
-              <Bar dataKey="previous" name={periods.previous.label} fill={COLORS[1]} radius={[0, 3, 3, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
+      <ChartCard title="Comparativo de Valores (R$) — Período Atual vs Anterior" height="h-48" isEmpty={valorChartData.every(d => d.current === 0 && d.previous === 0)}>
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={valorChartData} layout="vertical" margin={{ left: 10 }}>
+            <XAxis type="number" tickFormatter={(v: number) => `R$ ${(v / 1000).toFixed(0)}k`} tick={{ fontSize: 11 }} />
+            <YAxis dataKey="name" type="category" tick={{ fontSize: 11 }} width={110} interval={0} />
+            <Tooltip formatter={(v: number) => [`R$ ${v.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, '']} contentStyle={{ fontSize: 12 }} />
+            <Legend wrapperStyle={{ fontSize: 11 }} />
+            <Bar dataKey="current" name={periods.current.label} fill={CHART_COLORS.current} radius={[0, 3, 3, 0]} />
+            <Bar dataKey="previous" name={periods.previous.label} fill={CHART_COLORS.previous} radius={[0, 3, 3, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+      </ChartCard>
 
       {/* Period detail table */}
-      <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm overflow-x-auto">
-        <h4 className="text-xs font-black text-slate-600 uppercase tracking-tighter mb-4">Detalhamento por Período</h4>
-        <table className="w-full text-sm text-left">
-          <thead className="bg-slate-800 text-white text-[10px] uppercase">
+      <div className="bg-white rounded-card border border-gray-200 shadow-card p-5 overflow-x-auto">
+        <h4 className="text-2xs font-black text-slate-600 uppercase tracking-tight mb-4">Detalhamento por Período</h4>
+        <table className="w-full text-xs text-left">
+          <thead className="bg-slate-800 text-white text-2xs uppercase">
             <tr>
-              <th className="px-4 py-2">Período</th>
-              <th className="px-4 py-2 text-right">Viagens</th>
-              <th className="px-4 py-2 text-right">Atrasos</th>
-              <th className="px-4 py-2 text-right">%</th>
-              <th className="px-4 py-2 text-right">Excessos</th>
-              <th className="px-4 py-2 text-right">ANTT</th>
-              <th className="px-4 py-2 text-right">Trânsito</th>
-              <th className="px-4 py-2 text-right">Avarias</th>
-              <th className="px-4 py-2 text-right">Paradas</th>
-              <th className="px-4 py-2 text-right">Monitriip Inv.</th>
+              <th className="px-4 py-2.5">Período</th>
+              <th className="px-4 py-2.5 text-right">Viagens</th>
+              <th className="px-4 py-2.5 text-right">Atrasos</th>
+              <th className="px-4 py-2.5 text-right">%</th>
+              <th className="px-4 py-2.5 text-right">Excessos</th>
+              <th className="px-4 py-2.5 text-right">ANTT</th>
+              <th className="px-4 py-2.5 text-right">Trânsito</th>
+              <th className="px-4 py-2.5 text-right">Avarias</th>
+              <th className="px-4 py-2.5 text-right">Paradas</th>
+              <th className="px-4 py-2.5 text-right">Monitriip</th>
             </tr>
           </thead>
           <tbody>
@@ -273,17 +235,17 @@ export default function DashboardOperacionalScreen({
               { label: periods.current.label, s: cur, highlight: true },
               { label: periods.previous.label, s: prev, highlight: false },
             ].map((row, i) => (
-              <tr key={i} className={`border-b border-gray-100 ${row.highlight ? 'bg-blue-50 font-bold' : ''}`}>
-                <td className="px-4 py-2 font-mono text-xs">{row.label}</td>
-                <td className="px-4 py-2 text-right">{row.s.totalViagens}</td>
-                <td className="px-4 py-2 text-right">{row.s.atrasosInicio}</td>
-                <td className="px-4 py-2 text-right">{row.s.atrasosPerc}%</td>
-                <td className="px-4 py-2 text-right">{row.s.excessos}</td>
-                <td className="px-4 py-2 text-right">{row.s.multasAntt}</td>
-                <td className="px-4 py-2 text-right">{row.s.multasTransito}</td>
-                <td className="px-4 py-2 text-right">{row.s.avarias}</td>
-                <td className="px-4 py-2 text-right">{row.s.paradas}</td>
-                <td className="px-4 py-2 text-right">{row.s.monInvalidas}</td>
+              <tr key={i} className={`border-b border-gray-100 ${row.highlight ? 'bg-brand-50 font-bold' : 'hover:bg-slate-50'} transition-colors`}>
+                <td className="px-4 py-2.5 font-mono text-2xs">{row.label}</td>
+                <td className="px-4 py-2.5 text-right">{row.s.totalViagens}</td>
+                <td className="px-4 py-2.5 text-right">{row.s.atrasosInicio}</td>
+                <td className="px-4 py-2.5 text-right">{row.s.atrasosPerc}%</td>
+                <td className="px-4 py-2.5 text-right">{row.s.excessos}</td>
+                <td className="px-4 py-2.5 text-right">{row.s.multasAntt}</td>
+                <td className="px-4 py-2.5 text-right">{row.s.multasTransito}</td>
+                <td className="px-4 py-2.5 text-right">{row.s.avarias}</td>
+                <td className="px-4 py-2.5 text-right">{row.s.paradas}</td>
+                <td className="px-4 py-2.5 text-right">{row.s.monInvalidas}</td>
               </tr>
             ))}
           </tbody>

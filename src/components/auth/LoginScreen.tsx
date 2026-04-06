@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { LogIn, ShieldCheck, AlertCircle } from 'lucide-react';
+import { LogIn, ShieldCheck, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { User } from '../../types';
 
 interface LoginScreenProps {
@@ -10,6 +10,7 @@ interface LoginScreenProps {
 export default function LoginScreen({ onLogin, users }: LoginScreenProps) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -57,8 +58,9 @@ export default function LoginScreen({ onLogin, users }: LoginScreenProps) {
           )}
 
           <div className="space-y-1.5">
-            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Login de Acesso</label>
+            <label htmlFor="login-username" className="text-2xs font-bold text-slate-400 uppercase tracking-widest ml-1">Login de Acesso</label>
             <input
+              id="login-username"
               required
               type="text"
               value={username}
@@ -69,15 +71,26 @@ export default function LoginScreen({ onLogin, users }: LoginScreenProps) {
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Senha Secreta</label>
-            <input
-              required
-              type="password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              className="w-full px-4 py-3.5 bg-slate-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-400 focus:border-brand-400 outline-none transition-all font-semibold text-slate-700 placeholder:text-slate-300"
-              placeholder="********"
-            />
+            <label htmlFor="login-password" className="text-2xs font-bold text-slate-400 uppercase tracking-widest ml-1">Senha Secreta</label>
+            <div className="relative">
+              <input
+                id="login-password"
+                required
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                className="w-full px-4 py-3.5 pr-12 bg-slate-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-400 focus:border-brand-400 outline-none transition-all font-semibold text-slate-700 placeholder:text-slate-300"
+                placeholder="********"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(prev => !prev)}
+                aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors p-1"
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
           </div>
 
           <button

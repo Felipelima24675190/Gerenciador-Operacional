@@ -78,17 +78,19 @@ export default function ConsultSpeedDriverScreen({ motoristas, excessos }: Consu
   };
 
   return (
-    <div className="space-y-6 max-w-6xl mx-auto">
-      <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+    <div className="space-y-5 max-w-6xl mx-auto">
+      <div className="bg-white p-6 rounded-card border border-gray-200 shadow-card">
         <h3 className="text-lg font-bold text-slate-800 mb-4">Buscar Motorista</h3>
         <div className="relative mb-6">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-          <input 
-            type="text" 
-            placeholder="Digite nome ou matrícula..." 
+          <input
+            id="speed-driver-search"
+            type="text"
+            placeholder="Digite nome ou matrícula..."
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 font-medium"
+            aria-label="Buscar motorista por nome ou matrícula"
+            className="w-full pl-10 pr-4 py-3 text-xs font-medium border border-gray-200 rounded-button bg-slate-50 focus:ring-2 focus:ring-brand-400 focus:outline-none"
           />
         </div>
 
@@ -98,6 +100,7 @@ export default function ConsultSpeedDriverScreen({ motoristas, excessos }: Consu
               <button
                 key={m.matricula}
                 onClick={() => { setSelectedMotorista(m); setSearchTerm(''); }}
+                aria-label={`Selecionar motorista ${m.nome}`}
                 className="w-full text-left px-4 py-3 hover:bg-blue-50 border-b border-slate-100 last:border-0 flex justify-between items-center"
               >
                 <div>
@@ -117,15 +120,16 @@ export default function ConsultSpeedDriverScreen({ motoristas, excessos }: Consu
       </div>
 
       {selectedMotorista && driverStats && (
-        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4">
-          <div className="bg-[#0e4f8f] p-6 rounded-xl text-white shadow-lg flex justify-between items-center">
+        <div className="space-y-5 animate-in fade-in slide-in-from-bottom-4">
+          <div className="bg-[#0e4f8f] p-6 rounded-card text-white shadow-lg flex justify-between items-center">
             <div>
               <p className="text-blue-200 text-xs font-bold uppercase tracking-widest mb-1">Dossiê de Velocidade</p>
               <h2 className="text-2xl font-black">{selectedMotorista.nome}</h2>
               <p className="text-blue-100 font-mono mt-1">{selectedMotorista.matricula} • {selectedMotorista.filial} • {selectedMotorista.area}</p>
             </div>
-            <button 
+            <button
               onClick={exportPDF}
+              aria-label="Exportar relatório em PDF"
               className="px-4 py-2 bg-white text-[#0e4f8f] font-bold rounded-lg hover:bg-blue-50 transition-colors shadow-sm"
             >
               Exportar PDF
@@ -133,7 +137,7 @@ export default function ConsultSpeedDriverScreen({ motoristas, excessos }: Consu
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-             <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex items-center gap-4">
+             <div className="bg-white p-6 rounded-card border border-gray-200 shadow-card flex items-center gap-4">
               <div className="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center shrink-0">
                 <AlertTriangle size={24} />
               </div>
@@ -142,7 +146,7 @@ export default function ConsultSpeedDriverScreen({ motoristas, excessos }: Consu
                 <p className="text-2xl font-black text-slate-800">{driverStats.totalOcorrencias}</p>
               </div>
             </div>
-            <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex items-center gap-4">
+            <div className="bg-white p-6 rounded-card border border-gray-200 shadow-card flex items-center gap-4">
               <div className="w-12 h-12 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center shrink-0">
                 <Clock size={24} />
               </div>
@@ -151,7 +155,7 @@ export default function ConsultSpeedDriverScreen({ motoristas, excessos }: Consu
                 <p className="text-xl font-black text-slate-800">{Math.floor(driverStats.totalMinutos/60)}h {driverStats.totalMinutos%60}m</p>
               </div>
             </div>
-            <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex items-center gap-4">
+            <div className="bg-white p-6 rounded-card border border-gray-200 shadow-card flex items-center gap-4">
               <div className="w-12 h-12 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center shrink-0">
                 <TrendingUp size={24} />
               </div>
@@ -162,26 +166,26 @@ export default function ConsultSpeedDriverScreen({ motoristas, excessos }: Consu
             </div>
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+          <div className="bg-white rounded-card border border-gray-200 shadow-card overflow-hidden">
             <div className="p-6 border-b border-gray-100">
               <h3 className="text-lg font-bold text-slate-800">Histórico Detalhado</h3>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left">
-                <thead className="bg-slate-50 text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                <thead className="bg-slate-800 text-white text-2xs uppercase tracking-wide">
                   <tr>
-                    <th className="p-4">Data Ocorrência</th>
-                    <th className="p-4">Linha</th>
-                    <th className="p-4">Veículo</th>
-                    <th className="p-4">Tempo Excedido</th>
-                    <th className="p-4">Vel. Média</th>
-                    <th className="p-4">Local</th>
+                    <th className="px-3 py-2.5">Data Ocorrência</th>
+                    <th className="px-3 py-2.5">Linha</th>
+                    <th className="px-3 py-2.5">Veículo</th>
+                    <th className="px-3 py-2.5">Tempo Excedido</th>
+                    <th className="px-3 py-2.5">Vel. Média</th>
+                    <th className="px-3 py-2.5">Local</th>
                   </tr>
                 </thead>
                 <tbody className="text-sm">
                   {driverStats.ocorrencias.length > 0 ? (
                     driverStats.ocorrencias.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map(occ => (
-                      <tr key={occ.id} className="border-b border-gray-50 hover:bg-slate-50">
+                      <tr key={occ.id} className="hover:bg-slate-50 transition-colors border-b border-gray-100">
                         <td className="p-4 font-mono text-xs">{occ.dataOcorrencia}</td>
                         <td className="p-4 font-medium text-slate-700">{occ.nomeLinha}</td>
                         <td className="p-4">{occ.veiculo}</td>

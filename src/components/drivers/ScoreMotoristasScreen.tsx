@@ -283,31 +283,31 @@ export default function ScoreMotoristasScreen({
   );
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       {/* KPI summary */}
       <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
         <div className="bg-white border border-gray-200 rounded-xl p-4 text-center shadow-sm">
-          <p className="text-[10px] font-bold text-slate-500 uppercase">Motoristas Avaliados</p>
+          <p className="text-2xs font-bold text-slate-500 uppercase">Motoristas Avaliados</p>
           <p className="text-2xl font-black text-slate-800">{summary.total}</p>
         </div>
         <div className="bg-white border border-gray-200 rounded-xl p-4 text-center shadow-sm">
-          <p className="text-[10px] font-bold text-slate-500 uppercase">Score Médio</p>
+          <p className="text-2xs font-bold text-slate-500 uppercase">Score Médio</p>
           <p className={`text-2xl font-black ${getScoreColor(summary.avgScore)}`}>{summary.avgScore.toFixed(1)}</p>
         </div>
         <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-center">
-          <p className="text-[10px] font-bold text-emerald-600 uppercase">Excelente (≥90)</p>
+          <p className="text-2xs font-bold text-emerald-600 uppercase">Excelente (≥90)</p>
           <p className="text-2xl font-black text-emerald-700">{summary.excelente}</p>
         </div>
         <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-center">
-          <p className="text-[10px] font-bold text-blue-600 uppercase">Bom (70-89)</p>
+          <p className="text-2xs font-bold text-blue-600 uppercase">Bom (70-89)</p>
           <p className="text-2xl font-black text-blue-700">{summary.bom}</p>
         </div>
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-center">
-          <p className="text-[10px] font-bold text-amber-600 uppercase">Regular (50-69)</p>
+          <p className="text-2xs font-bold text-amber-600 uppercase">Regular (50-69)</p>
           <p className="text-2xl font-black text-amber-700">{summary.regular}</p>
         </div>
         <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-center">
-          <p className="text-[10px] font-bold text-red-600 uppercase">Crítico (&lt;50)</p>
+          <p className="text-2xs font-bold text-red-600 uppercase">Crítico (&lt;50)</p>
           <p className="text-2xl font-black text-red-700">{summary.critico}</p>
         </div>
       </div>
@@ -322,20 +322,20 @@ export default function ScoreMotoristasScreen({
               {!editingPesos && (
                 <button
                   onClick={() => { setTempPesos({ ...PESOS }); setEditingPesos(true); }}
-                  className="text-[10px] font-bold text-brand-500 hover:text-brand-700 flex items-center gap-1"
+                  className="text-2xs font-bold text-brand-500 hover:text-brand-700 flex items-center gap-1"
                 >
                   <Edit2 size={10} /> Editar pesos
                 </button>
               )}
             </div>
             {!editingPesos ? (
-              <p className="text-[10px] text-slate-500 mt-1">
+              <p className="text-2xs text-slate-500 mt-1">
                 Cada motorista inicia com <strong>100 pontos</strong>. Deduções:
                 Falta <strong>−{PESOS.falta}pts</strong> · Excesso de Velocidade <strong>−{PESOS.excesso}pts</strong> · Atraso de Linha <strong>−{PESOS.atraso}pts</strong> · Avaria <strong>−{PESOS.avaria}pts</strong> · Acidente <strong>−{PESOS.acidente}pts</strong>
               </p>
             ) : (
               <div className="mt-2">
-                <p className="text-[10px] text-slate-500 mb-2">Defina quantos pontos cada infração deduz do score (100 pontos base):</p>
+                <p className="text-2xs text-slate-500 mb-2">Defina quantos pontos cada infração deduz do score (100 pontos base):</p>
                 <div className="grid grid-cols-5 gap-2">
                   {([
                     { key: 'falta' as const, label: 'Falta' },
@@ -345,7 +345,7 @@ export default function ScoreMotoristasScreen({
                     { key: 'acidente' as const, label: 'Acidente' },
                   ]).map(item => (
                     <div key={item.key} className="bg-white border border-gray-200 rounded-lg p-2 text-center">
-                      <label className="text-[9px] font-bold text-slate-500 uppercase block mb-1">{item.label}</label>
+                      <label className="text-2xs font-bold text-slate-500 uppercase block mb-1">{item.label}</label>
                       <input
                         type="number"
                         min={0}
@@ -354,7 +354,7 @@ export default function ScoreMotoristasScreen({
                         onChange={e => setTempPesos(p => ({ ...p, [item.key]: Math.max(0, parseInt(e.target.value) || 0) }))}
                         className="w-full text-center text-sm font-black border border-gray-200 rounded p-1 focus:ring-1 focus:ring-brand-500"
                       />
-                      <p className="text-[9px] text-slate-400 mt-0.5">−pts/infração</p>
+                      <p className="text-2xs text-slate-400 mt-0.5">−pts/infração</p>
                     </div>
                   ))}
                 </div>
@@ -447,13 +447,13 @@ export default function ScoreMotoristasScreen({
                   { label: 'Acidentes', qty: selectedChartScore.detalhes.acidentes, ded: selectedChartScore.deducoes.acidentes },
                 ].map((item, i) => (
                   <div key={i} className="bg-white rounded-lg border border-gray-200 p-2.5 text-center">
-                    <p className="text-[9px] font-bold text-slate-500 uppercase">{item.label}</p>
+                    <p className="text-2xs font-bold text-slate-500 uppercase">{item.label}</p>
                     <p className="text-lg font-black text-slate-800">{item.qty}</p>
-                    {item.ded > 0 && <p className="text-[10px] font-bold text-red-500">-{item.ded} pts</p>}
+                    {item.ded > 0 && <p className="text-2xs font-bold text-red-500">-{item.ded} pts</p>}
                   </div>
                 ))}
               </div>
-              <p className="mt-2 text-[10px] text-slate-400 text-center">Clique para fechar</p>
+              <p className="mt-2 text-2xs text-slate-400 text-center">Clique para fechar</p>
             </div>
           )}
         </div>
@@ -462,21 +462,23 @@ export default function ScoreMotoristasScreen({
       {/* Filters */}
       <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-wrap gap-4 items-end">
         <div className="flex-1 min-w-[200px]">
-          <label className="text-[10px] font-bold text-slate-600 uppercase block mb-1">Buscar Motorista</label>
+          <label htmlFor="search-score" className="text-2xs font-bold text-slate-500 uppercase tracking-wide block mb-1">Buscar Motorista</label>
           <div className="relative">
             <Search size={14} className="absolute left-3 top-2.5 text-gray-400" />
             <input
+              id="search-score"
               type="text"
               placeholder="Nome, matrícula ou filial..."
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-400"
+              aria-label="Buscar motorista por nome, matrícula ou filial"
+              className="w-full pl-9 pr-4 px-3 py-2 text-xs font-medium border border-gray-200 rounded-button bg-slate-50 focus:ring-2 focus:ring-brand-400 focus:outline-none"
             />
           </div>
         </div>
         <div>
-          <label className="text-[10px] font-bold text-slate-600 uppercase block mb-1">Faixa</label>
-          <select value={filterFaixa} onChange={e => setFilterFaixa(e.target.value)} className="text-xs p-2 rounded-lg border border-gray-200 bg-slate-50">
+          <label htmlFor="faixa-filter" className="text-2xs font-bold text-slate-500 uppercase tracking-wide block mb-1">Faixa</label>
+          <select id="faixa-filter" value={filterFaixa} onChange={e => setFilterFaixa(e.target.value)} aria-label="Filtrar por faixa de score" className="px-3 py-2 text-xs font-medium border border-gray-200 rounded-button bg-slate-50 focus:ring-2 focus:ring-brand-400 focus:outline-none">
             <option value="Todas">Todas</option>
             <option value="Excelente">Excelente (≥90)</option>
             <option value="Bom">Bom (70-89)</option>
@@ -491,9 +493,9 @@ export default function ScoreMotoristasScreen({
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
         <div className="overflow-x-auto overflow-y-auto max-h-[500px]">
           <table className="w-full text-xs text-left table-fixed">
-            <thead className="bg-slate-800 text-white text-[10px] uppercase sticky top-0 z-10">
+            <thead className="bg-slate-800 text-white text-2xs uppercase tracking-wide sticky top-0 z-10">
               <tr>
-                <th className="px-2 py-2.5 w-[36px]">#</th>
+                <th className="px-3 py-2.5 w-[36px]">#</th>
                 <th className="px-2 py-2.5 cursor-pointer hover:text-brand-300" onClick={() => toggleSort('nome')}>
                   Motorista <SortIcon field="nome" />
                 </th>
@@ -523,16 +525,16 @@ export default function ScoreMotoristasScreen({
                 return (<>
                   <tr
                     key={s.matricula}
-                    className={`cursor-pointer transition-colors border-b border-gray-50 ${isExpanded ? 'bg-slate-50' : 'hover:bg-slate-50'}`}
+                    className={`cursor-pointer hover:bg-slate-50 transition-colors border-b border-gray-100 ${isExpanded ? 'bg-slate-50' : ''}`}
                     onClick={() => setExpandedMatricula(isExpanded ? null : s.matricula)}
                   >
-                    <td className="px-2 py-2.5 text-[10px] text-slate-400">{idx + 1}</td>
+                    <td className="px-2 py-2.5 text-2xs text-slate-400">{idx + 1}</td>
                     <td className="px-2 py-2.5 font-bold text-slate-700 truncate" title={s.nome}>{s.nome}</td>
                     <td className="px-2 py-2.5 font-mono text-slate-500">{s.matricula}</td>
                     <td className="px-2 py-2.5 text-slate-500 truncate" title={s.filial}>{s.filial}</td>
                     <td className={`px-2 py-2.5 text-center font-black text-lg ${getScoreColor(s.score)}`}>{s.score}</td>
                     <td className="px-2 py-2.5 text-center">
-                      <span className={`inline-block px-2 py-0.5 rounded-full text-[9px] font-black border ${getScoreBg(s.score)} ${getScoreColor(s.score)}`}>
+                      <span className={`inline-block px-2 py-0.5 rounded-full text-2xs font-black border ${getScoreBg(s.score)} ${getScoreColor(s.score)}`}>
                         {getScoreLabel(s.score)}
                       </span>
                     </td>
@@ -559,9 +561,9 @@ export default function ScoreMotoristasScreen({
                               { label: 'Acidentes', count: s.detalhes.acidentes, ded: s.deducoes.acidentes, peso: PESOS.acidente, color: 'red' },
                             ].map((item, i) => (
                               <div key={i} className={`bg-white rounded-lg border border-${item.color}-100 p-3`}>
-                                <p className="text-[10px] font-bold text-slate-500 uppercase">{item.label}</p>
+                                <p className="text-2xs font-bold text-slate-500 uppercase">{item.label}</p>
                                 <p className="text-lg font-black text-slate-700">{item.count}</p>
-                                <p className="text-[10px] text-slate-400">
+                                <p className="text-2xs text-slate-400">
                                   {item.count} × {item.peso}pts = <span className="font-bold text-red-500">−{item.ded}pts</span>
                                 </p>
                               </div>
@@ -574,12 +576,12 @@ export default function ScoreMotoristasScreen({
                               <span className={`text-lg font-black ${getScoreColor(s.score)}`}>{s.score}</span>
                             </div>
                             {s.score < 50 && (
-                              <div className="flex items-center gap-1 text-[10px] text-red-500 font-bold">
+                              <div className="flex items-center gap-1 text-2xs text-red-500 font-bold">
                                 <AlertTriangle size={12} /> Atenção: Score crítico
                               </div>
                             )}
                             {s.score >= 90 && (
-                              <div className="flex items-center gap-1 text-[10px] text-emerald-600 font-bold">
+                              <div className="flex items-center gap-1 text-2xs text-emerald-600 font-bold">
                                 <TrendingUp size={12} /> Desempenho excelente
                               </div>
                             )}

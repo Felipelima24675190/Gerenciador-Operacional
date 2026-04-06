@@ -208,47 +208,47 @@ function App() {
     }
   };
 
-  const getPageTitle = () => {
-    switch (activeTab) {
-      case 'dashboard': return 'Dashboard: Pontualidade';
-      case 'import-occurrences': return 'Importar Ocorrências Diárias';
-      case 'consult-driver': return 'Consultar Motorista';
-      case 'reports': return 'Relatórios e Métricas';
-      case 'import-drivers': return 'Importar Base de Motoristas';
-      case 'consult-base': return 'Consultar Base de Motoristas';
-      case 'manual-driver': return 'Cadastro Manual de Motoristas';
-      case 'import-lines': return 'Importar Base de Linhas';
-      case 'consult-lines': return 'Consultar Base de Linhas';
-      case 'import-vehicles': return 'Importar Base de Veículos';
-      case 'consult-vehicles': return 'Consultar Base de Veículos';
-      case 'import-stops': return 'Importar Paradas Indevidas';
-      case 'view-stops': return 'Consultar Paradas Indevidas';
-      case 'create-avaria': return 'Importar Relatório de Avarias';
-      case 'view-avaria': return 'Consultar Avarias do Período';
-      case 'users': return 'Gerenciamento de Usuários';
-      case 'import-speed': return 'Importar Excessos de Velocidade';
-      case 'view-speed': return 'Consultar Excessos de Velocidade';
-      case 'consult-speed-driver': return 'Histórico de Velocidade por Motorista';
-      case 'import-antt': return 'Importar Multas ANTT';
-      case 'view-antt': return 'Consultar Multas ANTT';
-      case 'antt-codes': return 'Consultar Códigos ANTT';
-      case 'import-transit': return 'Importar Multas de Trânsito';
-      case 'view-transit': return 'Consultar Multas de Trânsito';
-      case 'import-ocioso': return 'Importar Quilometragem Operacional';
-      case 'view-ocioso': return 'Consultar Quilometragem Operacional';
-      case 'import-ociosidade-motorista': return 'Importar Quilometragem de Veículos';
-      case 'view-ociosidade-motorista': return 'Consultar Quilometragem';
-      case 'import-monitriip': return 'Importar Dados Monitriip';
-      case 'view-monitriip': return 'Consultar Monitriip';
-      case 'dashboard-operacional': return 'Dashboard Operacional';
-      case 'line-dictionary': return 'Dicionário de Linhas';
-      case 'import-manutencao': return 'Importar Status de Manutenção';
-      case 'view-manutencao': return 'Consultar Veículos na Oficina';
-      case 'acidentes': return 'Acidentes e Sinistros';
-      case 'score-motoristas': return 'Score de Motoristas';
-      default: return 'Pontualidade Viação';
-    }
+  const PAGE_META: Record<string, { title: string; breadcrumb?: string }> = {
+    'dashboard-operacional': { title: 'Dashboard Operacional' },
+    'score-motoristas': { title: 'Score de Motoristas' },
+    'dashboard': { title: 'Dashboard Pontualidade', breadcrumb: 'Pontualidade' },
+    'import-occurrences': { title: 'Importar Ocorrências', breadcrumb: 'Pontualidade' },
+    'consult-driver': { title: 'Consultar Motorista', breadcrumb: 'Pontualidade' },
+    'import-speed': { title: 'Importar Excessos', breadcrumb: 'Velocidade' },
+    'view-speed': { title: 'Consultar Excessos', breadcrumb: 'Velocidade' },
+    'consult-speed-driver': { title: 'Histórico por Motorista', breadcrumb: 'Velocidade' },
+    'import-antt': { title: 'Importar Multas', breadcrumb: 'Multas ANTT' },
+    'view-antt': { title: 'Consultar Multas', breadcrumb: 'Multas ANTT' },
+    'antt-codes': { title: 'Consultar Códigos', breadcrumb: 'Multas ANTT' },
+    'import-transit': { title: 'Importar Multas', breadcrumb: 'Multas Trânsito' },
+    'view-transit': { title: 'Consultar Multas', breadcrumb: 'Multas Trânsito' },
+    'import-stops': { title: 'Importar Paradas', breadcrumb: 'Paradas Indevidas' },
+    'view-stops': { title: 'Consultar Paradas', breadcrumb: 'Paradas Indevidas' },
+    'create-avaria': { title: 'Cadastrar Avaria', breadcrumb: 'Avarias' },
+    'view-avaria': { title: 'Consultar Avarias', breadcrumb: 'Avarias' },
+    'acidentes': { title: 'Acidentes e Sinistros', breadcrumb: 'Avarias' },
+    'import-ociosidade-motorista': { title: 'Importar Quilometragem', breadcrumb: 'Quilometragem' },
+    'view-ociosidade-motorista': { title: 'Consultar Quilometragem', breadcrumb: 'Quilometragem' },
+    'import-ocioso': { title: 'Importar Quilometragem Operacional', breadcrumb: 'Quilometragem' },
+    'view-ocioso': { title: 'Consultar Quilometragem Operacional', breadcrumb: 'Quilometragem' },
+    'import-monitriip': { title: 'Importar Dados', breadcrumb: 'Monitriip' },
+    'view-monitriip': { title: 'Consultar Monitriip', breadcrumb: 'Monitriip' },
+    'import-manutencao': { title: 'Importar Status', breadcrumb: 'Manutenção' },
+    'view-manutencao': { title: 'Consultar Veículos na Oficina', breadcrumb: 'Manutenção' },
+    'reports': { title: 'Relatórios e Métricas', breadcrumb: 'Relatórios' },
+    'import-drivers': { title: 'Importar Base', breadcrumb: 'Base Motoristas' },
+    'manual-driver': { title: 'Cadastro Manual', breadcrumb: 'Base Motoristas' },
+    'consult-base': { title: 'Consultar Base', breadcrumb: 'Base Motoristas' },
+    'import-lines': { title: 'Importar Linhas', breadcrumb: 'Base Linhas' },
+    'consult-lines': { title: 'Consultar Linhas', breadcrumb: 'Base Linhas' },
+    'line-dictionary': { title: 'Dicionário de Linhas', breadcrumb: 'Base Linhas' },
+    'import-vehicles': { title: 'Importar Veículos', breadcrumb: 'Base Veículos' },
+    'consult-vehicles': { title: 'Consultar Veículos', breadcrumb: 'Base Veículos' },
+    'users': { title: 'Gerenciamento de Usuários', breadcrumb: 'Configurações' },
   };
+
+  const getPageTitle = () => PAGE_META[activeTab]?.title || 'Viação Progresso';
+  const getPageBreadcrumb = () => PAGE_META[activeTab]?.breadcrumb;
 
   // ─── Loading screen (while users load from Supabase for login validation) ──
   if (usersLoading) {
@@ -279,6 +279,7 @@ function App() {
       activeTab={activeTab}
       onTabChange={setActiveTab}
       title={getPageTitle()}
+      breadcrumb={getPageBreadcrumb()}
       user={currentUser}
       onLogout={handleLogout}
       notifications={notifications}

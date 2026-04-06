@@ -67,7 +67,7 @@ const DriverChartsModal = ({ motorista, ocorrencias, multasTransito, onClose }: 
 
   return (
     <div className="fixed inset-0 bg-black/60 z-50 flex justify-center items-center p-4" onClick={onClose}>
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+      <div className="bg-white rounded-card shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
         <div className="bg-slate-900 p-6 text-white rounded-t-2xl flex justify-between items-center sticky top-0 z-10">
           <div>
             <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">Relatório Gráfico</p>
@@ -80,23 +80,23 @@ const DriverChartsModal = ({ motorista, ocorrencias, multasTransito, onClose }: 
         <div className="p-6 space-y-6">
           {/* KPIs */}
           <div className="grid grid-cols-3 gap-4">
-            <div className="bg-slate-50 p-4 rounded-xl text-center">
-              <p className="text-[10px] font-bold text-slate-400 uppercase">Total Viagens</p>
+            <div className="bg-slate-50 p-4 rounded-card text-center">
+              <p className="text-2xs font-bold text-slate-400 uppercase">Total Viagens</p>
               <p className="text-3xl font-black text-slate-800">{total}</p>
             </div>
-            <div className="bg-emerald-50 p-4 rounded-xl text-center">
-              <p className="text-[10px] font-bold text-emerald-600 uppercase">Pontualidade</p>
+            <div className="bg-emerald-50 p-4 rounded-card text-center">
+              <p className="text-2xs font-bold text-emerald-600 uppercase">Pontualidade</p>
               <p className="text-3xl font-black text-emerald-600">{percPontual}%</p>
             </div>
-            <div className="bg-red-50 p-4 rounded-xl text-center">
-              <p className="text-[10px] font-bold text-red-500 uppercase">Atrasos</p>
+            <div className="bg-red-50 p-4 rounded-card text-center">
+              <p className="text-2xs font-bold text-red-500 uppercase">Atrasos</p>
               <p className="text-3xl font-black text-red-600">{atrasos}</p>
             </div>
           </div>
 
           {/* Pizza + Barras por dia */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-white border rounded-xl p-5">
+            <div className="bg-white border border-gray-200 rounded-card p-5 shadow-card">
               <h4 className="text-xs font-bold text-slate-500 uppercase mb-4">Distribuição de Status</h4>
               {pieData.length > 0 ? (
                 <ResponsiveContainer width="100%" height={220}>
@@ -113,14 +113,14 @@ const DriverChartsModal = ({ motorista, ocorrencias, multasTransito, onClose }: 
               )}
             </div>
 
-            <div className="bg-white border rounded-xl p-5">
+            <div className="bg-white border border-gray-200 rounded-card p-5 shadow-card">
               <h4 className="text-xs font-bold text-slate-500 uppercase mb-4">Ocorrências por Dia</h4>
               {dailyData.length > 0 ? (
                 <ResponsiveContainer width="100%" height={220}>
                   <BarChart data={dailyData} margin={{ left: -10 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                    <XAxis dataKey="day" fontSize={9} axisLine={false} tickLine={false} />
-                    <YAxis fontSize={9} axisLine={false} tickLine={false} />
+                    <XAxis dataKey="day" fontSize={11} axisLine={false} tickLine={false} />
+                    <YAxis fontSize={11} axisLine={false} tickLine={false} />
                     <Tooltip />
                     <Legend iconType="circle" />
                     <Bar dataKey="pontual" stackId="a" fill="#10b981" name="Pontual" />
@@ -136,49 +136,49 @@ const DriverChartsModal = ({ motorista, ocorrencias, multasTransito, onClose }: 
 
           {/* Atrasos por linha */}
           {linhaData.length > 0 && (
-            <div className="bg-white border rounded-xl p-5">
+            <div className="bg-white border border-gray-200 rounded-card p-5 shadow-card">
               <h4 className="text-xs font-bold text-slate-500 uppercase mb-4">Atrasos por Linha (Top 8)</h4>
               <ResponsiveContainer width="100%" height={220}>
                 <BarChart data={linhaData} layout="vertical" margin={{ left: 10, right: 30 }}>
                   <XAxis type="number" hide />
-                  <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} width={180} interval={0} tick={{ fontSize: 9 }} />
+                  <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} width={180} interval={0} tick={{ fontSize: 11 }} />
                   <Tooltip />
-                  <Bar dataKey="atraso" fill="#ef4444" name="Atrasos" radius={[0, 4, 4, 0]} label={{ position: 'right', fontSize: 10 }} />
+                  <Bar dataKey="atraso" fill="#ef4444" name="Atrasos" radius={[0, 4, 4, 0]} label={{ position: 'right', fontSize: 11 }} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
           )}
 
           {/* Histórico de Multas de Trânsito */}
-          <div className="bg-white border rounded-xl p-5">
+          <div className="bg-white border border-gray-200 rounded-card p-5 shadow-card">
             <h4 className="text-xs font-bold text-slate-500 uppercase mb-4">
               Histórico de Multas de Trânsito ({multasDoMotorista.length})
             </h4>
             {multasDoMotorista.length > 0 ? (
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto max-h-[500px] overflow-y-auto">
                 <table className="w-full text-xs">
-                  <thead>
-                    <tr className="bg-slate-50 text-left">
-                      <th className="p-2 font-bold text-slate-500 uppercase">Data</th>
-                      <th className="p-2 font-bold text-slate-500 uppercase">Veículo</th>
-                      <th className="p-2 font-bold text-slate-500 uppercase">Órgão</th>
-                      <th className="p-2 font-bold text-slate-500 uppercase">Infração</th>
-                      <th className="p-2 font-bold text-slate-500 uppercase">Vl. Cobrado</th>
-                      <th className="p-2 font-bold text-slate-500 uppercase">Vl. Recuperado</th>
-                      <th className="p-2 font-bold text-slate-500 uppercase">Status</th>
+                  <thead className="bg-slate-800 text-white sticky top-0">
+                    <tr className="text-2xs uppercase tracking-wide">
+                      <th className="px-3 py-2.5 font-bold text-left">Data</th>
+                      <th className="px-3 py-2.5 font-bold text-left">Veículo</th>
+                      <th className="px-3 py-2.5 font-bold text-left">Órgão</th>
+                      <th className="px-3 py-2.5 font-bold text-left">Infração</th>
+                      <th className="px-3 py-2.5 font-bold text-left">Vl. Cobrado</th>
+                      <th className="px-3 py-2.5 font-bold text-left">Vl. Recuperado</th>
+                      <th className="px-3 py-2.5 font-bold text-left">Status</th>
                     </tr>
                   </thead>
                   <tbody>
                     {multasDoMotorista.map(m => (
-                      <tr key={m.id} className="border-b hover:bg-slate-50">
-                        <td className="p-2 font-mono">{m.dataInfracao}</td>
-                        <td className="p-2 font-bold">{m.veiculo}</td>
-                        <td className="p-2">{m.orgaoAtuador}</td>
-                        <td className="p-2 max-w-[200px] truncate">{m.descricaoMulta}</td>
-                        <td className="p-2 font-bold text-red-600">R$ {m.valorCobrado.toFixed(2)}</td>
-                        <td className="p-2 font-bold text-emerald-600">R$ {m.valorRecuperado.toFixed(2)}</td>
-                        <td className="p-2">
-                          <span className={`px-1.5 py-0.5 rounded text-[10px] font-black ${
+                      <tr key={m.id} className="hover:bg-slate-50 transition-colors border-b border-gray-100">
+                        <td className="px-3 py-2 font-mono">{m.dataInfracao}</td>
+                        <td className="px-3 py-2 font-bold">{m.veiculo}</td>
+                        <td className="px-3 py-2">{m.orgaoAtuador}</td>
+                        <td className="px-3 py-2 max-w-[200px] truncate">{m.descricaoMulta}</td>
+                        <td className="px-3 py-2 font-bold text-red-600">R$ {m.valorCobrado.toFixed(2)}</td>
+                        <td className="px-3 py-2 font-bold text-emerald-600">R$ {m.valorRecuperado.toFixed(2)}</td>
+                        <td className="px-3 py-2">
+                          <span className={`px-1.5 py-0.5 rounded text-2xs font-black ${
                             m.status === 'Pago' ? 'bg-green-100 text-green-700' :
                             m.status === 'Cancelado' ? 'bg-gray-100 text-gray-600' :
                             m.status === 'Defesa' ? 'bg-blue-100 text-blue-700' :
@@ -191,7 +191,7 @@ const DriverChartsModal = ({ motorista, ocorrencias, multasTransito, onClose }: 
                 </table>
               </div>
             ) : (
-              <p className="text-xs text-slate-400 text-center py-4">Nenhuma multa de trânsito registrada para este motorista.</p>
+              <p className="text-2xs text-slate-400 text-center py-4">Nenhuma multa de trânsito registrada para este motorista.</p>
             )}
           </div>
         </div>
@@ -302,59 +302,71 @@ export default function ConsultDriverScreen({ motoristas, ocorrencias, multasTra
   };
 
   return (
-    <div className="space-y-6">
-      <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex flex-col gap-6">
+    <div className="space-y-5">
+      <div className="bg-white p-6 rounded-card border border-gray-200 shadow-card flex flex-col gap-6">
         <div className="flex flex-col md:flex-row items-center gap-6 pb-4 border-b border-gray-100">
           <div className="flex items-center gap-2">
             <Calendar size={20} className="text-red-500" />
             <h3 className="font-bold text-slate-800 uppercase text-sm tracking-wider">Período do Relatório</h3>
           </div>
           <div className="flex items-center gap-4">
-            <input
-              type="date"
-              value={dataInicio}
-              onChange={e => setDataInicio(e.target.value)}
-              className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm bg-slate-50 font-semibold"
-            />
+            <div className="relative">
+              <Calendar className="absolute left-2 top-2.5 text-gray-400" size={14} />
+              <input
+                id="dr-data-inicio"
+                type="date"
+                value={dataInicio}
+                onChange={e => setDataInicio(e.target.value)}
+                aria-label="Data de início do período"
+                className="pl-8 pr-3 py-2 text-xs font-medium border border-gray-200 rounded-button bg-slate-50 focus:ring-2 focus:ring-brand-400 focus:outline-none"
+              />
+            </div>
             <span className="text-gray-400">até</span>
-            <input
-              type="date"
-              value={dataFim}
-              onChange={e => setDataFim(e.target.value)}
-              className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm bg-slate-50 font-semibold"
-            />
+            <div className="relative">
+              <Calendar className="absolute left-2 top-2.5 text-gray-400" size={14} />
+              <input
+                id="dr-data-fim"
+                type="date"
+                value={dataFim}
+                onChange={e => setDataFim(e.target.value)}
+                aria-label="Data de fim do período"
+                className="pl-8 pr-3 py-2 text-xs font-medium border border-gray-200 rounded-button bg-slate-50 focus:ring-2 focus:ring-brand-400 focus:outline-none"
+              />
+            </div>
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="md:col-span-1 relative">
-            <label className="text-[10px] font-bold text-gray-400 uppercase mb-1 block">Nome ou Matrícula</label>
+            <label htmlFor="dr-search" className="text-2xs font-bold text-slate-500 uppercase tracking-wide mb-1 block">Nome ou Matrícula</label>
             <div className="relative">
               <input
+                id="dr-search"
                 type="text"
                 placeholder="Ex: 26646..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-400 bg-slate-50"
+                aria-label="Buscar motorista por nome ou matrícula"
+                className="w-full pl-9 pr-4 py-2 text-xs font-medium border border-gray-200 rounded-button bg-slate-50 focus:ring-2 focus:ring-brand-400 focus:outline-none"
               />
               <Search className="absolute left-3 top-2.5 text-gray-400" size={16} />
             </div>
           </div>
           <div>
-            <label className="text-[10px] font-bold text-gray-400 uppercase mb-1 block">Filial</label>
-            <select value={filialFilter} onChange={(e) => setFilialFilter(e.target.value)} className="w-full border-gray-300 rounded-lg text-sm bg-slate-50 p-2 font-medium">
+            <label htmlFor="dr-filial" className="text-2xs font-bold text-slate-500 uppercase tracking-wide mb-1 block">Filial</label>
+            <select id="dr-filial" value={filialFilter} onChange={(e) => setFilialFilter(e.target.value)} aria-label="Filtrar por filial" className="w-full px-3 py-2 text-xs font-medium border border-gray-200 rounded-button bg-slate-50 focus:ring-2 focus:ring-brand-400 focus:outline-none">
               {filiais.map(f => <option key={f} value={f}>{f}</option>)}
             </select>
           </div>
           <div>
-            <label className="text-[10px] font-bold text-gray-400 uppercase mb-1 block">Área</label>
-            <select value={areaFilter} onChange={(e) => setAreaFilter(e.target.value)} className="w-full border-gray-300 rounded-lg text-sm bg-slate-50 p-2 font-medium">
+            <label htmlFor="dr-area" className="text-2xs font-bold text-slate-500 uppercase tracking-wide mb-1 block">Área</label>
+            <select id="dr-area" value={areaFilter} onChange={(e) => setAreaFilter(e.target.value)} aria-label="Filtrar por área" className="w-full px-3 py-2 text-xs font-medium border border-gray-200 rounded-button bg-slate-50 focus:ring-2 focus:ring-brand-400 focus:outline-none">
               {areas.map(a => <option key={a} value={a}>{a}</option>)}
             </select>
           </div>
           <div>
-            <label className="text-[10px] font-bold text-gray-400 uppercase mb-1 block">Status</label>
-            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="w-full border-gray-300 rounded-lg text-sm bg-slate-50 p-2 font-medium">
+            <label htmlFor="dr-status" className="text-2xs font-bold text-slate-500 uppercase tracking-wide mb-1 block">Status</label>
+            <select id="dr-status" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} aria-label="Filtrar por status" className="w-full px-3 py-2 text-xs font-medium border border-gray-200 rounded-button bg-slate-50 focus:ring-2 focus:ring-brand-400 focus:outline-none">
               {statuses.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
           </div>
@@ -368,7 +380,7 @@ export default function ConsultDriverScreen({ motoristas, ocorrencias, multasTra
           const perc = mOccs.length > 0 ? (pontuais / mOccs.length) * 100 : 0;
 
           return (
-            <div key={m.matricula} className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm hover:shadow-md transition-all group">
+            <div key={m.matricula} className="bg-white rounded-card border border-gray-200 p-5 shadow-card hover:shadow-md transition-all group">
               <div className="flex justify-between items-start mb-4">
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center text-slate-500">
@@ -384,6 +396,7 @@ export default function ConsultDriverScreen({ motoristas, ocorrencias, multasTra
                     onClick={() => setSelectedDriverChart(m)}
                     className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
                     title="Ver Gráficos"
+                    aria-label={`Ver gráficos de ${m.nome}`}
                   >
                     <BarChart2 size={18} />
                   </button>
@@ -391,6 +404,7 @@ export default function ConsultDriverScreen({ motoristas, ocorrencias, multasTra
                     onClick={() => generatePDF(m)}
                     className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
                     title="Gerar Relatório PDF"
+                    aria-label={`Gerar PDF de ${m.nome}`}
                   >
                     <FileDown size={20} />
                   </button>
@@ -405,7 +419,7 @@ export default function ConsultDriverScreen({ motoristas, ocorrencias, multasTra
                   <Briefcase size={14} className="text-slate-400" /> {m.area}
                 </div>
                 <div className="mt-2 flex items-center gap-2">
-                  <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider
+                  <span className={`px-2 py-0.5 rounded-full text-2xs font-bold uppercase tracking-wider
                     ${m.status === 'ATIVO - EM OPERAÇÃO' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>
                     {m.status}
                   </span>
@@ -415,13 +429,13 @@ export default function ConsultDriverScreen({ motoristas, ocorrencias, multasTra
               <div className="pt-4 border-t border-slate-50">
                 <div className="flex justify-between items-end">
                   <div>
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">Média Pontualidade</p>
+                    <p className="text-2xs font-black text-slate-400 uppercase tracking-tighter">Média Pontualidade</p>
                     <p className={`text-2xl font-black ${perc >= 75 ? 'text-emerald-500' : 'text-red-500'}`}>
                       {perc.toFixed(0)}%
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">Viagens</p>
+                    <p className="text-2xs font-black text-slate-400 uppercase tracking-tighter">Viagens</p>
                     <p className="text-lg font-bold text-slate-700">{mOccs.length}</p>
                   </div>
                 </div>

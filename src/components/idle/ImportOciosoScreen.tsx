@@ -44,7 +44,7 @@ export default function ImportOciosoScreen({ registros, setRegistros, linhas, se
   // ─── File 2: Operacional e Ocioso por Veículo ───────────────────────────────
   const processVeicFile = (file: File) => {
     if (!file.name.endsWith('.csv') && !file.name.endsWith('.txt')) {
-      setVeicStatus('error'); setTimeout(() => setVeicStatus('idle'), 3000); return;
+      setVeicStatus('error'); setTimeout(() => setVeicStatus('idle'), 8000); return;
     }
     const reader = new FileReader();
     reader.onload = e => {
@@ -94,7 +94,7 @@ export default function ImportOciosoScreen({ registros, setRegistros, linhas, se
   // ─── File 1: Tempo Total por Linha ─────────────────────────────────────────
   const processLinhaFile = (file: File) => {
     if (!file.name.endsWith('.csv') && !file.name.endsWith('.txt')) {
-      setLinhaStatus('error'); setTimeout(() => setLinhaStatus('idle'), 3000); return;
+      setLinhaStatus('error'); setTimeout(() => setLinhaStatus('idle'), 8000); return;
     }
     const reader = new FileReader();
     reader.onload = e => {
@@ -152,15 +152,16 @@ export default function ImportOciosoScreen({ registros, setRegistros, linhas, se
     onDrop: (e: React.DragEvent) => void;
     onFile: (f: File) => void;
   }) => (
-    <div className="bg-white p-8 rounded-xl border border-gray-200 shadow-sm">
+    <div className="bg-white rounded-card border border-gray-200 shadow-card p-8">
       <div className="mb-6 text-center">
         <h3 className="text-xl font-bold text-slate-800">{title}</h3>
         <p className="text-sm text-gray-500 mt-2">{desc}</p>
       </div>
       <label
-        className={`border-2 border-dashed rounded-xl p-10 flex flex-col items-center justify-center transition-colors cursor-pointer
-          ${isDragging ? 'border-blue-400 bg-blue-50' : 'border-gray-300 bg-gray-50 hover:bg-gray-100'}`}
+        className={`border-2 border-dashed rounded-card p-8 text-center flex flex-col items-center justify-center transition-colors cursor-pointer
+          ${isDragging ? 'border-brand-400' : 'border-gray-300 hover:border-brand-400'}`}
         onDragOver={onDragOver} onDragLeave={onDragLeave} onDrop={onDrop}
+        aria-label={`Área de upload: ${title}`}
       >
         <input type="file" accept=".csv,.txt" className="hidden" onChange={ev => { const f = ev.target.files?.[0]; if (f) onFile(f); }} />
         {status === 'idle' && (
@@ -189,7 +190,7 @@ export default function ImportOciosoScreen({ registros, setRegistros, linhas, se
   );
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto">
+    <div className="space-y-5 max-w-5xl mx-auto">
       {/* Veículos */}
       <UploadArea
         title="Importar: Operacional e Ocioso por Veículo"
@@ -216,9 +217,9 @@ export default function ImportOciosoScreen({ registros, setRegistros, linhas, se
       />
 
       {registros.length > 0 && (
-        <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm flex items-center justify-between">
+        <div className="bg-white rounded-card border border-gray-200 shadow-card p-4 flex items-center justify-between">
           <p className="text-sm font-bold text-slate-700">Base ativa: {registros.length} registros · {new Set(registros.map(r => r.prefixo)).size} veículos</p>
-          <button onClick={() => { if (confirm('Limpar todos os registros de veículos?')) { setRegistros([]); setVeicStats(null); } }} className="flex items-center gap-2 px-3 py-1.5 border border-red-400 text-red-600 text-xs font-bold rounded-lg hover:bg-red-50">
+          <button onClick={() => { if (confirm('Limpar todos os registros de veículos?')) { setRegistros([]); setVeicStats(null); } }} className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-button text-xs font-bold transition-colors" aria-label="Limpar registros de veículos">
             <Trash2 size={14} /> Limpar
           </button>
         </div>
@@ -252,10 +253,10 @@ export default function ImportOciosoScreen({ registros, setRegistros, linhas, se
       />
 
       {linhas.length > 0 && (
-        <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+        <div className="bg-white rounded-card border border-gray-200 shadow-card p-4">
           <div className="flex items-center justify-between mb-3">
             <p className="text-sm font-bold text-slate-700">Base ativa: {linhas.length} linhas</p>
-            <button onClick={() => { if (confirm('Limpar todos os registros de linhas?')) { setLinhas([]); setLinhaStats(null); } }} className="flex items-center gap-2 px-3 py-1.5 border border-red-400 text-red-600 text-xs font-bold rounded-lg hover:bg-red-50">
+            <button onClick={() => { if (confirm('Limpar todos os registros de linhas?')) { setLinhas([]); setLinhaStats(null); } }} className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-button text-xs font-bold transition-colors" aria-label="Limpar registros de linhas">
               <Trash2 size={14} /> Limpar
             </button>
           </div>

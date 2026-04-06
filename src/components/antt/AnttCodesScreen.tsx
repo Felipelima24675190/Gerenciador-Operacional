@@ -47,28 +47,30 @@ export default function AnttCodesScreen({ anttCodeDescriptions, setAnttCodeDescr
 
   return (
     <div className="space-y-4">
-      <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm flex items-center gap-4">
+      <div className="bg-white rounded-card border border-gray-200 p-4 shadow-card flex items-center gap-4">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-2.5 text-slate-400" size={16} />
           <input
+            id="antt-search"
             type="text"
             placeholder="Buscar por codigo ou descricao..."
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-400"
+            aria-label="Buscar código ANTT"
+            className="w-full pl-10 pr-4 py-2 text-xs font-medium border border-gray-200 rounded-button bg-slate-50 focus:ring-2 focus:ring-brand-400 focus:outline-none"
           />
         </div>
         <span className="text-xs text-slate-400 font-bold">{filtered.length} codigos</span>
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-card border border-gray-200 shadow-card overflow-hidden">
         <table className="w-full text-sm text-left">
-          <thead className="bg-slate-800 text-white text-[10px] uppercase">
+          <thead className="bg-slate-800 text-white text-2xs uppercase tracking-wide">
             <tr>
-              <th className="px-4 py-3 w-36">Codigo</th>
-              <th className="px-4 py-3">Descricao</th>
-              <th className="px-4 py-3 w-36 text-right">Valor (R$)</th>
-              {isAdmin && <th className="px-4 py-3 w-28 text-right">Acoes</th>}
+              <th className="px-3 py-2.5 w-36">Codigo</th>
+              <th className="px-3 py-2.5">Descricao</th>
+              <th className="px-3 py-2.5 w-36 text-right">Valor (R$)</th>
+              {isAdmin && <th className="px-3 py-2.5 w-28 text-right">Acoes</th>}
             </tr>
           </thead>
           <tbody>

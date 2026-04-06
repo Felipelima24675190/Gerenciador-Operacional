@@ -92,19 +92,20 @@ export default function ImportVehiclesScreen({ setVeiculos, userRole }: ImportVe
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      <div className="bg-white p-8 rounded-xl border border-gray-200 shadow-sm text-center">
+    <div className="max-w-4xl mx-auto space-y-5">
+      <div className="bg-white rounded-card border border-gray-200 shadow-card p-8 text-center">
         <h3 className="text-xl font-bold text-slate-800">Importar Base de Veículos</h3>
         <p className="text-sm text-gray-500 mt-2">
           Arraste e solte o arquivo CSV ou TXT contendo os dados da frota.
         </p>
 
-        <div 
-          className={`mt-6 border-2 border-dashed rounded-xl p-10 flex flex-col items-center justify-center transition-colors cursor-pointer
-            ${isDragging ? 'border-brand-500 bg-brand-50' : 'border-gray-300 bg-gray-50 hover:bg-gray-100'}`}
+        <div
+          className={`mt-6 border-2 border-dashed rounded-card p-8 text-center flex flex-col items-center justify-center transition-colors cursor-pointer
+            ${isDragging ? 'border-brand-400' : 'border-gray-300 hover:border-brand-400'}`}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
+          aria-label="Área de upload de base de veículos"
         >
           {uploadStatus === 'idle' && (
             <>
@@ -137,7 +138,7 @@ export default function ImportVehiclesScreen({ setVeiculos, userRole }: ImportVe
           )}
         </div>
       </div>
-       <div className="bg-blue-50 border border-blue-200 p-6 rounded-xl flex items-start gap-4">
+      <div className="bg-blue-50 border border-blue-200 p-6 rounded-card flex items-start gap-4">
         <FileText className="text-blue-600 h-8 w-8 mt-1" />
         <div>
           <h4 className="font-bold text-blue-800">Instruções de Formato</h4>

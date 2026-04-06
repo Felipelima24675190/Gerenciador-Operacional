@@ -20,7 +20,7 @@ const CustomYAxisTick = (props: any) => {
     return (
       <g transform={`translate(${x},${y})`}>
         <text x={-10} y={-5} dy={0} textAnchor="end" fill="#64748b" fontSize={11} fontWeight={700}>{name}</text>
-        <text x={-10} y={10} dy={0} textAnchor="end" fill="#94a3b8" fontSize={9} fontWeight={600}>{code}</text>
+        <text x={-10} y={10} dy={0} textAnchor="end" fill="#94a3b8" fontSize={11} fontWeight={600}>{code}</text>
       </g>
     );
   }
@@ -256,9 +256,9 @@ export default function DashboardScreen({ motoristas, ocorrencias, viagens, setO
   }, [ocorrenciasFiltradas, motoristas, toleranciaAtraso, toleranciaAdiantamento]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* Filtros */}
-      <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm space-y-4">
+      <div className="bg-white p-6 rounded-card border border-gray-200 shadow-card space-y-4">
         <div className="flex items-center gap-2 border-b border-gray-100 pb-3">
           <Calendar size={20} className="text-red-500" />
           <h3 className="font-bold text-slate-800 uppercase text-xs tracking-widest">Filtros do Dashboard</h3>
@@ -266,51 +266,66 @@ export default function DashboardScreen({ motoristas, ocorrencias, viagens, setO
         
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <div className="space-y-1">
-            <label className="text-[10px] font-black text-slate-400 uppercase">Intervalo de Data</label>
+            <label htmlFor="filter-data-inicio" className="text-2xs font-bold text-slate-500 uppercase tracking-wide">Intervalo de Data</label>
             <div className="flex items-center gap-2">
-              <input 
-                type="date" 
-                value={dataInicio}
-                onChange={e => setDataInicio(e.target.value)}
-                className="w-full px-2 py-1.5 border border-gray-200 rounded text-xs font-bold bg-slate-50 focus:ring-2 focus:ring-brand-400 transition-all"
-              />
+              <div className="relative w-full">
+                <Calendar size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                <input
+                  id="filter-data-inicio"
+                  type="date"
+                  value={dataInicio}
+                  onChange={e => setDataInicio(e.target.value)}
+                  aria-label="Data de início"
+                  className="w-full pl-7 pr-2 py-2 border border-gray-200 rounded-button text-xs font-medium bg-slate-50 focus:ring-2 focus:ring-brand-400 focus:outline-none transition-all"
+                />
+              </div>
               <span className="text-slate-300">→</span>
-              <input 
-                type="date" 
-                value={dataFim}
-                onChange={e => setDataFim(e.target.value)}
-                className="w-full px-2 py-1.5 border border-gray-200 rounded text-xs font-bold bg-slate-50 focus:ring-2 focus:ring-brand-400 transition-all"
-              />
+              <div className="relative w-full">
+                <Calendar size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                <input
+                  id="filter-data-fim"
+                  type="date"
+                  value={dataFim}
+                  onChange={e => setDataFim(e.target.value)}
+                  aria-label="Data de fim"
+                  className="w-full pl-7 pr-2 py-2 border border-gray-200 rounded-button text-xs font-medium bg-slate-50 focus:ring-2 focus:ring-brand-400 focus:outline-none transition-all"
+                />
+              </div>
             </div>
           </div>
 
           <div className="space-y-1">
-            <label className="text-[10px] font-black text-slate-400 uppercase">Filial</label>
-            <select 
+            <label htmlFor="filter-filial" className="text-2xs font-bold text-slate-500 uppercase tracking-wide">Filial</label>
+            <select
+              id="filter-filial"
               value={filialFilter}
               onChange={e => setFilialFilter(e.target.value)}
-              className="w-full px-3 py-1.5 border border-gray-200 rounded text-xs font-bold bg-slate-50 focus:ring-2 focus:ring-brand-400"
+              aria-label="Filtrar por filial"
+              className="w-full px-3 py-2 text-xs font-medium border border-gray-200 rounded-button bg-slate-50 focus:ring-2 focus:ring-brand-400 focus:outline-none"
             >
               {filiaisUnicas.map(f => <option key={f} value={f}>{f === 'Todas' ? 'Todas as Filiais' : f}</option>)}
             </select>
           </div>
 
           <div className="space-y-1">
-            <label className="text-[10px] font-black text-slate-400 uppercase">Linha / Operação</label>
+            <label htmlFor="filter-linha" className="text-2xs font-bold text-slate-500 uppercase tracking-wide">Linha / Operação</label>
             <select
+              id="filter-linha"
               value={linhaFilter}
               onChange={e => setLinhaFilter(e.target.value)}
-              className="w-full px-3 py-1.5 border border-gray-200 rounded text-xs font-bold bg-slate-50 focus:ring-2 focus:ring-brand-400"
+              aria-label="Filtrar por linha"
+              className="w-full px-3 py-2 text-xs font-medium border border-gray-200 rounded-button bg-slate-50 focus:ring-2 focus:ring-brand-400 focus:outline-none"
             >
               {linhasUnicas.map(l => <option key={l} value={l}>{l === 'Todas' ? 'Todas as Linhas' : l}</option>)}
             </select>
           </div>
 
           <div className="space-y-1">
-            <label className="text-[10px] font-black text-slate-400 uppercase">Tolerância</label>
+            <label className="text-2xs font-bold text-slate-500 uppercase tracking-wide">Tolerância</label>
             <button
               onClick={() => setShowToleranciaSettings(!showToleranciaSettings)}
-              className="w-full flex items-center gap-2 px-3 py-1.5 border border-gray-200 rounded text-xs font-bold bg-slate-50 hover:bg-slate-100 transition-colors"
+              aria-label="Configurar tolerância de pontualidade"
+              className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium border border-gray-200 rounded-button bg-slate-50 hover:bg-slate-100 transition-colors focus:ring-2 focus:ring-brand-400 focus:outline-none"
             >
               <Settings size={12} />
               Atraso: {toleranciaAtraso}min · Adiant: {toleranciaAdiantamento}min
@@ -320,33 +335,37 @@ export default function DashboardScreen({ motoristas, ocorrencias, viagens, setO
 
         {/* Tolerance settings panel */}
         {showToleranciaSettings && (
-          <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-xl space-y-3">
-            <p className="text-xs font-bold text-amber-700">Configurar Tolerância de Pontualidade</p>
-            <p className="text-[10px] text-amber-600">Define o limite em minutos para classificar viagens como Atraso ou Adiantamento. O sistema recalcula automaticamente.</p>
+          <div className="mt-4 p-4 bg-slate-50 border border-gray-200 rounded-card space-y-3">
+            <p className="text-xs font-bold text-slate-700">Configurar Tolerância de Pontualidade</p>
+            <p className="text-2xs text-slate-500">Define o limite em minutos para classificar viagens como Atraso ou Adiantamento. O sistema recalcula automaticamente.</p>
             <div className="flex items-center gap-6 flex-wrap">
               <div className="flex items-center gap-2">
-                <label className="text-[10px] font-bold text-slate-600 uppercase">Atraso (min):</label>
+                <label htmlFor="tolerancia-atraso" className="text-2xs font-bold text-slate-600 uppercase tracking-wide">Atraso (min):</label>
                 <input
+                  id="tolerancia-atraso"
                   type="number"
                   min={1}
                   max={60}
                   value={toleranciaAtraso}
                   onChange={e => saveTolerancia(Math.max(1, parseInt(e.target.value) || 5), toleranciaAdiantamento)}
-                  className="w-16 px-2 py-1 text-xs border border-amber-300 rounded focus:ring-2 focus:ring-amber-400 focus:outline-none text-center font-bold"
+                  aria-label="Tolerância de atraso em minutos"
+                  className="w-16 px-2 py-2 text-xs font-medium border border-gray-200 rounded-button bg-slate-50 focus:ring-2 focus:ring-brand-400 focus:outline-none text-center"
                 />
               </div>
               <div className="flex items-center gap-2">
-                <label className="text-[10px] font-bold text-slate-600 uppercase">Adiantamento (min):</label>
+                <label htmlFor="tolerancia-adiantamento" className="text-2xs font-bold text-slate-600 uppercase tracking-wide">Adiantamento (min):</label>
                 <input
+                  id="tolerancia-adiantamento"
                   type="number"
                   min={1}
                   max={60}
                   value={toleranciaAdiantamento}
                   onChange={e => saveTolerancia(toleranciaAtraso, Math.max(1, parseInt(e.target.value) || 5))}
-                  className="w-16 px-2 py-1 text-xs border border-amber-300 rounded focus:ring-2 focus:ring-amber-400 focus:outline-none text-center font-bold"
+                  aria-label="Tolerância de adiantamento em minutos"
+                  className="w-16 px-2 py-2 text-xs font-medium border border-gray-200 rounded-button bg-slate-50 focus:ring-2 focus:ring-brand-400 focus:outline-none text-center"
                 />
               </div>
-              <p className="text-[10px] text-slate-500 ml-auto">
+              <p className="text-2xs text-slate-500 ml-auto">
                 Exemplo: com tolerância de {toleranciaAtraso}min, viagens com diferença &gt; {toleranciaAtraso}min são <span className="font-bold text-red-500">Atraso</span> e &lt; -{toleranciaAdiantamento}min são <span className="font-bold text-orange-500">Adiantamento</span>.
               </p>
             </div>
@@ -382,7 +401,7 @@ export default function DashboardScreen({ motoristas, ocorrencias, viagens, setO
       </div>
 
       {linhaMaisAtrasada && (
-        <div className="bg-red-50 border border-red-100 rounded-2xl p-6 flex flex-col md:flex-row justify-between items-center gap-4 relative overflow-hidden">
+        <div className="bg-red-50 border border-red-100 rounded-card p-6 flex flex-col md:flex-row justify-between items-center gap-4 relative overflow-hidden">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center">
               <AlertCircle size={24} />
@@ -398,12 +417,13 @@ export default function DashboardScreen({ motoristas, ocorrencias, viagens, setO
           <div className="flex flex-col gap-3 w-full md:w-auto">
             <button 
               onClick={() => setLinePreviewId(linhaMaisAtrasada.id)}
-              className="px-6 py-2 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-slate-800 transition-all shadow-lg flex items-center justify-center gap-2"
+              aria-label="Visualizar todas as viagens da linha crítica"
+              className="px-6 py-2 bg-slate-900 text-white rounded-card text-xs font-bold hover:bg-slate-800 transition-all shadow-lg flex items-center justify-center gap-2"
             >
               <Search size={14} />
               Visualizar Todas as Viagens
             </button>
-            <p className="text-[10px] font-bold text-slate-400 uppercase text-center">Clique para preview detalhado</p>
+            <p className="text-2xs font-bold text-slate-400 uppercase text-center">Clique para preview detalhado</p>
           </div>
         </div>
       )}
@@ -411,13 +431,13 @@ export default function DashboardScreen({ motoristas, ocorrencias, viagens, setO
       {/* Modal de Preview de Linha */}
       {linePreviewId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-4xl overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="bg-white rounded-card shadow-2xl w-full max-w-4xl overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="bg-slate-900 p-6 text-white flex justify-between items-center">
               <div>
                 <h3 className="text-xl font-black">Detalhamento da Operação</h3>
                 <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">{linePreviewId} - {ocorrenciasFiltradas.find(o => o.numeroLinha === linePreviewId)?.nomeLinha}</p>
               </div>
-              <button onClick={() => setLinePreviewId(null)} className="p-2 hover:bg-slate-800 rounded-full transition-colors">
+              <button onClick={() => setLinePreviewId(null)} aria-label="Fechar detalhamento" className="p-2 hover:bg-slate-800 rounded-full transition-colors">
                 <X size={24} />
               </button>
             </div>
@@ -449,14 +469,14 @@ export default function DashboardScreen({ motoristas, ocorrencias, viagens, setO
                 return (
                   <table className="w-full text-left border-collapse">
                     <thead>
-                      <tr className="border-b border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-wider">
-                        <th className="pb-3">Atendimento</th>
-                        <th className="pb-3">Sentido</th>
-                        <th className="pb-3">Veículo</th>
-                        <th className="pb-3">Previsto (Início/Fim)</th>
-                        <th className="pb-3">Realizado (Início/Fim)</th>
-                        <th className="pb-3">Status</th>
-                        <th className="pb-3 text-right">Ação</th>
+                      <tr className="bg-slate-800 text-white text-2xs uppercase tracking-wide">
+                        <th className="px-3 py-2.5">Atendimento</th>
+                        <th className="px-3 py-2.5">Sentido</th>
+                        <th className="px-3 py-2.5">Veículo</th>
+                        <th className="px-3 py-2.5">Previsto (Início/Fim)</th>
+                        <th className="px-3 py-2.5">Realizado (Início/Fim)</th>
+                        <th className="px-3 py-2.5">Status</th>
+                        <th className="px-3 py-2.5 text-right">Ação</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -468,21 +488,21 @@ export default function DashboardScreen({ motoristas, ocorrencias, viagens, setO
                             <tr key={`header-${matricula}`} className="bg-slate-100 border-t-2 border-slate-300">
                               <td colSpan={7} className="px-3 py-2">
                                 <div className="flex items-center gap-3">
-                                  <div className="w-6 h-6 rounded-full bg-slate-700 flex items-center justify-center text-white text-[9px] font-black">
+                                  <div className="w-6 h-6 rounded-full bg-slate-700 flex items-center justify-center text-white text-2xs font-black">
                                     {(mot?.nome || matricula).charAt(0)}
                                   </div>
                                   <span className="font-black text-slate-700 text-xs">{mot?.nome || `Matrícula ${matricula}`}</span>
-                                  {mot && <span className="text-[9px] text-slate-400 font-bold uppercase">{mot.filial} · {mot.area}</span>}
-                                  <span className="ml-auto text-[9px] font-black text-slate-500 bg-white px-2 py-0.5 rounded border">{occs.length} viagem{occs.length !== 1 ? 'ns' : ''}</span>
+                                  {mot && <span className="text-2xs text-slate-400 font-bold uppercase">{mot.filial} · {mot.area}</span>}
+                                  <span className="ml-auto text-2xs font-black text-slate-500 bg-white px-2 py-0.5 rounded border">{occs.length} viagem{occs.length !== 1 ? 'ns' : ''}</span>
                                 </div>
                               </td>
                             </tr>
                             {/* Driver's trips */}
                             {occs.map((occ, idx) => (
-                              <tr key={occ.id} className={`border-b border-slate-50 hover:bg-slate-50 transition-colors ${idx === occs.length - 1 ? 'border-b-2 border-slate-200' : ''}`}>
+                              <tr key={occ.id} className={`hover:bg-slate-50 transition-colors border-b border-gray-100 ${idx === occs.length - 1 ? 'border-b-2 border-slate-200' : ''}`}>
                                 <td className="py-3 pl-10 font-bold text-slate-700 text-sm">{occ.atendimento}</td>
                                 <td className="py-3">
-                                  <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase ${occ.sentido === 'Ida' ? 'bg-blue-50 text-blue-600' : 'bg-orange-50 text-orange-600'}`}>
+                                  <span className={`px-2 py-0.5 rounded text-2xs font-black uppercase ${occ.sentido === 'Ida' ? 'bg-blue-50 text-blue-600' : 'bg-orange-50 text-orange-600'}`}>
                                     {occ.sentido}
                                   </span>
                                 </td>
@@ -499,7 +519,7 @@ export default function DashboardScreen({ motoristas, ocorrencias, viagens, setO
                                   {(() => {
                                     const st = getStatusInicio(occ);
                                     return (
-                                      <span className={`px-2 py-1 rounded-full text-[10px] font-bold ${st === 'Atraso' ? 'bg-red-100 text-red-600' : st === 'Adiantamento' ? 'bg-orange-100 text-orange-600' : 'bg-emerald-100 text-emerald-600'}`}>
+                                      <span className={`px-2 py-1 rounded-full text-2xs font-bold ${st === 'Atraso' ? 'bg-red-100 text-red-600' : st === 'Adiantamento' ? 'bg-orange-100 text-orange-600' : 'bg-emerald-100 text-emerald-600'}`}>
                                         {st}
                                       </span>
                                     );
@@ -508,14 +528,14 @@ export default function DashboardScreen({ motoristas, ocorrencias, viagens, setO
                                 <td className="py-3 text-right">
                                   {editingOccId === occ.id && isAdmin ? (
                                     <div className="flex items-center gap-1 justify-end" onClick={e => e.stopPropagation()}>
-                                      <input className="w-32 text-[10px] p-1 border rounded focus:ring-1 focus:ring-brand-400" value={motivoTemp} onChange={e => setMotivoTemp(e.target.value)} placeholder="Justificativa..." autoFocus />
-                                      <button onClick={() => saveMotivo(occ.id)} className="p-1 text-emerald-600 hover:bg-emerald-50 rounded"><Save size={14} /></button>
+                                      <input className="w-32 text-2xs p-1 border border-gray-200 rounded focus:ring-2 focus:ring-brand-400 focus:outline-none" aria-label="Justificativa do atraso" value={motivoTemp} onChange={e => setMotivoTemp(e.target.value)} placeholder="Justificativa..." autoFocus />
+                                      <button onClick={() => saveMotivo(occ.id)} aria-label="Salvar justificativa" className="p-1 text-emerald-600 hover:bg-emerald-50 rounded"><Save size={14} /></button>
                                     </div>
                                   ) : (
                                     <div className="flex items-center justify-end gap-2">
-                                      <p className="text-[10px] text-slate-500 italic max-w-[120px] truncate">{occ.motivoAtraso || ''}</p>
+                                      <p className="text-2xs text-slate-500 italic max-w-[120px] truncate">{occ.motivoAtraso || ''}</p>
                                       {isAdmin && (
-                                        <button onClick={() => { setEditingOccId(occ.id); setMotivoTemp(occ.motivoAtraso || ''); }} className="p-1.5 text-slate-400 hover:text-red-500 transition-colors">
+                                        <button onClick={() => { setEditingOccId(occ.id); setMotivoTemp(occ.motivoAtraso || ''); }} aria-label="Editar justificativa" className="p-1.5 text-slate-400 hover:text-red-500 transition-colors">
                                           <Edit3 size={14} />
                                         </button>
                                       )}
@@ -534,7 +554,7 @@ export default function DashboardScreen({ motoristas, ocorrencias, viagens, setO
             </div>
             
             <div className="p-4 bg-slate-50 border-t border-slate-100 text-center">
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Fim da listagem de Pontualidade</p>
+              <p className="text-2xs font-bold text-slate-400 uppercase tracking-widest">Fim da listagem de Pontualidade</p>
             </div>
           </div>
         </div>
@@ -542,105 +562,106 @@ export default function DashboardScreen({ motoristas, ocorrencias, viagens, setO
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Gráfico de Ocorrências por Filial / Linha */}
-        <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+        <div className="bg-white p-6 rounded-card border border-gray-200 shadow-card">
           <div className="mb-6">
             {renderDashboardTitle(linhaFilter === 'Todas' ? 'Ocorrências por Filial' : 'Desvios da Linha', linhaFilter)}
           </div>
-          <div className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={dadosGraficoFilial} layout="vertical" margin={{ left: 60, right: 20 }}>
-                <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#e5e7eb" />
-                <XAxis type="number" hide />
-                <YAxis 
-                  dataKey="name" 
-                  type="category" 
-                  axisLine={false} 
-                  tickLine={false} 
-                  width={120}
-                  interval={0}
-                  tick={<CustomYAxisTick />}
-                />
-                <Tooltip cursor={{ fill: '#f3f4f6' }} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-                <Legend iconType="circle" />
-                <Bar dataKey="Atraso" stackId="a" fill="#ef4444" radius={[0, 4, 4, 0]} barSize={20} />
-                <Bar dataKey="Adiantamento" stackId="a" fill="#f97316" radius={[0, 4, 4, 0]} barSize={20} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+          {dadosGraficoFilial.length === 0 && <p className="text-2xs text-slate-400 text-center py-10">Sem dados no período</p>}
+          {dadosGraficoFilial.length > 0 && (
+            <div className="h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={dadosGraficoFilial} layout="vertical" margin={{ left: 60, right: 20 }}>
+                  <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#e5e7eb" />
+                  <XAxis type="number" hide tick={{ fontSize: 11 }} />
+                  <YAxis
+                    dataKey="name"
+                    type="category"
+                    axisLine={false}
+                    tickLine={false}
+                    width={120}
+                    interval={0}
+                    tick={<CustomYAxisTick />}
+                  />
+                  <Tooltip cursor={{ fill: '#f3f4f6' }} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                  <Legend iconType="circle" />
+                  <Bar dataKey="Atraso" stackId="a" fill="#ef4444" radius={[0, 4, 4, 0]} barSize={20} />
+                  <Bar dataKey="Adiantamento" stackId="a" fill="#f97316" radius={[0, 4, 4, 0]} barSize={20} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
         </div>
 
         {/* Gráfico de Linha do Tempo */}
-        <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+        <div className="bg-white p-6 rounded-card border border-gray-200 shadow-card">
           <div className="mb-6">
             {renderDashboardTitle(linhaFilter === 'Todas' ? 'Volume de Ocorrências (Semana)' : 'Tendência Semanal', linhaFilter)}
           </div>
-          <div className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={dadosLinhaDoTempo}>
-                <defs>
-                  <linearGradient id="colorOcorrencias" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="#ef4444" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} />
-                <YAxis axisLine={false} tickLine={false} />
-                <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-                <Area type="monotone" dataKey="Ocorrencias" stroke="#ef4444" strokeWidth={3} fillOpacity={1} fill="url(#colorOcorrencias)" />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
+          {dadosLinhaDoTempo.every(d => d.Ocorrencias === 0) && <p className="text-2xs text-slate-400 text-center py-10">Sem dados no período</p>}
+          {!dadosLinhaDoTempo.every(d => d.Ocorrencias === 0) && (
+            <div className="h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={dadosLinhaDoTempo}>
+                  <defs>
+                    <linearGradient id="colorOcorrencias" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="#ef4444" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11 }} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11 }} />
+                  <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                  <Area type="monotone" dataKey="Ocorrencias" stroke="#ef4444" strokeWidth={3} fillOpacity={1} fill="url(#colorOcorrencias)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          )}
         </div>
       </div>
 
       {/* Ranking de Motoristas */}
-      <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+      <div className="bg-white p-6 rounded-card border border-gray-200 shadow-card">
         <h3 className="text-lg font-bold text-slate-800 mb-6">Top 10 Motoristas com mais Ocorrências</h3>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="border-b border-gray-200 text-sm text-gray-500">
-                <th className="pb-3 font-semibold pl-4">Posição</th>
-                <th className="pb-3 font-semibold">Motorista</th>
-                <th className="pb-3 font-semibold">Filial</th>
-                <th className="pb-3 font-semibold text-right pr-4">Ocorrências (Atraso/Adiantamento)</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rankingMotoristas.map((motorista, index) => (
-                <tr key={index} className="border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors">
-                  <td className="py-4 pl-4">
-                    <span className={clsx(
-                      "w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm",
-                      index === 0 ? "bg-red-100 text-red-600" :
-                      index === 1 ? "bg-orange-100 text-orange-600" :
-                      index === 2 ? "bg-yellow-100 text-yellow-600" :
-                      "bg-gray-100 text-gray-600"
-                    )}>
-                      {index + 1}
-                    </span>
-                  </td>
-                  <td className="py-4 font-medium text-slate-800">{motorista.nome}</td>
-                  <td className="py-4 text-gray-500">
-                    <span className="px-2.5 py-1 rounded-md text-xs font-medium bg-slate-100 text-slate-600">
-                      {motorista.filial}
-                    </span>
-                  </td>
-                  <td className="py-4 text-right pr-4 font-bold text-red-600">{motorista.total}</td>
+        {rankingMotoristas.length === 0 && <p className="text-2xs text-slate-400 text-center py-10">Sem dados no período</p>}
+        {rankingMotoristas.length > 0 && (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-slate-800 text-white text-2xs uppercase tracking-wide">
+                  <th className="px-3 py-2.5 pl-4">Posição</th>
+                  <th className="px-3 py-2.5">Motorista</th>
+                  <th className="px-3 py-2.5">Filial</th>
+                  <th className="px-3 py-2.5 text-right pr-4">Ocorrências (Atraso/Adiantamento)</th>
                 </tr>
-              ))}
-              
-              {rankingMotoristas.length === 0 && (
-                <tr>
-                  <td colSpan={4} className="py-8 text-center text-gray-500">
-                    Nenhuma ocorrência registrada no período.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {rankingMotoristas.map((motorista, index) => (
+                  <tr key={index} className="hover:bg-slate-50 transition-colors border-b border-gray-100 last:border-0">
+                    <td className="py-4 pl-4">
+                      <span className={clsx(
+                        "w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm",
+                        index === 0 ? "bg-red-100 text-red-600" :
+                        index === 1 ? "bg-orange-100 text-orange-600" :
+                        index === 2 ? "bg-yellow-100 text-yellow-600" :
+                        "bg-gray-100 text-gray-600"
+                      )}>
+                        {index + 1}
+                      </span>
+                    </td>
+                    <td className="py-4 font-medium text-slate-800">{motorista.nome}</td>
+                    <td className="py-4 text-gray-500">
+                      <span className="px-2.5 py-1 rounded-md text-xs font-medium bg-slate-100 text-slate-600">
+                        {motorista.filial}
+                      </span>
+                    </td>
+                    <td className="py-4 text-right pr-4 font-bold text-red-600">{motorista.total}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );

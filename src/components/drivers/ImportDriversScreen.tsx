@@ -83,8 +83,8 @@ export default function ImportDriversScreen({ setMotoristas }: ImportDriversScre
   };
 
   return (
-    <div className="max-w-2xl mx-auto space-y-4">
-      <div className="bg-white p-8 rounded-xl border border-gray-200 shadow-sm text-center">
+    <div className="max-w-2xl mx-auto space-y-5">
+      <div className="bg-white rounded-card border border-gray-200 shadow-card p-8 text-center">
         <h2 className="text-xl font-bold text-slate-800 mb-2">Importar Base de Motoristas</h2>
         <p className="text-sm text-gray-500 mb-1">
           Arquivo <strong>.txt</strong> ou <strong>.csv</strong> com colunas:{' '}
@@ -93,9 +93,10 @@ export default function ImportDriversScreen({ setMotoristas }: ImportDriversScre
         <p className="text-xs text-slate-400 mb-6">Suporta separadores TAB ou ponto-e-vírgula. A importação substitui a base atual.</p>
 
         <div
-          className={`border-2 border-dashed rounded-xl p-10 flex flex-col items-center justify-center transition-colors cursor-pointer
-            ${status === 'idle' ? 'border-gray-300 bg-gray-50 hover:bg-gray-100' : ''}`}
+          className={`border-2 border-dashed rounded-card p-8 text-center flex flex-col items-center justify-center transition-colors cursor-pointer
+            border-gray-300 hover:border-brand-400`}
           onClick={() => fileInputRef.current?.click()}
+          aria-label="Área de upload de motoristas"
         >
           <input
             ref={fileInputRef}

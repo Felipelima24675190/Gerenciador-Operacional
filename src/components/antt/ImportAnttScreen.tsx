@@ -92,7 +92,7 @@ export default function ImportAnttScreen({ multas, setMultas, userRole, anttCode
     if (!file.name.endsWith('.txt') && !file.name.endsWith('.csv')) {
       setUploadStatus('error');
       setErrorMsg('Formato de arquivo não suportado. Use .csv ou .txt');
-      setTimeout(() => setUploadStatus('idle'), 3000);
+      setTimeout(() => setUploadStatus('idle'), 8000);
       return;
     }
 
@@ -320,7 +320,7 @@ export default function ImportAnttScreen({ multas, setMultas, userRole, anttCode
   const processCodeFile = (file: File) => {
     if (!file.name.endsWith('.txt') && !file.name.endsWith('.csv')) {
       setCodeUploadStatus('error');
-      setTimeout(() => setCodeUploadStatus('idle'), 3000);
+      setTimeout(() => setCodeUploadStatus('idle'), 8000);
       return;
     }
 
@@ -380,8 +380,8 @@ export default function ImportAnttScreen({ multas, setMultas, userRole, anttCode
   };
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto">
-      <div className="bg-white p-8 rounded-xl border border-gray-200 shadow-sm text-center">
+    <div className="space-y-5 max-w-4xl mx-auto">
+      <div className="bg-white rounded-card border border-gray-200 shadow-card p-8 text-center">
         <div className="mb-6">
           <h3 className="text-xl font-bold text-slate-800">Importar Multas ANTT</h3>
           <p className="text-sm text-gray-500 mt-2">
@@ -392,11 +392,12 @@ export default function ImportAnttScreen({ multas, setMultas, userRole, anttCode
         </div>
 
         <label
-          className={`border-2 border-dashed rounded-xl p-10 flex flex-col items-center justify-center transition-colors cursor-pointer
-            ${isDragging ? 'border-brand-500 bg-blue-50' : 'border-gray-300 bg-gray-50 hover:bg-gray-100'}`}
+          className={`border-2 border-dashed rounded-card p-8 text-center flex flex-col items-center justify-center transition-colors cursor-pointer
+            ${isDragging ? 'border-brand-400' : 'border-gray-300 hover:border-brand-400'}`}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
+          aria-label="Área de upload de multas ANTT"
         >
           <input type="file" accept=".csv,.txt" className="hidden" onChange={ev => { const f = ev.target.files?.[0]; if (f) processMultasFile(f); }} />
 
@@ -444,12 +445,13 @@ export default function ImportAnttScreen({ multas, setMultas, userRole, anttCode
       </div>
 
       {multas.length > 0 && (
-        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+        <div className="bg-white rounded-card border border-gray-200 shadow-card p-6">
           <div className="flex items-center justify-between">
             <h4 className="text-lg font-bold text-slate-800">Base Ativa ({multas.length} registros)</h4>
             <button
               onClick={handleLimparTodos}
-              className="flex items-center gap-2 px-4 py-2 bg-white border border-red-500 text-red-600 text-sm font-bold rounded-lg hover:bg-red-50 transition-colors"
+              className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-button text-xs font-bold transition-colors"
+              aria-label="Limpar todas as multas"
             >
               <Trash2 size={16} />
               Limpar Multas
@@ -459,7 +461,7 @@ export default function ImportAnttScreen({ multas, setMultas, userRole, anttCode
       )}
 
       {/* Importar Código de Multas ANTT */}
-      <div className="bg-white p-8 rounded-xl border border-gray-200 shadow-sm text-center">
+      <div className="bg-white rounded-card border border-gray-200 shadow-card p-8 text-center">
         <div className="mb-6">
           <h3 className="text-xl font-bold text-slate-800">Importar Códigos de Multas ANTT</h3>
           <p className="text-sm text-gray-500 mt-2">
@@ -468,11 +470,12 @@ export default function ImportAnttScreen({ multas, setMultas, userRole, anttCode
         </div>
 
         <label
-          className={`border-2 border-dashed rounded-xl p-10 flex flex-col items-center justify-center transition-colors cursor-pointer
-            ${isCodeDragging ? 'border-brand-500 bg-blue-50' : 'border-gray-300 bg-gray-50 hover:bg-gray-100'}`}
+          className={`border-2 border-dashed rounded-card p-8 text-center flex flex-col items-center justify-center transition-colors cursor-pointer
+            ${isCodeDragging ? 'border-brand-400' : 'border-gray-300 hover:border-brand-400'}`}
           onDragOver={(e) => { e.preventDefault(); setIsCodeDragging(true); }}
           onDragLeave={(e) => { e.preventDefault(); setIsCodeDragging(false); }}
           onDrop={handleDropCodeFile}
+          aria-label="Área de upload de códigos de multas ANTT"
         >
           <input type="file" accept=".csv,.txt" className="hidden" onChange={ev => { const f = ev.target.files?.[0]; if (f) processCodeFile(f); }} />
 
@@ -514,12 +517,13 @@ export default function ImportAnttScreen({ multas, setMultas, userRole, anttCode
       </div>
 
       {anttCodeDescriptions.length > 0 && (
-        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+        <div className="bg-white rounded-card border border-gray-200 shadow-card p-6">
           <div className="flex items-center justify-between">
             <h4 className="text-lg font-bold text-slate-800">Códigos de Multas Ativos ({anttCodeDescriptions.length} registros)</h4>
             <button
               onClick={handleLimparCodigos}
-              className="flex items-center gap-2 px-4 py-2 bg-white border border-red-500 text-red-600 text-sm font-bold rounded-lg hover:bg-red-50 transition-colors"
+              className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-button text-xs font-bold transition-colors"
+              aria-label="Limpar todos os códigos de multa"
             >
               <Trash2 size={16} />
               Limpar Códigos

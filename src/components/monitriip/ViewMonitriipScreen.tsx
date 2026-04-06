@@ -40,7 +40,7 @@ const ChartCard = ({
   yAxisWidth?: number;
   valueLabel?: string;
 }) => (
-  <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+  <div className="bg-white rounded-card border border-gray-200 p-4 shadow-card">
     <h4 className="text-xs font-black text-slate-600 uppercase tracking-tighter mb-3">{title}</h4>
     {data.length > 0 ? (
       <div className="h-72">
@@ -50,7 +50,7 @@ const ChartCard = ({
             <YAxis
               dataKey="name"
               type="category"
-              tick={{ fontSize: 9 }}
+              tick={{ fontSize: 11 }}
               width={yAxisWidth}
               interval={0}
               axisLine={false}
@@ -65,7 +65,7 @@ const ChartCard = ({
         </ResponsiveContainer>
       </div>
     ) : (
-      <p className="text-xs text-slate-400 text-center py-10">Sem dados no período</p>
+      <p className="text-2xs text-slate-400 text-center py-10">Sem dados no período</p>
     )}
   </div>
 );
@@ -165,7 +165,7 @@ export default function ViewMonitriipScreen({ monitriips, viagens }: Props) {
 
   if (monitriips.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-[60vh] text-center p-8 bg-white rounded-3xl border border-gray-100 shadow-sm">
+      <div className="flex flex-col items-center justify-center h-[60vh] text-center p-8 bg-white rounded-card border border-gray-100 shadow-card">
         <h2 className="text-2xl font-black text-slate-800">Nenhum Dado Importado</h2>
         <p className="text-slate-500 max-w-md mt-2">
           Importe o arquivo do Monitriip para visualizar o painel.
@@ -175,9 +175,9 @@ export default function ViewMonitriipScreen({ monitriips, viagens }: Props) {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       {/* KPI cards */}
-      <div className="bg-slate-800 p-4 flex gap-3 overflow-x-auto rounded-xl">
+      <div className="bg-slate-800 p-4 flex gap-3 overflow-x-auto rounded-card">
         {[
           { l: 'Total de Viagens', v: kpis.total },
           { l: 'Viagens Válidas', v: `${kpis.validas} (${kpis.pctValidas}%)` },
@@ -186,62 +186,70 @@ export default function ViewMonitriipScreen({ monitriips, viagens }: Props) {
           { l: 'NoShow Total', v: kpis.totalNoShow },
         ].map((k, i) => (
           <div key={i} className="bg-slate-700 rounded-lg p-3 text-center min-w-[150px] flex-1">
-            <p className="text-[10px] font-bold text-slate-400 uppercase">{k.l}</p>
+            <p className="text-2xs font-bold text-slate-400 uppercase">{k.l}</p>
             <p className="text-lg font-black text-white mt-0.5">{k.v}</p>
           </div>
         ))}
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+      <div className="bg-white rounded-card border border-gray-200 p-4 shadow-card">
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
           <div>
-            <label className="text-xs font-bold text-slate-500 uppercase block mb-1">Data Início</label>
+            <label htmlFor="mt-data-inicio" className="text-2xs font-bold text-slate-500 uppercase tracking-wide block mb-1">Data Início</label>
             <div className="relative">
               <Calendar className="absolute left-2 top-2.5 text-gray-400" size={14} />
               <input
+                id="mt-data-inicio"
                 type="date"
                 value={dataInicio}
                 onChange={e => { setDataInicio(e.target.value); setPage(1); }}
-                className="w-full pl-8 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-300"
+                aria-label="Data de início do filtro"
+                className="w-full pl-8 pr-3 py-2 text-xs font-medium border border-gray-200 rounded-button bg-slate-50 focus:ring-2 focus:ring-brand-400 focus:outline-none"
               />
             </div>
           </div>
           <div>
-            <label className="text-xs font-bold text-slate-500 uppercase block mb-1">Data Fim</label>
+            <label htmlFor="mt-data-fim" className="text-2xs font-bold text-slate-500 uppercase tracking-wide block mb-1">Data Fim</label>
             <div className="relative">
               <Calendar className="absolute left-2 top-2.5 text-gray-400" size={14} />
               <input
+                id="mt-data-fim"
                 type="date"
                 value={dataFim}
                 onChange={e => { setDataFim(e.target.value); setPage(1); }}
-                className="w-full pl-8 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-300"
+                aria-label="Data de fim do filtro"
+                className="w-full pl-8 pr-3 py-2 text-xs font-medium border border-gray-200 rounded-button bg-slate-50 focus:ring-2 focus:ring-brand-400 focus:outline-none"
               />
             </div>
           </div>
           <div>
-            <label className="text-xs font-bold text-slate-500 uppercase block mb-1">Serviço</label>
+            <label htmlFor="mt-servico" className="text-2xs font-bold text-slate-500 uppercase tracking-wide block mb-1">Serviço</label>
             <div className="relative">
               <Search className="absolute left-2 top-2.5 text-gray-400" size={14} />
               <input
+                id="mt-servico"
                 type="text"
                 placeholder="Buscar serviço..."
                 value={servicoBusca}
                 onChange={e => { setServicoBusca(e.target.value); setPage(1); }}
-                className="w-full pl-8 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-300"
+                aria-label="Buscar por serviço"
+                className="w-full pl-8 pr-3 py-2 text-xs font-medium border border-gray-200 rounded-button bg-slate-50 focus:ring-2 focus:ring-brand-400 focus:outline-none"
               />
             </div>
           </div>
           <div>
-            <label className="text-xs font-bold text-slate-500 uppercase block mb-1">Linha</label>
+            <label htmlFor="mt-linha" className="text-2xs font-bold text-slate-500 uppercase tracking-wide block mb-1">Linha</label>
             <div className="relative">
               <Search className="absolute left-2 top-2.5 text-gray-400" size={14} />
               <input
+                id="mt-linha"
                 type="text"
                 placeholder="Buscar linha..."
                 value={linhaBusca}
                 onChange={e => { setLinhaBusca(e.target.value); setPage(1); }}
-                className="w-full pl-8 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-300"
+                aria-label="Buscar por linha"
+                className="w-full pl-8 pr-3 py-2 text-xs font-medium border border-gray-200 rounded-button bg-slate-50 focus:ring-2 focus:ring-brand-400 focus:outline-none"
               />
             </div>
           </div>
@@ -265,25 +273,25 @@ export default function ViewMonitriipScreen({ monitriips, viagens }: Props) {
           valueLabel="Inválidas"
         />
         {/* GPS problems summary card */}
-        <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+        <div className="bg-white rounded-card border border-gray-200 p-4 shadow-card">
           <h4 className="text-xs font-black text-slate-600 uppercase tracking-tighter mb-3">
             Problemas de GPS — Vel. Localização Fora do Intervalo (10–100)
           </h4>
           {gpsProblems.length === 0 ? (
-            <p className="text-xs text-slate-400 text-center py-10">Nenhuma anomalia detectada no período</p>
+            <p className="text-2xs text-slate-400 text-center py-10">Nenhuma anomalia detectada no período</p>
           ) : (
-            <div className="overflow-x-auto max-h-64 overflow-y-auto">
+            <div className="overflow-x-auto max-h-[500px] overflow-y-auto">
               <table className="w-full text-xs">
                 <thead className="bg-slate-800 text-white sticky top-0">
-                  <tr>
-                    <th className="px-3 py-2 font-bold uppercase text-left">Data</th>
-                    <th className="px-3 py-2 font-bold uppercase text-left">Serviço</th>
-                    <th className="px-3 py-2 font-bold uppercase text-right">Vel. Loc.</th>
+                  <tr className="text-2xs uppercase tracking-wide">
+                    <th className="px-3 py-2.5 font-bold text-left">Data</th>
+                    <th className="px-3 py-2.5 font-bold text-left">Serviço</th>
+                    <th className="px-3 py-2.5 font-bold text-right">Vel. Loc.</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {gpsProblems.slice(0, 50).map((r, i) => (
-                    <tr key={r.id} className={i % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
+                  {gpsProblems.slice(0, 50).map((r) => (
+                    <tr key={r.id} className="hover:bg-slate-50 transition-colors border-b border-gray-100">
                       <td className="px-3 py-1.5 font-mono text-slate-700">{r.data}</td>
                       <td className="px-3 py-1.5 text-slate-700">{r.servico}</td>
                       <td className="px-3 py-1.5 text-right font-bold text-red-600">{r.velTempoLocalizacao}</td>
@@ -302,7 +310,7 @@ export default function ViewMonitriipScreen({ monitriips, viagens }: Props) {
       </div>
 
       {/* Data table */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-card border border-gray-200 shadow-card overflow-hidden">
         <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
           <h4 className="text-xs font-black text-slate-600 uppercase tracking-tighter">
             Registros Detalhados
@@ -311,23 +319,23 @@ export default function ViewMonitriipScreen({ monitriips, viagens }: Props) {
             Pág. {page}/{totalPages} — {filtered.length} viagens
           </span>
         </div>
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto max-h-[500px] overflow-y-auto">
           <table className="w-full text-xs text-left">
-            <thead className="bg-slate-800 text-white">
-              <tr>
+            <thead className="bg-slate-800 text-white sticky top-0">
+              <tr className="text-2xs uppercase tracking-wide">
                 {[
                   'Data', 'Partida Prev.', 'Partida Real', 'Chegada',
                   'Serviço', 'Linha', 'Válida', 'Atraso', 'Embarque', 'NoShow', 'Vel. Loc.',
                 ].map(h => (
-                  <th key={h} className="px-3 py-2 font-bold uppercase whitespace-nowrap">{h}</th>
+                  <th key={h} className="px-3 py-2.5 font-bold whitespace-nowrap">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {paginated.map((r, i) => {
+              {paginated.map((r) => {
                 const velBad = isVelBad(r.velTempoLocalizacao);
                 return (
-                  <tr key={r.id} className={i % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
+                  <tr key={r.id} className="hover:bg-slate-50 transition-colors border-b border-gray-100">
                     <td className="px-3 py-2 font-mono text-slate-700 whitespace-nowrap">{r.data}</td>
                     <td className="px-3 py-2 whitespace-nowrap text-slate-600">{r.partidaPrevista}</td>
                     <td className="px-3 py-2 whitespace-nowrap text-slate-600">{r.partida}</td>
@@ -335,13 +343,13 @@ export default function ViewMonitriipScreen({ monitriips, viagens }: Props) {
                     <td className="px-3 py-2 font-bold text-slate-800">{r.servico}</td>
                     <td className="px-3 py-2 text-slate-600 truncate max-w-[200px]" title={getLinhaName(r)}>{getLinhaName(r)}</td>
                     <td className="px-3 py-2 whitespace-nowrap">
-                      <span className={`px-1.5 py-0.5 rounded font-bold text-[10px] ${r.viagemValida ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
+                      <span className={`px-1.5 py-0.5 rounded font-bold text-2xs ${r.viagemValida ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
                         {r.viagemValida ? 'Sim' : 'Não'}
                       </span>
                     </td>
                     <td className="px-3 py-2 whitespace-nowrap">
                       {r.atraso30min ? (
-                        <span className="px-1.5 py-0.5 rounded font-bold text-[10px] bg-amber-100 text-amber-700">Sim</span>
+                        <span className="px-1.5 py-0.5 rounded font-bold text-2xs bg-amber-100 text-amber-700">Sim</span>
                       ) : (
                         <span className="text-slate-400">Não</span>
                       )}
@@ -369,6 +377,7 @@ export default function ViewMonitriipScreen({ monitriips, viagens }: Props) {
             <button
               onClick={() => setPage(p => Math.max(1, p - 1))}
               disabled={page === 1}
+              aria-label="Página anterior"
               className="px-3 py-1 text-xs font-bold border border-gray-300 rounded-lg disabled:opacity-40 hover:bg-gray-50"
             >
               Anterior
@@ -377,6 +386,7 @@ export default function ViewMonitriipScreen({ monitriips, viagens }: Props) {
             <button
               onClick={() => setPage(p => Math.min(totalPages, p + 1))}
               disabled={page === totalPages}
+              aria-label="Próxima página"
               className="px-3 py-1 text-xs font-bold border border-gray-300 rounded-lg disabled:opacity-40 hover:bg-gray-50"
             >
               Próxima

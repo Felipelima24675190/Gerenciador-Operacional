@@ -102,9 +102,9 @@ function DriverHistoryModal({
           <div className="grid grid-cols-4 gap-3">
             {(['TRABALHADO', 'FOLGA', 'ATESTADO', 'FALTA'] as TipoEventoMotorista[]).map(tipo => (
               <div key={tipo} className={`p-3 rounded-xl text-center ${TIPO_COLORS[tipo]}`}>
-                <p className="text-[9px] font-black uppercase tracking-wider">{tipo}</p>
+                <p className="text-2xs font-black uppercase tracking-wider">{tipo}</p>
                 <p className="text-2xl font-black">{resumo[tipo]}</p>
-                <p className="text-[9px]">dia(s)</p>
+                <p className="text-2xs">dia(s)</p>
               </div>
             ))}
           </div>
@@ -144,7 +144,7 @@ function DriverHistoryModal({
               <div key={ev.id} className="flex items-center justify-between bg-white border rounded-lg px-3 py-2">
                 <div className="flex items-center gap-3">
                   <span className="font-mono text-xs text-slate-500">{ev.data}</span>
-                  <span className={`px-2 py-0.5 rounded text-[10px] font-black ${TIPO_COLORS[ev.tipo]}`}>{ev.tipo}</span>
+                  <span className={`px-2 py-0.5 rounded text-2xs font-black ${TIPO_COLORS[ev.tipo]}`}>{ev.tipo}</span>
                   {ev.observacao && <span className="text-xs text-slate-400 italic">{ev.observacao}</span>}
                 </div>
                 <button onClick={() => handleDelete(ev.id)} className="text-slate-300 hover:text-red-500 transition-colors">
@@ -235,17 +235,17 @@ export default function ConsultBaseScreen({ motoristas, setMotoristas, userRole,
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white p-4 rounded-xl border shadow-sm">
+        <div className="bg-white p-4 rounded-card border border-gray-200 shadow-card">
           <p className="text-sm text-gray-500">Total Motoristas</p>
           <p className="text-3xl font-bold">{dashboardData.total}</p>
         </div>
-        <div className="bg-white p-4 rounded-xl border shadow-sm">
+        <div className="bg-white p-4 rounded-card border border-gray-200 shadow-card">
           <p className="text-sm text-gray-500">Motoristas Ativos</p>
           <p className="text-3xl font-bold text-green-600">{dashboardData.totalAtivos}</p>
         </div>
-        <div className="md:col-span-2 bg-white p-4 rounded-xl border shadow-sm">
+        <div className="md:col-span-2 bg-white p-4 rounded-card border border-gray-200 shadow-card">
           <h4 className="text-sm text-gray-500 mb-2">Ativos por Filial</h4>
           <div className="h-24">
             <ResponsiveContainer width="100%" height="100%">
@@ -259,25 +259,29 @@ export default function ConsultBaseScreen({ motoristas, setMotoristas, userRole,
           </div>
         </div>
       </div>
-      <div className="bg-white p-6 rounded-xl border shadow-sm relative">
+      <div className="bg-white p-6 rounded-card border border-gray-200 shadow-card relative">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
           <div className="relative md:col-span-2">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
               <input
+                id="search-motorista"
                 type="text"
                 placeholder="Buscar por nome ou matrícula..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-400 bg-slate-50"
+                aria-label="Buscar motorista por nome ou matrícula"
+                className="w-full pl-10 pr-4 py-2 px-3 text-xs font-medium border border-gray-200 rounded-button bg-slate-50 focus:ring-2 focus:ring-brand-400 focus:outline-none"
               />
           </div>
 
           <div className="flex items-center gap-2">
             <Filter size={16} className="text-gray-400" />
             <select
+              id="filial-filter"
               value={filialFilter}
               onChange={(e) => setFilialFilter(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-400 bg-white w-full"
+              aria-label="Filtrar por filial"
+              className="px-3 py-2 text-xs font-medium border border-gray-200 rounded-button bg-slate-50 focus:ring-2 focus:ring-brand-400 focus:outline-none w-full"
             >
               {filiais.map(f => <option key={f} value={f}>{f === 'Todos' ? 'Todas as Filiais' : f}</option>)}
             </select>
@@ -286,9 +290,11 @@ export default function ConsultBaseScreen({ motoristas, setMotoristas, userRole,
           <div className="flex items-center gap-2">
             <Filter size={16} className="text-gray-400" />
             <select
+              id="status-filter"
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as StatusMotorista | 'Todos')}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-400 bg-white w-full"
+              aria-label="Filtrar por status"
+              className="px-3 py-2 text-xs font-medium border border-gray-200 rounded-button bg-slate-50 focus:ring-2 focus:ring-brand-400 focus:outline-none w-full"
             >
               <option value="Todos">Todos os Status</option>
               <option value="ATIVO - EM OPERAÇÃO">ATIVO - EM OPERAÇÃO</option>
@@ -302,21 +308,21 @@ export default function ConsultBaseScreen({ motoristas, setMotoristas, userRole,
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-gray-50 border-b border-gray-200 text-sm text-gray-600">
-                <th className="py-3 px-6 font-semibold w-24">Matrícula</th>
-                <th className="py-3 px-6 font-semibold">Nome</th>
-                <th className="py-3 px-6 font-semibold w-32">Filial</th>
-                <th className="py-3 px-6 font-semibold w-32">Área</th>
-                <th className="py-3 px-6 font-semibold w-48">Status</th>
-                <th className="py-3 px-6 font-semibold w-24">Histórico</th>
-                {isAdmin && setMotoristas && <th className="py-3 px-6 font-semibold w-28">Ações</th>}
+              <tr className="bg-slate-800 text-white text-2xs uppercase tracking-wide">
+                <th className="px-3 py-2.5 font-semibold w-24">Matrícula</th>
+                <th className="px-3 py-2.5 font-semibold">Nome</th>
+                <th className="px-3 py-2.5 font-semibold w-32">Filial</th>
+                <th className="px-3 py-2.5 font-semibold w-32">Área</th>
+                <th className="px-3 py-2.5 font-semibold w-48">Status</th>
+                <th className="px-3 py-2.5 font-semibold w-24">Histórico</th>
+                {isAdmin && setMotoristas && <th className="px-3 py-2.5 font-semibold w-28">Ações</th>}
               </tr>
             </thead>
             <tbody>
               {paginatedMotoristas.map((motorista, index) => {
                 const isEditing = editingId === motorista.matricula;
                 return (
-                <tr key={`${motorista.matricula}-${index}`} className="border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors">
+                <tr key={`${motorista.matricula}-${index}`} className="hover:bg-slate-50 transition-colors border-b border-gray-100">
                   <td className="py-3 px-6 font-medium text-slate-800">{motorista.matricula}</td>
                   <td className="py-3 px-6 text-slate-600">
                     {isEditing ? <input value={editData.nome || ''} onChange={e => setEditData(p => ({ ...p, nome: e.target.value }))} className="w-full border rounded px-2 py-1 text-sm" /> : motorista.nome}
@@ -336,7 +342,7 @@ export default function ConsultBaseScreen({ motoristas, setMotoristas, userRole,
                         <option value="INSTRUTOR">INSTRUTOR</option>
                       </select>
                     ) : (
-                      <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider ${getStatusColor(motorista.status)}`}>
+                      <span className={`px-2.5 py-1 rounded-full text-2xs font-bold tracking-wider ${getStatusColor(motorista.status)}`}>
                         {motorista.status}
                       </span>
                     )}

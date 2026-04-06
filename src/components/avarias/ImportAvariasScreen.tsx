@@ -120,12 +120,12 @@ export default function ImportAvariasScreen({ setAvarias, motoristas, userRole }
           setTimeout(() => setUploadStatus('idle'), 10000);
         }
       };
-      reader.onerror = () => { setUploadStatus('error'); setTimeout(() => setUploadStatus('idle'), 5000); };
+      reader.onerror = () => { setUploadStatus('error'); setTimeout(() => setUploadStatus('idle'), 8000); };
       reader.readAsText(file);
     } else {
       setErrorMessage("Somente .txt ou .csv separados por ponto e vírgula.");
       setUploadStatus('error');
-      setTimeout(() => setUploadStatus('idle'), 5000);
+      setTimeout(() => setUploadStatus('idle'), 8000);
     }
   };
 
@@ -143,8 +143,8 @@ export default function ImportAvariasScreen({ setAvarias, motoristas, userRole }
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      <div className="bg-white p-8 rounded-xl border border-gray-200 shadow-sm text-center">
+    <div className="max-w-4xl mx-auto space-y-5">
+      <div className="bg-white rounded-card border border-gray-200 shadow-card p-8 text-center">
         <h3 className="text-xl font-bold text-slate-800">Importar Relatório de Avarias</h3>
         <p className="text-sm text-gray-500 mt-2">Arraste e solte o arquivo CSV ou clique para selecionar.</p>
         <input
@@ -155,12 +155,13 @@ export default function ImportAvariasScreen({ setAvarias, motoristas, userRole }
           onChange={handleFileInputChange}
         />
         <div
-          className={`mt-6 border-2 border-dashed rounded-xl p-10 flex flex-col items-center justify-center transition-colors cursor-pointer
-            ${isDragging ? 'border-brand-500 bg-brand-50' : 'border-gray-300 bg-gray-50 hover:bg-gray-100'}`}
+          className={`mt-6 border-2 border-dashed rounded-card p-8 text-center flex flex-col items-center justify-center transition-colors cursor-pointer
+            ${isDragging ? 'border-brand-400' : 'border-gray-300 hover:border-brand-400'}`}
           onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
           onDragLeave={() => setIsDragging(false)}
           onDrop={handleDrop}
           onClick={() => fileInputRef.current?.click()}
+          aria-label="Área de upload de avarias"
         >
           {uploadStatus === 'idle' && (
             <><UploadCloud size={32} /><p className="font-semibold mt-4">Arraste o arquivo CSV/TXT aqui ou clique para selecionar</p></>
@@ -170,7 +171,7 @@ export default function ImportAvariasScreen({ setAvarias, motoristas, userRole }
               <CheckCircle size={32} className="text-emerald-500 mx-auto" />
               <p className="font-bold text-emerald-700 mt-4">Avarias importadas! ({stats.count} registros)</p>
               <p className="text-sm font-mono text-emerald-600 mt-2">Valor Identificado: R$ {stats.totalAvaria.toFixed(2)}</p>
-              {stats.notFoundDrivers > 0 && <p className="text-[10px] mt-2 font-bold text-red-500">Atenção: {stats.notFoundDrivers} matrículas não constam na base de motoristas.</p>}
+              {stats.notFoundDrivers > 0 && <p className="text-2xs mt-2 font-bold text-red-500">Atenção: {stats.notFoundDrivers} matrículas não constam na base de motoristas.</p>}
             </div>
           )}
           {uploadStatus === 'error' && (
@@ -182,7 +183,7 @@ export default function ImportAvariasScreen({ setAvarias, motoristas, userRole }
           )}
         </div>
       </div>
-      <div className="bg-blue-50 border border-blue-200 p-6 rounded-xl flex items-start gap-4">
+      <div className="bg-blue-50 border border-blue-200 p-6 rounded-card flex items-start gap-4">
         <FileText className="text-blue-600 h-8 w-8 mt-1 shrink-0" />
         <div>
           <h4 className="font-bold text-blue-800">Formato Esperado — Separador: ponto e vírgula (;)</h4>
@@ -190,7 +191,7 @@ export default function ImportAvariasScreen({ setAvarias, motoristas, userRole }
           <p className="text-xs text-blue-600 mt-1">
             <strong>VEÍCULO; DATA; MOTORISTA IDENTIFICADO?; MATRÍCULA MOTORISTA; CULPADO?; LANÇADO NO GLOBUS?; MÊS DE LANÇAMENTO; GERENTE; DESCRIÇÃO DE AVARIA; TIPO DE AVARIA; CAUSA DE AVARIA; AÇÃO TOMADA; HORÁRIO; VALOR DA AVARIA; VALOR COBRADO</strong>
           </p>
-          <p className="text-[10px] text-blue-500 mt-2">Exemplo: <code>6045;31/12/2022;SIM;24723;SIM;SIM;JANEIRO;ROMULO;FRONTAL;;;; X;97,5;97,5</code></p>
+          <p className="text-2xs text-blue-500 mt-2">Exemplo: <code>6045;31/12/2022;SIM;24723;SIM;SIM;JANEIRO;ROMULO;FRONTAL;;;; X;97,5;97,5</code></p>
         </div>
       </div>
     </div>

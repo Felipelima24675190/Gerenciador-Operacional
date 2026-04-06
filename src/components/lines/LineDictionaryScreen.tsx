@@ -85,33 +85,35 @@ export default function LineDictionaryScreen({ dicionario, setDicionario, viagen
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* Header */}
-      <div className="bg-slate-800 rounded-xl p-5 flex items-center gap-4">
+      <div className="bg-slate-800 rounded-card p-5 flex items-center gap-4">
         <BookOpen className="text-blue-400" size={28} />
         <div>
           <h2 className="text-lg font-black text-white">Dicionário de Linhas</h2>
           <p className="text-slate-400 text-xs mt-0.5">Abreviações utilizadas nos nomes das linhas (ex: BLA = Balsas(MA), REC = Recife(PE))</p>
         </div>
         <div className="ml-auto bg-slate-700 rounded-lg px-4 py-2 text-center">
-          <p className="text-[10px] font-bold text-slate-400 uppercase">Entradas</p>
+          <p className="text-2xs font-bold text-slate-400 uppercase">Entradas</p>
           <p className="text-xl font-black text-white">{dicionario.length}</p>
         </div>
       </div>
 
       {/* Search + Add */}
-      <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
+      <div className="bg-white rounded-card border border-gray-200 p-5 shadow-card">
         <div className="flex gap-4 items-end flex-wrap">
           <div className="flex-1 min-w-[200px]">
             <label className="text-xs font-bold text-slate-500 uppercase block mb-1">Buscar</label>
             <div className="relative">
               <Search size={14} className="absolute left-3 top-2.5 text-gray-400" />
               <input
+                id="line-search"
                 type="text"
                 placeholder="Buscar sigla ou nome..."
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+                aria-label="Buscar linha por sigla ou nome"
+                className="w-full pl-9 pr-4 py-2 text-xs font-medium border border-gray-200 rounded-button bg-slate-50 focus:ring-2 focus:ring-brand-400 focus:outline-none"
               />
             </div>
           </div>
@@ -157,18 +159,18 @@ export default function LineDictionaryScreen({ dicionario, setDicionario, viagen
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-card border border-gray-200 shadow-card overflow-hidden">
         <table className="w-full text-sm text-left">
-          <thead className="bg-slate-800 text-white text-[10px] uppercase">
+          <thead className="bg-slate-800 text-white text-2xs uppercase tracking-wide">
             <tr>
-              <th className="px-6 py-3 font-bold w-32">Sigla</th>
-              <th className="px-6 py-3 font-bold">Nome Completo</th>
-              {isAdmin && <th className="px-6 py-3 font-bold w-28 text-center">Ações</th>}
+              <th className="px-3 py-2.5 w-32">Sigla</th>
+              <th className="px-3 py-2.5">Nome Completo</th>
+              {isAdmin && <th className="px-3 py-2.5 w-28 text-center">Ações</th>}
             </tr>
           </thead>
           <tbody>
             {filtered.map(d => (
-              <tr key={d.id} className="border-b border-gray-100 hover:bg-gray-50">
+              <tr key={d.id} className="hover:bg-slate-50 transition-colors border-b border-gray-100">
                 <td className="px-6 py-3 font-mono font-black text-slate-800">
                   {editingId === d.id ? (
                     <input value={editSigla} onChange={e => setEditSigla(e.target.value)} className="border rounded px-2 py-1 text-sm uppercase w-20" />

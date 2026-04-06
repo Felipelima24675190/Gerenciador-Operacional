@@ -88,21 +88,21 @@ function PontualidadeTab({ motoristas, ocorrencias }: { motoristas: Motorista[];
   };
 
   return (
-    <div className="space-y-6">
-      <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+    <div className="space-y-5">
+      <div className="bg-white p-6 rounded-card border border-gray-200 shadow-card">
         <div className="flex items-center gap-2 mb-4"><Filter className="text-gray-500" size={18} /><h3 className="font-bold text-slate-800">Filtros</h3></div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Data Início</label>
-            <div className="relative"><input type="date" value={dataInicio} onChange={e => setDataInicio(e.target.value)} className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm bg-slate-50" /><Calendar className="absolute left-3 top-2.5 text-gray-400" size={18} /></div>
+            <label className="block text-2xs font-bold text-slate-500 uppercase tracking-wide mb-1">Data Início</label>
+            <div className="relative"><input type="date" value={dataInicio} onChange={e => setDataInicio(e.target.value)} className="w-full pl-10 pr-4 px-3 py-2 text-xs font-medium border border-gray-200 rounded-button bg-slate-50 focus:ring-2 focus:ring-brand-400 focus:outline-none" /><Calendar className="absolute left-3 top-2.5 text-gray-400" size={18} /></div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Data Fim</label>
-            <div className="relative"><input type="date" value={dataFim} onChange={e => setDataFim(e.target.value)} className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm bg-slate-50" /><Calendar className="absolute left-3 top-2.5 text-gray-400" size={18} /></div>
+            <label className="block text-2xs font-bold text-slate-500 uppercase tracking-wide mb-1">Data Fim</label>
+            <div className="relative"><input type="date" value={dataFim} onChange={e => setDataFim(e.target.value)} className="w-full pl-10 pr-4 px-3 py-2 text-xs font-medium border border-gray-200 rounded-button bg-slate-50 focus:ring-2 focus:ring-brand-400 focus:outline-none" /><Calendar className="absolute left-3 top-2.5 text-gray-400" size={18} /></div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Área</label>
-            <select value={areaSelecionada} onChange={e => setAreaSelecionada(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm bg-slate-50">
+            <label className="block text-2xs font-bold text-slate-500 uppercase tracking-wide mb-1">Área</label>
+            <select value={areaSelecionada} onChange={e => setAreaSelecionada(e.target.value)} className="w-full px-3 py-2 text-xs font-medium border border-gray-200 rounded-button bg-slate-50 focus:ring-2 focus:ring-brand-400 focus:outline-none">
               {areasDisponiveis.map(a => <option key={a} value={a}>{a}</option>)}
             </select>
           </div>
@@ -157,12 +157,12 @@ function VelocidadeTab({ excessos }: { excessos: ExcessoVelocidade[] }) {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+    <div className="space-y-5">
+      <div className="bg-white p-6 rounded-card border border-gray-200 shadow-card">
         <div className="flex items-center gap-2 mb-4"><Filter className="text-gray-500" size={18} /><h3 className="font-bold text-slate-800">Filtros</h3></div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div><label className="block text-sm font-medium text-gray-700 mb-1">Data Início</label><div className="relative"><input type="date" value={dataInicio} onChange={e => setDataInicio(e.target.value)} className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm bg-slate-50" /><Calendar className="absolute left-3 top-2.5 text-gray-400" size={18} /></div></div>
-          <div><label className="block text-sm font-medium text-gray-700 mb-1">Data Fim</label><div className="relative"><input type="date" value={dataFim} onChange={e => setDataFim(e.target.value)} className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm bg-slate-50" /><Calendar className="absolute left-3 top-2.5 text-gray-400" size={18} /></div></div>
+          <div><label className="block text-2xs font-bold text-slate-500 uppercase tracking-wide mb-1">Data Início</label><div className="relative"><input type="date" value={dataInicio} onChange={e => setDataInicio(e.target.value)} className="w-full pl-10 pr-4 px-3 py-2 text-xs font-medium border border-gray-200 rounded-button bg-slate-50 focus:ring-2 focus:ring-brand-400 focus:outline-none" /><Calendar className="absolute left-3 top-2.5 text-gray-400" size={18} /></div></div>
+          <div><label className="block text-2xs font-bold text-slate-500 uppercase tracking-wide mb-1">Data Fim</label><div className="relative"><input type="date" value={dataFim} onChange={e => setDataFim(e.target.value)} className="w-full pl-10 pr-4 px-3 py-2 text-xs font-medium border border-gray-200 rounded-button bg-slate-50 focus:ring-2 focus:ring-brand-400 focus:outline-none" /><Calendar className="absolute left-3 top-2.5 text-gray-400" size={18} /></div></div>
         </div>
       </div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -172,7 +172,7 @@ function VelocidadeTab({ excessos }: { excessos: ExcessoVelocidade[] }) {
           { label: 'Veículos', value: metricas.veiculos },
           { label: 'Velocidade Média', value: `${metricas.mediaVelocidade} km/h` },
         ].map((k, i) => (
-          <div key={i} className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+          <div key={i} className="bg-white p-4 rounded-card border border-gray-200 shadow-card">
             <p className="text-xs text-gray-500">{k.label}</p>
             <p className="text-2xl font-bold text-slate-800">{k.value}</p>
           </div>
@@ -218,13 +218,13 @@ function AnttTab({ multas }: { multas: MultaANTT[] }) {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+    <div className="space-y-5">
+      <div className="bg-white p-6 rounded-card border border-gray-200 shadow-card">
         <div className="flex items-center gap-2 mb-4"><Filter className="text-gray-500" size={18} /><h3 className="font-bold text-slate-800">Filtros</h3></div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div><label className="block text-sm font-medium text-gray-700 mb-1">Data Início</label><div className="relative"><input type="date" value={dataInicio} onChange={e => setDataInicio(e.target.value)} className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm bg-slate-50" /><Calendar className="absolute left-3 top-2.5 text-gray-400" size={18} /></div></div>
-          <div><label className="block text-sm font-medium text-gray-700 mb-1">Data Fim</label><div className="relative"><input type="date" value={dataFim} onChange={e => setDataFim(e.target.value)} className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm bg-slate-50" /><Calendar className="absolute left-3 top-2.5 text-gray-400" size={18} /></div></div>
-          <div><label className="block text-sm font-medium text-gray-700 mb-1">Empresa</label><select value={empresa} onChange={e => setEmpresa(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm bg-slate-50"><option value="Todas">Todas</option><option value="PROGRESSO">PROGRESSO</option><option value="CRUZEIRO">CRUZEIRO</option></select></div>
+          <div><label className="block text-2xs font-bold text-slate-500 uppercase tracking-wide mb-1">Data Início</label><div className="relative"><input type="date" value={dataInicio} onChange={e => setDataInicio(e.target.value)} className="w-full pl-10 pr-4 px-3 py-2 text-xs font-medium border border-gray-200 rounded-button bg-slate-50 focus:ring-2 focus:ring-brand-400 focus:outline-none" /><Calendar className="absolute left-3 top-2.5 text-gray-400" size={18} /></div></div>
+          <div><label className="block text-2xs font-bold text-slate-500 uppercase tracking-wide mb-1">Data Fim</label><div className="relative"><input type="date" value={dataFim} onChange={e => setDataFim(e.target.value)} className="w-full pl-10 pr-4 px-3 py-2 text-xs font-medium border border-gray-200 rounded-button bg-slate-50 focus:ring-2 focus:ring-brand-400 focus:outline-none" /><Calendar className="absolute left-3 top-2.5 text-gray-400" size={18} /></div></div>
+          <div><label className="block text-2xs font-bold text-slate-500 uppercase tracking-wide mb-1">Empresa</label><select value={empresa} onChange={e => setEmpresa(e.target.value)} className="w-full px-3 py-2 text-xs font-medium border border-gray-200 rounded-button bg-slate-50 focus:ring-2 focus:ring-brand-400 focus:outline-none"><option value="Todas">Todas</option><option value="PROGRESSO">PROGRESSO</option><option value="CRUZEIRO">CRUZEIRO</option></select></div>
         </div>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -233,7 +233,7 @@ function AnttTab({ multas }: { multas: MultaANTT[] }) {
           { label: 'Valor Total', value: metricas.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) },
           { label: 'Motoristas', value: metricas.motoristas },
         ].map((k, i) => (
-          <div key={i} className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+          <div key={i} className="bg-white p-4 rounded-card border border-gray-200 shadow-card">
             <p className="text-xs text-gray-500">{k.label}</p>
             <p className="text-2xl font-bold text-slate-800">{k.value}</p>
           </div>
@@ -277,12 +277,12 @@ function AvariasTab({ avarias }: { avarias: Avaria[] }) {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+    <div className="space-y-5">
+      <div className="bg-white p-6 rounded-card border border-gray-200 shadow-card">
         <div className="flex items-center gap-2 mb-4"><Filter className="text-gray-500" size={18} /><h3 className="font-bold text-slate-800">Filtros</h3></div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div><label className="block text-sm font-medium text-gray-700 mb-1">Data Início</label><div className="relative"><input type="date" value={dataInicio} onChange={e => setDataInicio(e.target.value)} className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm bg-slate-50" /><Calendar className="absolute left-3 top-2.5 text-gray-400" size={18} /></div></div>
-          <div><label className="block text-sm font-medium text-gray-700 mb-1">Data Fim</label><div className="relative"><input type="date" value={dataFim} onChange={e => setDataFim(e.target.value)} className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm bg-slate-50" /><Calendar className="absolute left-3 top-2.5 text-gray-400" size={18} /></div></div>
+          <div><label className="block text-2xs font-bold text-slate-500 uppercase tracking-wide mb-1">Data Início</label><div className="relative"><input type="date" value={dataInicio} onChange={e => setDataInicio(e.target.value)} className="w-full pl-10 pr-4 px-3 py-2 text-xs font-medium border border-gray-200 rounded-button bg-slate-50 focus:ring-2 focus:ring-brand-400 focus:outline-none" /><Calendar className="absolute left-3 top-2.5 text-gray-400" size={18} /></div></div>
+          <div><label className="block text-2xs font-bold text-slate-500 uppercase tracking-wide mb-1">Data Fim</label><div className="relative"><input type="date" value={dataFim} onChange={e => setDataFim(e.target.value)} className="w-full pl-10 pr-4 px-3 py-2 text-xs font-medium border border-gray-200 rounded-button bg-slate-50 focus:ring-2 focus:ring-brand-400 focus:outline-none" /><Calendar className="absolute left-3 top-2.5 text-gray-400" size={18} /></div></div>
         </div>
       </div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -292,7 +292,7 @@ function AvariasTab({ avarias }: { avarias: Avaria[] }) {
           { label: 'Valor Cobrado', value: metricas.cobrado.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) },
           { label: 'Motoristas', value: metricas.motoristas },
         ].map((k, i) => (
-          <div key={i} className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+          <div key={i} className="bg-white p-4 rounded-card border border-gray-200 shadow-card">
             <p className="text-xs text-gray-500">{k.label}</p>
             <p className="text-2xl font-bold text-slate-800">{k.value}</p>
           </div>
@@ -335,12 +335,12 @@ function ParadasTab({ paradas }: { paradas: ParadaIndevida[] }) {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+    <div className="space-y-5">
+      <div className="bg-white p-6 rounded-card border border-gray-200 shadow-card">
         <div className="flex items-center gap-2 mb-4"><Filter className="text-gray-500" size={18} /><h3 className="font-bold text-slate-800">Filtros</h3></div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div><label className="block text-sm font-medium text-gray-700 mb-1">Data Início</label><div className="relative"><input type="date" value={dataInicio} onChange={e => setDataInicio(e.target.value)} className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm bg-slate-50" /><Calendar className="absolute left-3 top-2.5 text-gray-400" size={18} /></div></div>
-          <div><label className="block text-sm font-medium text-gray-700 mb-1">Data Fim</label><div className="relative"><input type="date" value={dataFim} onChange={e => setDataFim(e.target.value)} className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm bg-slate-50" /><Calendar className="absolute left-3 top-2.5 text-gray-400" size={18} /></div></div>
+          <div><label className="block text-2xs font-bold text-slate-500 uppercase tracking-wide mb-1">Data Início</label><div className="relative"><input type="date" value={dataInicio} onChange={e => setDataInicio(e.target.value)} className="w-full pl-10 pr-4 px-3 py-2 text-xs font-medium border border-gray-200 rounded-button bg-slate-50 focus:ring-2 focus:ring-brand-400 focus:outline-none" /><Calendar className="absolute left-3 top-2.5 text-gray-400" size={18} /></div></div>
+          <div><label className="block text-2xs font-bold text-slate-500 uppercase tracking-wide mb-1">Data Fim</label><div className="relative"><input type="date" value={dataFim} onChange={e => setDataFim(e.target.value)} className="w-full pl-10 pr-4 px-3 py-2 text-xs font-medium border border-gray-200 rounded-button bg-slate-50 focus:ring-2 focus:ring-brand-400 focus:outline-none" /><Calendar className="absolute left-3 top-2.5 text-gray-400" size={18} /></div></div>
         </div>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -349,7 +349,7 @@ function ParadasTab({ paradas }: { paradas: ParadaIndevida[] }) {
           { label: 'Motoristas', value: metricas.motoristas },
           { label: 'Veículos', value: metricas.veiculos },
         ].map((k, i) => (
-          <div key={i} className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+          <div key={i} className="bg-white p-4 rounded-card border border-gray-200 shadow-card">
             <p className="text-xs text-gray-500">{k.label}</p>
             <p className="text-2xl font-bold text-slate-800">{k.value}</p>
           </div>
@@ -406,14 +406,14 @@ function TransitoTab({ motoristas, multas }: { motoristas: Motorista[]; multas: 
   };
 
   return (
-    <div className="space-y-6">
-      <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+    <div className="space-y-5">
+      <div className="bg-white p-6 rounded-card border border-gray-200 shadow-card">
         <div className="flex items-center gap-2 mb-4"><Filter className="text-gray-500" size={18} /><h3 className="font-bold text-slate-800">Filtros</h3></div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div><label className="block text-sm font-medium text-gray-700 mb-1">Data Início</label><div className="relative"><input type="date" value={dataInicio} onChange={e => setDataInicio(e.target.value)} className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm bg-slate-50" /><Calendar className="absolute left-3 top-2.5 text-gray-400" size={18} /></div></div>
-          <div><label className="block text-sm font-medium text-gray-700 mb-1">Data Fim</label><div className="relative"><input type="date" value={dataFim} onChange={e => setDataFim(e.target.value)} className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm bg-slate-50" /><Calendar className="absolute left-3 top-2.5 text-gray-400" size={18} /></div></div>
-          <div><label className="block text-sm font-medium text-gray-700 mb-1">Filial</label>
-            <select value={filial} onChange={e => setFilial(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm bg-slate-50">
+          <div><label className="block text-2xs font-bold text-slate-500 uppercase tracking-wide mb-1">Data Início</label><div className="relative"><input type="date" value={dataInicio} onChange={e => setDataInicio(e.target.value)} className="w-full pl-10 pr-4 px-3 py-2 text-xs font-medium border border-gray-200 rounded-button bg-slate-50 focus:ring-2 focus:ring-brand-400 focus:outline-none" /><Calendar className="absolute left-3 top-2.5 text-gray-400" size={18} /></div></div>
+          <div><label className="block text-2xs font-bold text-slate-500 uppercase tracking-wide mb-1">Data Fim</label><div className="relative"><input type="date" value={dataFim} onChange={e => setDataFim(e.target.value)} className="w-full pl-10 pr-4 px-3 py-2 text-xs font-medium border border-gray-200 rounded-button bg-slate-50 focus:ring-2 focus:ring-brand-400 focus:outline-none" /><Calendar className="absolute left-3 top-2.5 text-gray-400" size={18} /></div></div>
+          <div><label className="block text-2xs font-bold text-slate-500 uppercase tracking-wide mb-1">Filial</label>
+            <select value={filial} onChange={e => setFilial(e.target.value)} className="w-full px-3 py-2 text-xs font-medium border border-gray-200 rounded-button bg-slate-50 focus:ring-2 focus:ring-brand-400 focus:outline-none">
               <option value="Todas">Todas</option>
               {filiaisDisponiveis.map(f => <option key={f} value={f}>{f}</option>)}
             </select>
@@ -428,7 +428,7 @@ function TransitoTab({ motoristas, multas }: { motoristas: Motorista[]; multas: 
           { label: 'Motoristas', value: metricas.motoristas },
           { label: 'Veículos', value: metricas.veiculos },
         ].map((k, i) => (
-          <div key={i} className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+          <div key={i} className="bg-white p-4 rounded-card border border-gray-200 shadow-card">
             <p className="text-xs text-gray-500">{k.label}</p>
             <p className="text-2xl font-bold text-slate-800">{k.value}</p>
           </div>
@@ -491,12 +491,12 @@ function QuilometragemTab({ registros }: { registros: OciosidadeMotorista[] }) {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+    <div className="space-y-5">
+      <div className="bg-white p-6 rounded-card border border-gray-200 shadow-card">
         <div className="flex items-center gap-2 mb-4"><Filter className="text-gray-500" size={18} /><h3 className="font-bold text-slate-800">Filtros</h3></div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div><label className="block text-sm font-medium text-gray-700 mb-1">Data Início</label><div className="relative"><input type="date" value={dataInicio} onChange={e => setDataInicio(e.target.value)} className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm bg-slate-50" /><Calendar className="absolute left-3 top-2.5 text-gray-400" size={18} /></div></div>
-          <div><label className="block text-sm font-medium text-gray-700 mb-1">Data Fim</label><div className="relative"><input type="date" value={dataFim} onChange={e => setDataFim(e.target.value)} className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm bg-slate-50" /><Calendar className="absolute left-3 top-2.5 text-gray-400" size={18} /></div></div>
+          <div><label className="block text-2xs font-bold text-slate-500 uppercase tracking-wide mb-1">Data Início</label><div className="relative"><input type="date" value={dataInicio} onChange={e => setDataInicio(e.target.value)} className="w-full pl-10 pr-4 px-3 py-2 text-xs font-medium border border-gray-200 rounded-button bg-slate-50 focus:ring-2 focus:ring-brand-400 focus:outline-none" /><Calendar className="absolute left-3 top-2.5 text-gray-400" size={18} /></div></div>
+          <div><label className="block text-2xs font-bold text-slate-500 uppercase tracking-wide mb-1">Data Fim</label><div className="relative"><input type="date" value={dataFim} onChange={e => setDataFim(e.target.value)} className="w-full pl-10 pr-4 px-3 py-2 text-xs font-medium border border-gray-200 rounded-button bg-slate-50 focus:ring-2 focus:ring-brand-400 focus:outline-none" /><Calendar className="absolute left-3 top-2.5 text-gray-400" size={18} /></div></div>
         </div>
       </div>
       <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
@@ -508,7 +508,7 @@ function QuilometragemTab({ registros }: { registros: OciosidadeMotorista[] }) {
           { label: 'Combustível Total (L)', value: metricas.totalCombustivelL.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' L' },
           { label: 'Veículos', value: metricas.veiculos },
         ].map((k, i) => (
-          <div key={i} className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+          <div key={i} className="bg-white p-4 rounded-card border border-gray-200 shadow-card">
             <p className="text-xs text-gray-500">{k.label}</p>
             <p className="text-2xl font-bold text-slate-800">{k.value}</p>
           </div>
@@ -528,9 +528,9 @@ export default function ReportsScreen({ motoristas, ocorrencias, excessos = [], 
   const [activeTab, setActiveTab] = useState<Tab>('pontualidade');
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* Tab Bar */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-1 flex gap-1 overflow-x-auto">
+      <div className="bg-white rounded-card border border-gray-200 shadow-card p-1 flex gap-1 overflow-x-auto">
         {TABS.map(tab => (
           <button
             key={tab.id}

@@ -4,7 +4,7 @@ import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend,
 } from 'recharts';
-import { Search } from 'lucide-react';
+import { Search, Calendar } from 'lucide-react';
 
 interface ViewAnttScreenProps {
   multas: MultaANTT[];
@@ -178,7 +178,7 @@ export default function ViewAnttScreen({ multas, anttCodeDescriptions, motorista
       if (d.getFullYear() === currentYear)     monthlyCounts[months[d.getMonth()]][keyAtual]++;
       else if (d.getFullYear() === previousYear) monthlyCounts[months[d.getMonth()]][keyAnterior]++;
     });
-    return { data: months.map(month => ({ name: month, ...monthlyCounts[month] })), keyAtual, keyAnterior };
+    return { data: months.map(month => ({ name: month, ...monthlyCounts[month] } as Record<string, string | number>)), keyAtual, keyAnterior };
   }, [multas]);
 
   const tableFiltered = useMemo(() => {
@@ -194,9 +194,9 @@ export default function ViewAnttScreen({ multas, anttCodeDescriptions, motorista
   }, [filteredMultas, searchTable, codeDescriptionMap]);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       {/* KPI Bar */}
-      <div className="bg-white p-4 flex gap-4 overflow-x-auto rounded-xl border border-gray-200 shadow-sm">
+      <div className="bg-white rounded-card border border-gray-200 shadow-card p-4 flex gap-4 overflow-x-auto">
         {[
           { l: 'Valor Total', v: kpis.totalValor, c: true },
           { l: 'Valor Progresso', v: kpis.valorProgresso, c: true },
@@ -206,174 +206,235 @@ export default function ViewAnttScreen({ multas, anttCodeDescriptions, motorista
           { l: 'Cruzeiro', v: kpis.totalCruzeiro },
         ].map((k, i) => (
           <div key={i} className="bg-slate-50 border border-gray-200 rounded-lg p-4 text-center min-w-[120px] flex-1">
-            <p className="text-[10px] font-bold text-slate-500 uppercase">{k.l}</p>
+            <p className="text-2xs font-bold text-slate-500 uppercase tracking-wide">{k.l}</p>
             <p className="text-xl font-black text-slate-800 mt-1">{k.c ? formatCurrency(k.v) : k.v}</p>
           </div>
         ))}
       </div>
 
       {/* Filters */}
-      <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-wrap gap-4 items-end">
+      <div className="bg-white rounded-card border border-gray-200 shadow-card p-4 flex flex-wrap gap-4 items-end">
         <div>
-          <label className="text-[10px] font-bold text-slate-600 uppercase block mb-1">Empresa</label>
-          <select value={empresaFilter} onChange={e => setEmpresaFilter(e.target.value)} className="text-xs p-2 rounded-lg border border-gray-200 bg-slate-50">
+          <label htmlFor="antt-empresa" className="text-2xs font-bold text-slate-500 uppercase tracking-wide block mb-1">Empresa</label>
+          <select
+            id="antt-empresa"
+            value={empresaFilter}
+            onChange={e => setEmpresaFilter(e.target.value)}
+            aria-label="Filtrar por empresa"
+            className="px-3 py-2 text-xs font-medium border border-gray-200 rounded-button bg-slate-50 focus:ring-2 focus:ring-brand-400 focus:outline-none"
+          >
             <option value="Todas">Todas</option>
             {empresasDisponiveis.map(e => <option key={e} value={e}>{e}</option>)}
           </select>
         </div>
         <div>
-          <label className="text-[10px] font-bold text-slate-600 uppercase block mb-1">Setor Responsavel</label>
-          <select value={setorFilter} onChange={e => setSetorFilter(e.target.value)} className="text-xs p-2 rounded-lg border border-gray-200 bg-slate-50">
+          <label htmlFor="antt-setor" className="text-2xs font-bold text-slate-500 uppercase tracking-wide block mb-1">Setor Responsavel</label>
+          <select
+            id="antt-setor"
+            value={setorFilter}
+            onChange={e => setSetorFilter(e.target.value)}
+            aria-label="Filtrar por setor"
+            className="px-3 py-2 text-xs font-medium border border-gray-200 rounded-button bg-slate-50 focus:ring-2 focus:ring-brand-400 focus:outline-none"
+          >
             {setoresUnicos.map(s => <option key={s} value={s}>{s}</option>)}
           </select>
         </div>
         <div>
-          <label className="text-[10px] font-bold text-slate-600 uppercase block mb-1">Codigo Infracao</label>
-          <input type="text" placeholder="Ex: 501" value={codigoFilter} onChange={e => setCodigoFilter(e.target.value)} className="text-xs p-2 rounded-lg border border-gray-200 bg-slate-50 w-28" />
+          <label htmlFor="antt-codigo" className="text-2xs font-bold text-slate-500 uppercase tracking-wide block mb-1">Codigo Infracao</label>
+          <input
+            id="antt-codigo"
+            type="text"
+            placeholder="Ex: 501"
+            value={codigoFilter}
+            onChange={e => setCodigoFilter(e.target.value)}
+            aria-label="Filtrar por código de infração"
+            className="px-3 py-2 text-xs font-medium border border-gray-200 rounded-button bg-slate-50 focus:ring-2 focus:ring-brand-400 focus:outline-none w-28"
+          />
         </div>
         <div>
-          <label className="text-[10px] font-bold text-slate-600 uppercase block mb-1">Inicio</label>
-          <input type="date" value={dataInicio} onChange={e => setDataInicio(e.target.value)} className="text-xs p-2 rounded-lg border border-gray-200" />
+          <label htmlFor="antt-data-inicio" className="text-2xs font-bold text-slate-500 uppercase tracking-wide block mb-1">Inicio</label>
+          <div className="relative">
+            <Calendar size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+            <input
+              id="antt-data-inicio"
+              type="date"
+              value={dataInicio}
+              onChange={e => setDataInicio(e.target.value)}
+              aria-label="Data de início do filtro"
+              className="px-3 py-2 pl-8 text-xs font-medium border border-gray-200 rounded-button bg-slate-50 focus:ring-2 focus:ring-brand-400 focus:outline-none"
+            />
+          </div>
         </div>
         <div>
-          <label className="text-[10px] font-bold text-slate-600 uppercase block mb-1">Fim</label>
-          <input type="date" value={dataFim} onChange={e => setDataFim(e.target.value)} className="text-xs p-2 rounded-lg border border-gray-200" />
+          <label htmlFor="antt-data-fim" className="text-2xs font-bold text-slate-500 uppercase tracking-wide block mb-1">Fim</label>
+          <div className="relative">
+            <Calendar size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+            <input
+              id="antt-data-fim"
+              type="date"
+              value={dataFim}
+              onChange={e => setDataFim(e.target.value)}
+              aria-label="Data de fim do filtro"
+              className="px-3 py-2 pl-8 text-xs font-medium border border-gray-200 rounded-button bg-slate-50 focus:ring-2 focus:ring-brand-400 focus:outline-none"
+            />
+          </div>
         </div>
-        <div className="text-xs text-slate-400 font-bold pb-2">{filteredMultas.length} multas no período</div>
+        <div className="text-2xs text-slate-400 font-bold pb-2">{filteredMultas.length} multas no período</div>
       </div>
 
       {/* Charts Row 1 */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-          <h4 className="text-[10px] font-black text-slate-600 uppercase text-center mb-3">Quantitativo Mensal — Ano Atual vs Ano Anterior</h4>
+        <div className="bg-white rounded-card border border-gray-200 shadow-card p-4">
+          <h4 className="text-2xs font-black text-slate-600 uppercase tracking-wide text-center mb-3">Quantitativo Mensal — Ano Atual vs Ano Anterior</h4>
           <div className="h-56">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartDataMensal.data}>
-                <XAxis dataKey="name" tick={{ fontSize: 9 }} axisLine={false} />
-                <YAxis tick={{ fontSize: 9 }} axisLine={false} />
-                <Tooltip />
-                <Legend wrapperStyle={{ fontSize: 10 }} />
-                <Bar dataKey={chartDataMensal.keyAtual} name={chartDataMensal.keyAtual} fill="#0e4f8f" radius={[3, 3, 0, 0]} />
-                <Bar dataKey={chartDataMensal.keyAnterior} name={chartDataMensal.keyAnterior} fill="#9fbfea" radius={[3, 3, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+            {chartDataMensal.data.some(d => (d[chartDataMensal.keyAtual] as number) > 0 || (d[chartDataMensal.keyAnterior] as number) > 0) ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartDataMensal.data}>
+                  <XAxis dataKey="name" tick={{ fontSize: 11 }} axisLine={false} />
+                  <YAxis tick={{ fontSize: 11 }} axisLine={false} />
+                  <Tooltip />
+                  <Legend wrapperStyle={{ fontSize: 11 }} />
+                  <Bar dataKey={chartDataMensal.keyAtual} name={chartDataMensal.keyAtual} fill="#0e4f8f" radius={[3, 3, 0, 0]} />
+                  <Bar dataKey={chartDataMensal.keyAnterior} name={chartDataMensal.keyAnterior} fill="#9fbfea" radius={[3, 3, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <p className="text-2xs text-slate-400 text-center py-10">Sem dados no período</p>
+            )}
           </div>
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-          <h4 className="text-[10px] font-black text-slate-600 uppercase text-center mb-3">Distribuicao por Setor</h4>
+        <div className="bg-white rounded-card border border-gray-200 shadow-card p-4">
+          <h4 className="text-2xs font-black text-slate-600 uppercase tracking-wide text-center mb-3">Distribuicao por Setor</h4>
           <div className="h-56">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={chartSetor}
-                  dataKey="value"
-                  nameKey="name"
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={60}
-                  innerRadius={20}
-                  label={({ name, percent }: any) => {
-                    const label = name.length > 10 ? name.substring(0, 10) + '..' : name;
-                    return `${label} ${(percent * 100).toFixed(1)}%`;
-                  }}
-                  labelLine={true}
-                  fontSize={8}
-                >
-                  {chartSetor.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
-                </Pie>
-                <Tooltip formatter={(value: number, name: string) => [`${value} multas`, name]} />
-              </PieChart>
-            </ResponsiveContainer>
+            {chartSetor.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={chartSetor}
+                    dataKey="value"
+                    nameKey="name"
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={60}
+                    innerRadius={20}
+                    label={({ name, percent }: any) => {
+                      const label = name.length > 10 ? name.substring(0, 10) + '..' : name;
+                      return `${label} ${(percent * 100).toFixed(1)}%`;
+                    }}
+                    labelLine={true}
+                    fontSize={11}
+                  >
+                    {chartSetor.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                  </Pie>
+                  <Tooltip formatter={(value: number, name: string) => [`${value} multas`, name]} />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <p className="text-2xs text-slate-400 text-center py-10">Sem dados no período</p>
+            )}
           </div>
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-          <h4 className="text-[10px] font-black text-slate-600 uppercase text-center mb-3">Top 10 Codigos</h4>
+        <div className="bg-white rounded-card border border-gray-200 shadow-card p-4">
+          <h4 className="text-2xs font-black text-slate-600 uppercase tracking-wide text-center mb-3">Top 10 Codigos</h4>
           <div className="h-56">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartCodigo} layout="vertical" margin={{ left: 5 }}>
-                <XAxis type="number" hide />
-                <YAxis dataKey="name" type="category" tick={{ fontSize: 9 }} width={50} interval={0} axisLine={false} />
-                <Tooltip />
-                <Bar dataKey="count" fill="#1a6abf" radius={[0, 4, 4, 0]} barSize={16} label={{ position: 'right', fontSize: 9 }} />
-              </BarChart>
-            </ResponsiveContainer>
+            {chartCodigo.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartCodigo} layout="vertical" margin={{ left: 5 }}>
+                  <XAxis type="number" hide />
+                  <YAxis dataKey="name" type="category" tick={{ fontSize: 11 }} width={50} interval={0} axisLine={false} />
+                  <Tooltip />
+                  <Bar dataKey="count" fill="#1a6abf" radius={[0, 4, 4, 0]} barSize={16} label={{ position: 'right', fontSize: 11 }} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <p className="text-2xs text-slate-400 text-center py-10">Sem dados no período</p>
+            )}
           </div>
         </div>
       </div>
 
       {/* Charts Row 2 */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-          <h4 className="text-[10px] font-black text-slate-600 uppercase text-center mb-3">Top 10 Filiais</h4>
+        <div className="bg-white rounded-card border border-gray-200 shadow-card p-4">
+          <h4 className="text-2xs font-black text-slate-600 uppercase tracking-wide text-center mb-3">Top 10 Filiais</h4>
           <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartTerminal} layout="vertical" margin={{ left: 10 }}>
-                <XAxis type="number" hide />
-                <YAxis dataKey="name" type="category" tick={{ fontSize: 9 }} width={100} interval={0} axisLine={false} />
-                <Tooltip />
-                <Bar dataKey="count" fill="#3d7fd2" radius={[0, 4, 4, 0]} barSize={18} label={{ position: 'right', fontSize: 9 }} />
-              </BarChart>
-            </ResponsiveContainer>
+            {chartTerminal.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartTerminal} layout="vertical" margin={{ left: 10 }}>
+                  <XAxis type="number" hide />
+                  <YAxis dataKey="name" type="category" tick={{ fontSize: 11 }} width={100} interval={0} axisLine={false} />
+                  <Tooltip />
+                  <Bar dataKey="count" fill="#3d7fd2" radius={[0, 4, 4, 0]} barSize={18} label={{ position: 'right', fontSize: 11 }} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <p className="text-2xs text-slate-400 text-center py-10">Sem dados no período</p>
+            )}
           </div>
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm relative">
-          <h4 className="text-[10px] font-black text-slate-600 uppercase text-center mb-3">Top 10 Motoristas</h4>
+        <div className="bg-white rounded-card border border-gray-200 shadow-card p-4 relative">
+          <h4 className="text-2xs font-black text-slate-600 uppercase tracking-wide text-center mb-3">Top 10 Motoristas</h4>
           <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartMotorista} layout="vertical" margin={{ left: 10 }}>
-                <XAxis type="number" hide />
-                <YAxis dataKey="name" type="category" tick={{ fontSize: 10, fontWeight: 700, cursor: 'pointer' }} width={80} interval={0} axisLine={false} />
-                <Tooltip formatter={(v: number) => [`${v} multas`, 'Qtd']} labelFormatter={(_: string, payload: any[]) => payload?.[0]?.payload?.fullName || ''} />
-                <Bar
-                  dataKey="count"
-                  fill="#0b3f72"
-                  radius={[0, 4, 4, 0]}
-                  barSize={18}
-                  label={{ position: 'right', fontSize: 9 }}
-                  cursor="pointer"
-                  onClick={(data: any) => {
-                    const mat = data?.matricula || data?.payload?.matricula;
-                    if (mat) setSelectedAnttMatricula(prev => prev === mat ? null : mat);
-                  }}
-                />
-              </BarChart>
-            </ResponsiveContainer>
+            {chartMotorista.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartMotorista} layout="vertical" margin={{ left: 10 }}>
+                  <XAxis type="number" hide />
+                  <YAxis dataKey="name" type="category" tick={{ fontSize: 11, fontWeight: 700, cursor: 'pointer' }} width={80} interval={0} axisLine={false} />
+                  <Tooltip formatter={(v: number) => [`${v} multas`, 'Qtd']} labelFormatter={(_: string, payload: any[]) => payload?.[0]?.payload?.fullName || ''} />
+                  <Bar
+                    dataKey="count"
+                    fill="#0b3f72"
+                    radius={[0, 4, 4, 0]}
+                    barSize={18}
+                    label={{ position: 'right', fontSize: 11 }}
+                    cursor="pointer"
+                    onClick={(data: any) => {
+                      const mat = data?.matricula || data?.payload?.matricula;
+                      if (mat) setSelectedAnttMatricula(prev => prev === mat ? null : mat);
+                    }}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <p className="text-2xs text-slate-400 text-center py-10">Sem dados no período</p>
+            )}
           </div>
 
           {selectedAnttMotorista && (
             <div
               className="mt-3 bg-gradient-to-r from-slate-50 to-slate-100 border-2 border-blue-300 rounded-xl p-4 shadow-md cursor-pointer"
               onClick={() => setSelectedAnttMatricula(null)}
+              aria-label="Fechar detalhes do motorista"
             >
               <div className="flex items-center justify-between mb-3">
                 <div>
-                  <p className="text-sm font-black text-slate-800">{selectedAnttMotorista.fullName}</p>
-                  <p className="text-xs text-slate-500">Matrícula: <strong>{selectedAnttMotorista.matricula}</strong></p>
+                  <p className="text-xs font-black text-slate-800">{selectedAnttMotorista.fullName}</p>
+                  <p className="text-2xs text-slate-500">Matrícula: <strong>{selectedAnttMotorista.matricula}</strong></p>
                 </div>
                 <div className="text-right">
-                  <p className="text-xl font-black text-slate-800">{selectedAnttMotorista.count} <span className="text-xs font-bold text-slate-500">multas</span></p>
-                  <p className="text-xs font-bold text-slate-500">{formatCurrency(selectedAnttMotorista.valor)}</p>
+                  <p className="text-xl font-black text-slate-800">{selectedAnttMotorista.count} <span className="text-2xs font-bold text-slate-500">multas</span></p>
+                  <p className="text-2xs font-bold text-slate-500">{formatCurrency(selectedAnttMotorista.valor)}</p>
                 </div>
               </div>
               <div className="flex flex-wrap gap-2">
                 {Object.entries(selectedAnttMotorista.codigos).sort((a, b) => b[1] - a[1]).map(([cod, qty]) => (
                   <div key={cod} className="bg-white rounded-lg border border-gray-200 px-3 py-1.5 text-center">
-                    <p className="text-[9px] font-bold text-slate-500">Cód. {cod}</p>
-                    <p className="text-sm font-black text-slate-800">{qty}</p>
+                    <p className="text-2xs font-bold text-slate-500">Cód. {cod}</p>
+                    <p className="text-xs font-black text-slate-800">{qty}</p>
                   </div>
                 ))}
               </div>
-              <p className="mt-2 text-[10px] text-slate-400 text-center">Clique para fechar</p>
+              <p className="mt-2 text-2xs text-slate-400 text-center">Clique para fechar</p>
             </div>
           )}
         </div>
       </div>
 
       {/* Detail Table */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-card border border-gray-200 shadow-card overflow-hidden">
         <div className="p-4 border-b border-gray-100 flex items-center gap-3">
           <Search size={14} className="text-slate-400" />
           <input
@@ -381,22 +442,23 @@ export default function ViewAnttScreen({ multas, anttCodeDescriptions, motorista
             placeholder="Buscar na tabela (auto, codigo, descricao, terminal, setor)..."
             value={searchTable}
             onChange={e => setSearchTable(e.target.value)}
+            aria-label="Buscar na tabela de multas"
             className="flex-1 text-xs border-0 outline-none placeholder:text-slate-400"
           />
-          <span className="text-[10px] text-slate-400 font-bold">{tableFiltered.length} registros</span>
+          <span className="text-2xs text-slate-400 font-bold">{tableFiltered.length} registros</span>
         </div>
-        <div className="overflow-y-auto max-h-[400px]">
+        <div className="overflow-x-auto overflow-y-auto max-h-[500px]">
           <table className="w-full text-xs text-left">
-            <thead className="bg-slate-800 text-white text-[10px] uppercase sticky top-0 z-10">
-              <tr>
-                <th className="px-3 py-2">Data</th>
-                <th className="px-3 py-2">Auto</th>
-                <th className="px-3 py-2">Codigo</th>
-                <th className="px-3 py-2">Descricao</th>
-                <th className="px-3 py-2">Setor</th>
-                <th className="px-3 py-2">Filial</th>
-                <th className="px-3 py-2">Empresa</th>
-                <th className="px-3 py-2 text-right">Valor</th>
+            <thead className="sticky top-0 z-10">
+              <tr className="bg-slate-800 text-white text-2xs uppercase tracking-wide">
+                <th className="px-3 py-2.5">Data</th>
+                <th className="px-3 py-2.5">Auto</th>
+                <th className="px-3 py-2.5">Codigo</th>
+                <th className="px-3 py-2.5">Descricao</th>
+                <th className="px-3 py-2.5">Setor</th>
+                <th className="px-3 py-2.5">Filial</th>
+                <th className="px-3 py-2.5">Empresa</th>
+                <th className="px-3 py-2.5 text-right">Valor</th>
               </tr>
             </thead>
             <tbody>
@@ -404,14 +466,14 @@ export default function ViewAnttScreen({ multas, anttCodeDescriptions, motorista
                 const codeInfo    = codeDescriptionMap.get(m.codigoInfracao);
                 const valorExibido = codeInfo?.valor && codeInfo.valor > 0 ? codeInfo.valor : (m.valor || 0);
                 return (
-                  <tr key={m.id} className="border-b border-gray-50 hover:bg-slate-50 transition-colors">
-                    <td className="px-3 py-2 font-mono text-[10px]">{m.dataHora}</td>
+                  <tr key={m.id} className="hover:bg-slate-50 transition-colors border-b border-gray-100">
+                    <td className="px-3 py-2 font-mono text-2xs">{m.dataHora}</td>
                     <td className="px-3 py-2 font-bold">{m.autoInfracao}</td>
                     <td className="px-3 py-2 font-mono">{m.codigoInfracao}</td>
                     <td className="px-3 py-2 text-slate-600 whitespace-normal break-words">{m.descricaoInfracao || codeInfo?.descricao || '-'}</td>
-                    <td className="px-3 py-2"><span className="px-1.5 py-0.5 bg-slate-100 rounded text-[9px] font-bold">{normalizeSetor(m.setor)}</span></td>
+                    <td className="px-3 py-2"><span className="px-1.5 py-0.5 bg-slate-100 rounded text-2xs font-bold">{normalizeSetor(m.setor)}</span></td>
                     <td className="px-3 py-2">{m.terminal}</td>
-                    <td className="px-3 py-2 text-[10px] font-bold">{m.empresa}</td>
+                    <td className="px-3 py-2 text-2xs font-bold">{m.empresa}</td>
                     <td className="px-3 py-2 text-right font-bold">{formatCurrency(valorExibido)}</td>
                   </tr>
                 );

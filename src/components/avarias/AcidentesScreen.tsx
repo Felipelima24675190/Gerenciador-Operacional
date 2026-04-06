@@ -145,17 +145,19 @@ export default function AcidentesScreen({ acidentes, setAcidentes, avarias, moto
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       {/* Header */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm flex items-center gap-4 flex-wrap">
+      <div className="bg-white rounded-card border border-gray-200 p-4 shadow-card flex items-center gap-4 flex-wrap">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-2.5 text-slate-400" size={14} />
           <input
+            id="acidentes-search"
             type="text"
             placeholder="Buscar por veiculo, placa, local, tipo..."
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-400"
+            aria-label="Buscar acidente"
+            className="w-full pl-9 pr-4 py-2 text-xs font-medium border border-gray-200 rounded-button bg-slate-50 focus:ring-2 focus:ring-brand-400 focus:outline-none"
           />
         </div>
         <span className="text-xs text-slate-400 font-bold">{filtered.length} acidentes</span>
@@ -171,52 +173,52 @@ export default function AcidentesScreen({ acidentes, setAcidentes, avarias, moto
 
       {/* Form */}
       {showForm && (
-        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm space-y-4">
+        <div className="bg-white rounded-card border border-gray-200 p-6 shadow-card space-y-4">
           <h4 className="text-sm font-black text-slate-700 uppercase">Novo Registro de Acidente</h4>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <div>
-              <label className="text-[10px] font-bold text-slate-600 uppercase block mb-1">Data</label>
+              <label className="text-2xs font-bold text-slate-600 uppercase block mb-1">Data</label>
               <input type="date" value={formData.data} onChange={e => setFormData(p => ({ ...p, data: e.target.value }))} className="w-full text-xs p-2 border border-gray-200 rounded-lg" />
             </div>
             <div>
-              <label className="text-[10px] font-bold text-slate-600 uppercase block mb-1">Hora</label>
+              <label className="text-2xs font-bold text-slate-600 uppercase block mb-1">Hora</label>
               <input type="time" value={formData.hora} onChange={e => setFormData(p => ({ ...p, hora: e.target.value }))} className="w-full text-xs p-2 border border-gray-200 rounded-lg" />
             </div>
             <div>
-              <label className="text-[10px] font-bold text-slate-600 uppercase block mb-1">Prefixo Veiculo</label>
+              <label className="text-2xs font-bold text-slate-600 uppercase block mb-1">Prefixo Veiculo</label>
               <input type="text" value={formData.prefixoVeiculo} onChange={e => setFormData(p => ({ ...p, prefixoVeiculo: e.target.value }))} className="w-full text-xs p-2 border border-gray-200 rounded-lg" />
             </div>
             <div>
-              <label className="text-[10px] font-bold text-slate-600 uppercase block mb-1">Placa</label>
+              <label className="text-2xs font-bold text-slate-600 uppercase block mb-1">Placa</label>
               <input type="text" value={formData.placaVeiculo} onChange={e => setFormData(p => ({ ...p, placaVeiculo: e.target.value }))} className="w-full text-xs p-2 border border-gray-200 rounded-lg" />
             </div>
             <div>
-              <label className="text-[10px] font-bold text-slate-600 uppercase block mb-1">Matricula Motorista</label>
+              <label className="text-2xs font-bold text-slate-600 uppercase block mb-1">Matricula Motorista</label>
               <input type="text" value={formData.matriculaMotorista} onChange={e => setFormData(p => ({ ...p, matriculaMotorista: e.target.value }))} className="w-full text-xs p-2 border border-gray-200 rounded-lg" />
             </div>
             <div>
-              <label className="text-[10px] font-bold text-slate-600 uppercase block mb-1">Local</label>
+              <label className="text-2xs font-bold text-slate-600 uppercase block mb-1">Local</label>
               <input type="text" value={formData.local} onChange={e => setFormData(p => ({ ...p, local: e.target.value }))} className="w-full text-xs p-2 border border-gray-200 rounded-lg" />
             </div>
             <div>
-              <label className="text-[10px] font-bold text-slate-600 uppercase block mb-1">Tipo Acidente</label>
+              <label className="text-2xs font-bold text-slate-600 uppercase block mb-1">Tipo Acidente</label>
               <select value={formData.tipoAcidente} onChange={e => setFormData(p => ({ ...p, tipoAcidente: e.target.value }))} className="w-full text-xs p-2 border border-gray-200 rounded-lg bg-white">
                 {TIPOS_ACIDENTE.map(t => <option key={t} value={t}>{t}</option>)}
               </select>
             </div>
             <div>
-              <label className="text-[10px] font-bold text-slate-600 uppercase block mb-1">Gravidade</label>
+              <label className="text-2xs font-bold text-slate-600 uppercase block mb-1">Gravidade</label>
               <select value={formData.gravidade} onChange={e => setFormData(p => ({ ...p, gravidade: e.target.value as Acidente['gravidade'] }))} className="w-full text-xs p-2 border border-gray-200 rounded-lg bg-white">
                 {GRAVIDADES.map(g => <option key={g} value={g}>{g}</option>)}
               </select>
             </div>
             <div>
-              <label className="text-[10px] font-bold text-slate-600 uppercase block mb-1">Valor Estimado (R$)</label>
+              <label className="text-2xs font-bold text-slate-600 uppercase block mb-1">Valor Estimado (R$)</label>
               <input type="number" step="0.01" value={formData.valorEstimado} onChange={e => setFormData(p => ({ ...p, valorEstimado: parseFloat(e.target.value) || 0 }))} className="w-full text-xs p-2 border border-gray-200 rounded-lg" />
             </div>
             <div>
-              <label className="text-[10px] font-bold text-slate-600 uppercase block mb-1">Status</label>
+              <label className="text-2xs font-bold text-slate-600 uppercase block mb-1">Status</label>
               <select value={formData.status} onChange={e => setFormData(p => ({ ...p, status: e.target.value as Acidente['status'] }))} className="w-full text-xs p-2 border border-gray-200 rounded-lg bg-white">
                 <option value="Em Análise">Em Analise</option>
                 <option value="Concluído">Concluido</option>
@@ -226,24 +228,24 @@ export default function AcidentesScreen({ acidentes, setAcidentes, avarias, moto
           </div>
 
           <div className="col-span-full">
-            <label className="text-[10px] font-bold text-slate-600 uppercase block mb-1">Descricao do Acidente</label>
+            <label className="text-2xs font-bold text-slate-600 uppercase block mb-1">Descricao do Acidente</label>
             <textarea value={formData.descricao} onChange={e => setFormData(p => ({ ...p, descricao: e.target.value }))} rows={3} className="w-full text-xs p-2 border border-gray-200 rounded-lg resize-none" placeholder="Descreva o acidente em detalhes..." />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
-              <label className="text-[10px] font-bold text-slate-600 uppercase block mb-1">Causa da Avaria</label>
+              <label className="text-2xs font-bold text-slate-600 uppercase block mb-1">Causa da Avaria</label>
               <textarea value={formData.causaAvaria} onChange={e => setFormData(p => ({ ...p, causaAvaria: e.target.value }))} rows={2} className="w-full text-xs p-2 border border-gray-200 rounded-lg resize-none" placeholder="Descreva a causa da avaria..." />
             </div>
             <div>
-              <label className="text-[10px] font-bold text-slate-600 uppercase block mb-1">Acao Tomada</label>
+              <label className="text-2xs font-bold text-slate-600 uppercase block mb-1">Acao Tomada</label>
               <textarea value={formData.acaoTomada} onChange={e => setFormData(p => ({ ...p, acaoTomada: e.target.value }))} rows={2} className="w-full text-xs p-2 border border-gray-200 rounded-lg resize-none" placeholder="Descreva a ação tomada..." />
             </div>
           </div>
 
           {/* Photos */}
           <div>
-            <label className="text-[10px] font-bold text-slate-600 uppercase block mb-2">Fotos do Acidente</label>
+            <label className="text-2xs font-bold text-slate-600 uppercase block mb-2">Fotos do Acidente</label>
             <input type="file" accept="image/*" multiple onChange={handlePhotoUpload} className="text-xs mb-3" />
             {formFotos.length > 0 && (
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -256,7 +258,7 @@ export default function AcidentesScreen({ acidentes, setAcidentes, avarias, moto
                       placeholder="Descricao da foto..."
                       value={foto.descricao}
                       onChange={e => updatePhotoDesc(foto.id, e.target.value)}
-                      className="w-full text-[10px] p-2 border-t border-gray-200 focus:outline-none"
+                      className="w-full text-2xs p-2 border-t border-gray-200 focus:outline-none"
                     />
                   </div>
                 ))}
@@ -274,7 +276,7 @@ export default function AcidentesScreen({ acidentes, setAcidentes, avarias, moto
       {/* List */}
       <div className="space-y-3">
         {filtered.length === 0 && (
-          <div className="bg-white rounded-xl border border-gray-200 p-8 text-center text-slate-400 shadow-sm">
+          <div className="bg-white rounded-card border border-gray-200 p-8 text-center text-slate-400 shadow-card">
             Nenhum acidente registrado
           </div>
         )}
@@ -284,20 +286,20 @@ export default function AcidentesScreen({ acidentes, setAcidentes, avarias, moto
           const avariaVinculada = acidente.avariaVinculadaId ? avarias.find(a => a.id === acidente.avariaVinculadaId) : null;
 
           return (
-            <div key={acidente.id} className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+            <div key={acidente.id} className="bg-white rounded-card border border-gray-200 shadow-card overflow-hidden">
               {/* Header row */}
               <div
                 className="flex items-center gap-4 px-4 py-3 cursor-pointer hover:bg-slate-50 transition-colors"
                 onClick={() => setExpandedId(isExpanded ? null : acidente.id)}
               >
-                <div className={`px-2 py-0.5 rounded text-[9px] font-black ${gravColor(acidente.gravidade)}`}>{acidente.gravidade}</div>
+                <div className={`px-2 py-0.5 rounded text-2xs font-black ${gravColor(acidente.gravidade)}`}>{acidente.gravidade}</div>
                 <span className="text-xs font-bold text-slate-700">{acidente.data} {acidente.hora}</span>
                 <span className="text-xs text-slate-500">{acidente.tipoAcidente}</span>
                 <span className="text-xs font-mono font-bold text-brand-600">{acidente.prefixoVeiculo}</span>
                 <span className="text-xs text-slate-500 truncate flex-1">{acidente.local}</span>
-                {acidente.fotos.length > 0 && <span className="flex items-center gap-1 text-[10px] text-slate-400"><Image size={12} />{acidente.fotos.length}</span>}
-                {acidente.avariaVinculadaId && <span className="flex items-center gap-1 text-[10px] text-brand-500 font-bold"><Link2 size={12} />Vinculado</span>}
-                <span className={`px-2 py-0.5 rounded text-[9px] font-bold ${acidente.status === 'Concluído' ? 'bg-emerald-100 text-emerald-700' : acidente.status === 'Pendente Seguro' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'}`}>
+                {acidente.fotos.length > 0 && <span className="flex items-center gap-1 text-2xs text-slate-400"><Image size={12} />{acidente.fotos.length}</span>}
+                {acidente.avariaVinculadaId && <span className="flex items-center gap-1 text-2xs text-brand-500 font-bold"><Link2 size={12} />Vinculado</span>}
+                <span className={`px-2 py-0.5 rounded text-2xs font-bold ${acidente.status === 'Concluído' ? 'bg-emerald-100 text-emerald-700' : acidente.status === 'Pendente Seguro' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'}`}>
                   {acidente.status}
                 </span>
                 {isExpanded ? <ChevronUp size={14} className="text-slate-400" /> : <ChevronDown size={14} className="text-slate-400" />}
@@ -307,14 +309,14 @@ export default function AcidentesScreen({ acidentes, setAcidentes, avarias, moto
               {isExpanded && (
                 <div className="border-t border-gray-100 px-4 py-4 space-y-4 bg-slate-50/50">
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
-                    <div><span className="text-[10px] font-bold text-slate-500 uppercase block">Placa</span>{acidente.placaVeiculo || '-'}</div>
-                    <div><span className="text-[10px] font-bold text-slate-500 uppercase block">Motorista</span>{motorista ? motorista.nome : acidente.matriculaMotorista || '-'}</div>
-                    <div><span className="text-[10px] font-bold text-slate-500 uppercase block">Valor Estimado</span>{acidente.valorEstimado.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</div>
-                    <div><span className="text-[10px] font-bold text-slate-500 uppercase block">Local</span>{acidente.local}</div>
+                    <div><span className="text-2xs font-bold text-slate-500 uppercase block">Placa</span>{acidente.placaVeiculo || '-'}</div>
+                    <div><span className="text-2xs font-bold text-slate-500 uppercase block">Motorista</span>{motorista ? motorista.nome : acidente.matriculaMotorista || '-'}</div>
+                    <div><span className="text-2xs font-bold text-slate-500 uppercase block">Valor Estimado</span>{acidente.valorEstimado.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</div>
+                    <div><span className="text-2xs font-bold text-slate-500 uppercase block">Local</span>{acidente.local}</div>
                   </div>
 
                   <div>
-                    <span className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Descricao</span>
+                    <span className="text-2xs font-bold text-slate-500 uppercase block mb-1">Descricao</span>
                     <p className="text-xs text-slate-600 bg-white p-3 rounded-lg border border-gray-200">{acidente.descricao || 'Sem descricao'}</p>
                   </div>
 
@@ -322,13 +324,13 @@ export default function AcidentesScreen({ acidentes, setAcidentes, avarias, moto
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       {acidente.causaAvaria && (
                         <div>
-                          <span className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Causa da Avaria</span>
+                          <span className="text-2xs font-bold text-slate-500 uppercase block mb-1">Causa da Avaria</span>
                           <p className="text-xs text-slate-600 bg-white p-3 rounded-lg border border-gray-200">{acidente.causaAvaria}</p>
                         </div>
                       )}
                       {acidente.acaoTomada && (
                         <div>
-                          <span className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Acao Tomada</span>
+                          <span className="text-2xs font-bold text-slate-500 uppercase block mb-1">Acao Tomada</span>
                           <p className="text-xs text-slate-600 bg-white p-3 rounded-lg border border-gray-200">{acidente.acaoTomada}</p>
                         </div>
                       )}
@@ -338,12 +340,12 @@ export default function AcidentesScreen({ acidentes, setAcidentes, avarias, moto
                   {/* Photos gallery */}
                   {acidente.fotos.length > 0 && (
                     <div>
-                      <span className="text-[10px] font-bold text-slate-500 uppercase block mb-2">Fotos ({acidente.fotos.length})</span>
+                      <span className="text-2xs font-bold text-slate-500 uppercase block mb-2">Fotos ({acidente.fotos.length})</span>
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                         {acidente.fotos.map(foto => (
                           <div key={foto.id} className="border border-gray-200 rounded-lg overflow-hidden bg-white">
                             <img src={foto.url} alt="" className="w-full h-32 object-cover" />
-                            {foto.descricao && <p className="text-[10px] text-slate-500 p-2 border-t border-gray-100">{foto.descricao}</p>}
+                            {foto.descricao && <p className="text-2xs text-slate-500 p-2 border-t border-gray-100">{foto.descricao}</p>}
                           </div>
                         ))}
                       </div>
@@ -352,7 +354,7 @@ export default function AcidentesScreen({ acidentes, setAcidentes, avarias, moto
 
                   {/* Avaria link */}
                   <div>
-                    <span className="text-[10px] font-bold text-slate-500 uppercase block mb-2">Vinculacao com Avaria</span>
+                    <span className="text-2xs font-bold text-slate-500 uppercase block mb-2">Vinculacao com Avaria</span>
                     {avariaVinculada ? (
                       <div className="flex items-center gap-3 bg-white p-3 rounded-lg border border-brand-200">
                         <Link2 size={14} className="text-brand-500" />
@@ -361,7 +363,7 @@ export default function AcidentesScreen({ acidentes, setAcidentes, avarias, moto
                           <span className="text-slate-500 ml-2">{avariaVinculada.data || '-'} - {avariaVinculada.veiculo || '-'} - {(avariaVinculada.descricaoAvaria || '').substring(0, 50)}</span>
                         </div>
                         {isAdmin && (
-                          <button onClick={() => desvincularAvaria(acidente.id)} className="text-[10px] text-red-500 font-bold hover:text-red-700">Desvincular</button>
+                          <button onClick={() => desvincularAvaria(acidente.id)} className="text-2xs text-red-500 font-bold hover:text-red-700">Desvincular</button>
                         )}
                       </div>
                     ) : (
@@ -387,9 +389,9 @@ export default function AcidentesScreen({ acidentes, setAcidentes, avarias, moto
                                   <span className="text-slate-500 truncate flex-1">{(av.descricaoAvaria || '').substring(0, 40)}</span>
                                 </div>
                               ))}
-                              {avariasFiltered.length === 0 && <p className="text-[10px] text-slate-400 text-center py-2">Nenhuma avaria encontrada</p>}
+                              {avariasFiltered.length === 0 && <p className="text-2xs text-slate-400 text-center py-2">Nenhuma avaria encontrada</p>}
                             </div>
-                            <button onClick={() => { setVinculandoId(null); setVinculoSearch(''); }} className="text-[10px] text-slate-400 hover:text-slate-600">Cancelar</button>
+                            <button onClick={() => { setVinculandoId(null); setVinculoSearch(''); }} className="text-2xs text-slate-400 hover:text-slate-600">Cancelar</button>
                           </div>
                         ) : (
                           isAdmin && (

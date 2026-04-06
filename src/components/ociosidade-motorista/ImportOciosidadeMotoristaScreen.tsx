@@ -52,7 +52,7 @@ export default function ImportOciosidadeMotoristaScreen({ ociosidades, setOciosi
     if (!file.name.endsWith('.csv') && !file.name.endsWith('.txt')) {
       setUploadStatus('error');
       setErrorMsg('Formato não suportado. Use .csv ou .txt');
-      setTimeout(() => setUploadStatus('idle'), 3000);
+      setTimeout(() => setUploadStatus('idle'), 8000);
       return;
     }
     const reader = new FileReader();
@@ -63,7 +63,7 @@ export default function ImportOciosidadeMotoristaScreen({ ociosidades, setOciosi
       if (lines.length < 2) {
         setUploadStatus('error');
         setErrorMsg('Arquivo vazio ou inválido.');
-        setTimeout(() => setUploadStatus('idle'), 4000);
+        setTimeout(() => setUploadStatus('idle'), 8000);
         return;
       }
 
@@ -158,8 +158,8 @@ export default function ImportOciosidadeMotoristaScreen({ ociosidades, setOciosi
   };
 
   return (
-    <div className="space-y-6 max-w-3xl mx-auto">
-      <div className="bg-white p-8 rounded-xl border border-gray-200 shadow-sm text-center">
+    <div className="space-y-5 max-w-3xl mx-auto">
+      <div className="bg-white rounded-card border border-gray-200 shadow-card p-8 text-center">
         <h3 className="text-xl font-bold text-slate-800 mb-2">Importar Quilometragem de Veículos</h3>
         <p className="text-sm text-gray-500">
           Arquivo CSV separado por <strong>;</strong> com colunas: <span className="font-semibold text-slate-600">Descrição · Data Inicial · Data Final · Área Final · Área Inicial · Combustível (ml) · Distância (km) · Eficiência · Parado c/ Motor Ligado · Tempo em Movimento · Tempo Total Parado · Total</span>
@@ -167,12 +167,13 @@ export default function ImportOciosidadeMotoristaScreen({ ociosidades, setOciosi
         <p className="text-xs text-emerald-600 mt-2 font-semibold">A importação acumula registros — novos dados são adicionados à base existente.</p>
 
         <div
-          className={`mt-6 border-2 border-dashed rounded-xl p-10 flex flex-col items-center justify-center transition-colors cursor-pointer
-            ${isDragging ? 'border-brand-500 bg-brand-50' : 'border-gray-300 bg-gray-50 hover:bg-gray-100'}`}
+          className={`mt-6 border-2 border-dashed rounded-card p-8 text-center flex flex-col items-center justify-center transition-colors cursor-pointer
+            ${isDragging ? 'border-brand-400' : 'border-gray-300 hover:border-brand-400'}`}
           onDragOver={e => { e.preventDefault(); setIsDragging(true); }}
           onDragLeave={e => { e.preventDefault(); setIsDragging(false); }}
           onDrop={handleDrop}
           onClick={() => fileInputRef.current?.click()}
+          aria-label="Área de upload de quilometragem"
         >
           <input ref={fileInputRef} type="file" accept=".csv,.txt" className="hidden"
             onChange={ev => { const f = ev.target.files?.[0]; if (f) processFile(f); ev.target.value = ''; }} />
@@ -202,12 +203,12 @@ export default function ImportOciosidadeMotoristaScreen({ ociosidades, setOciosi
       </div>
 
       {ociosidades.length > 0 && (
-        <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between">
+        <div className="bg-white rounded-card border border-gray-200 shadow-card p-5 flex items-center justify-between">
           <div>
             <p className="text-sm font-bold text-slate-700">Base Ativa</p>
             <p className="text-xs text-slate-400">{ociosidades.length} registros · {new Set(ociosidades.map(r => r.prefixo)).size} veículos</p>
           </div>
-          <button onClick={handleClear} className="flex items-center gap-2 px-4 py-2 text-xs text-red-500 border border-red-200 rounded-lg hover:bg-red-50">
+          <button onClick={handleClear} className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-button text-xs font-bold transition-colors" aria-label="Limpar base de quilometragem">
             <Trash2 size={14} /> Limpar Base
           </button>
         </div>

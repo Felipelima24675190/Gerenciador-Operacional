@@ -290,8 +290,8 @@ export default function ImportLinesScreen({ viagens, setViagens, userRole }: Imp
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      <div className="bg-white p-8 rounded-xl border border-gray-200 shadow-sm text-center">
+    <div className="max-w-4xl mx-auto space-y-5">
+      <div className="bg-white rounded-card border border-gray-200 shadow-card p-8 text-center">
         <div className="mb-6">
           <h3 className="text-xl font-bold text-slate-800">Importar Base de Linhas</h3>
           <p className="text-sm text-gray-500 mt-2">
@@ -302,12 +302,13 @@ export default function ImportLinesScreen({ viagens, setViagens, userRole }: Imp
         <input ref={fileInputRef} type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleFileChange} />
 
         <div
-          className={`border-2 border-dashed rounded-xl p-10 flex flex-col items-center justify-center transition-colors cursor-pointer
-            ${isDragging ? 'border-brand-red bg-red-50' : 'border-gray-300 bg-gray-50 hover:bg-gray-100'}`}
+          className={`border-2 border-dashed rounded-card p-8 text-center flex flex-col items-center justify-center transition-colors cursor-pointer
+            ${isDragging ? 'border-brand-400' : 'border-gray-300 hover:border-brand-400'}`}
           onDragOver={e => { e.preventDefault(); setIsDragging(true); }}
           onDragLeave={e => { e.preventDefault(); setIsDragging(false); }}
           onDrop={handleDrop}
           onClick={handleClick}
+          aria-label="Área de upload de base de linhas"
         >
           {uploadStatus === 'idle' && (
             <>
@@ -357,10 +358,10 @@ export default function ImportLinesScreen({ viagens, setViagens, userRole }: Imp
       </div>
 
       {viagens.length > 0 && (
-        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+        <div className="bg-white rounded-card border border-gray-200 shadow-card p-6">
           <div className="flex items-center justify-between mb-4">
             <h4 className="text-lg font-bold text-slate-800">Base Atual</h4>
-            <button onClick={handleLimpar} className="flex items-center gap-2 px-4 py-2 bg-white border border-red-500 text-red-600 text-sm font-bold rounded-lg hover:bg-red-50 transition-colors">
+            <button onClick={handleLimpar} className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-button text-xs font-bold transition-colors" aria-label="Limpar base de linhas">
               <Trash2 size={16} /> Limpar Base
             </button>
           </div>
@@ -381,18 +382,18 @@ export default function ImportLinesScreen({ viagens, setViagens, userRole }: Imp
         </div>
       )}
 
-      <div className="bg-blue-50 border border-blue-200 p-6 rounded-xl flex items-start gap-4">
+      <div className="bg-blue-50 border border-blue-200 p-6 rounded-card flex items-start gap-4">
         <FileText className="text-blue-600 h-8 w-8 mt-1 shrink-0" />
         <div>
           <h4 className="font-bold text-blue-800">Formato Esperado — Arquivo .xlsx</h4>
           <p className="text-xs text-blue-700 mt-2">
             Planilha com 9 colunas: <strong>Empresa, Linha, Origem, Destino, Serviço, Horário de Saída, Sentido, Dia Operante, Região</strong>
           </p>
-          <p className="text-[10px] text-blue-500 mt-2">
+          <p className="text-2xs text-blue-500 mt-2">
             Cada linha da planilha representa um serviço em um dia específico. O sistema agrupa automaticamente os dias operantes
             e unifica serviços com mesmo atendimento, sentido e horário de saída (ex: 10201595/10301595).
           </p>
-          <p className="text-[10px] text-blue-500 mt-1">
+          <p className="text-2xs text-blue-500 mt-1">
             A importação substitui toda a base de linhas existente.
           </p>
         </div>

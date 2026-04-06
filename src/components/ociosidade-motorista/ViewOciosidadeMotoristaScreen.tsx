@@ -133,7 +133,7 @@ export default function ViewOciosidadeMotoristaScreen({ ociosidades }: Props) {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       {/* Stale data warning */}
       {isStaleFormat && (
         <div className="bg-amber-50 border border-amber-300 rounded-xl px-4 py-3 text-xs text-amber-800 font-semibold flex items-center gap-2">
@@ -142,20 +142,20 @@ export default function ViewOciosidadeMotoristaScreen({ ociosidades }: Props) {
       )}
 
       {/* Date Filter */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+      <div className="bg-white rounded-card border border-gray-200 p-4 shadow-card">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
           <div>
-            <label className="text-xs font-bold text-slate-500 uppercase block mb-1">Data Início</label>
+            <label htmlFor="ociosidade-data-inicio" className="text-2xs font-bold text-slate-500 uppercase tracking-wide block mb-1">Data Início</label>
             <div className="relative">
               <Calendar className="absolute left-2 top-2.5 text-gray-400" size={14} />
-              <input type="date" value={dataInicio} onChange={e => setDataInicio(e.target.value)} className="w-full pl-8 pr-3 py-2 text-sm border border-gray-300 rounded-lg" />
+              <input id="ociosidade-data-inicio" type="date" value={dataInicio} onChange={e => setDataInicio(e.target.value)} aria-label="Data início do filtro" className="w-full pl-8 pr-3 px-3 py-2 text-xs font-medium border border-gray-200 rounded-button bg-slate-50 focus:ring-2 focus:ring-brand-400 focus:outline-none" />
             </div>
           </div>
           <div>
-            <label className="text-xs font-bold text-slate-500 uppercase block mb-1">Data Fim</label>
+            <label htmlFor="ociosidade-data-fim" className="text-2xs font-bold text-slate-500 uppercase tracking-wide block mb-1">Data Fim</label>
             <div className="relative">
               <Calendar className="absolute left-2 top-2.5 text-gray-400" size={14} />
-              <input type="date" value={dataFim} onChange={e => setDataFim(e.target.value)} className="w-full pl-8 pr-3 py-2 text-sm border border-gray-300 rounded-lg" />
+              <input id="ociosidade-data-fim" type="date" value={dataFim} onChange={e => setDataFim(e.target.value)} aria-label="Data fim do filtro" className="w-full pl-8 pr-3 px-3 py-2 text-xs font-medium border border-gray-200 rounded-button bg-slate-50 focus:ring-2 focus:ring-brand-400 focus:outline-none" />
             </div>
           </div>
           <p className="text-sm text-slate-500 pb-2">{filteredByDate.length} registros no período</p>
@@ -172,8 +172,8 @@ export default function ViewOciosidadeMotoristaScreen({ ociosidades }: Props) {
           { label: 'Combustível Total (L)',       value: kpis.combustivelL.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' L', color: 'text-amber-600' },
           { label: 'Veículos',                   value: kpis.veiculosUnicos.toString(), color: 'text-slate-700' },
         ].map((k, i) => (
-          <div key={i} className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-            <p className="text-[10px] font-bold text-slate-500 uppercase leading-tight">{k.label}</p>
+          <div key={i} className="bg-white rounded-card border border-gray-200 p-4 shadow-card">
+            <p className="text-2xs font-bold text-slate-500 uppercase leading-tight">{k.label}</p>
             <p className={`text-xl font-black mt-1 ${k.color}`}>{k.value}</p>
           </div>
         ))}
@@ -181,8 +181,8 @@ export default function ViewOciosidadeMotoristaScreen({ ociosidades }: Props) {
 
       {/* Charts */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-          <h4 className="text-[10px] font-black text-slate-600 uppercase text-center mb-3">Top 10 — Maior Tempo Ocioso (Motor Ligado)</h4>
+        <div className="bg-white rounded-card border border-gray-200 p-4 shadow-card">
+          <h4 className="text-2xs font-black text-slate-600 uppercase text-center mb-3">Top 10 — Maior Tempo Ocioso (Motor Ligado)</h4>
           <div style={{ height: Math.max(200, topOcioso.length * 30) }}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={topOcioso} layout="vertical" margin={{ left: 5, right: 40 }}>
@@ -197,8 +197,8 @@ export default function ViewOciosidadeMotoristaScreen({ ociosidades }: Props) {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-          <h4 className="text-[10px] font-black text-slate-600 uppercase text-center mb-3">Top 10 — Veículos que Mais Rodaram (KM)</h4>
+        <div className="bg-white rounded-card border border-gray-200 p-4 shadow-card">
+          <h4 className="text-2xs font-black text-slate-600 uppercase text-center mb-3">Top 10 — Veículos que Mais Rodaram (KM)</h4>
           <div style={{ height: Math.max(200, topKm.length * 30) }}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={topKm} layout="vertical" margin={{ left: 5, right: 60 }}>
@@ -215,12 +215,13 @@ export default function ViewOciosidadeMotoristaScreen({ ociosidades }: Props) {
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-card border border-gray-200 shadow-card overflow-hidden">
         <div className="p-4 border-b border-gray-100 flex items-center gap-4 flex-wrap">
           <div className="relative flex-1 min-w-[200px]">
             <Search size={14} className="absolute left-3 top-2.5 text-slate-400" />
-            <input type="text" placeholder="Buscar veículo..." value={search} onChange={e => setSearch(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-400" />
+            <input id="search-ociosidade" type="text" placeholder="Buscar veículo..." value={search} onChange={e => setSearch(e.target.value)}
+              aria-label="Buscar veículo por prefixo"
+              className="w-full pl-9 pr-4 px-3 py-2 text-xs font-medium border border-gray-200 rounded-button bg-slate-50 focus:ring-2 focus:ring-brand-400 focus:outline-none" />
           </div>
           <div className="flex items-center gap-2 text-xs text-slate-500">
             <span className="font-bold">Ordenar:</span>
@@ -231,17 +232,17 @@ export default function ViewOciosidadeMotoristaScreen({ ociosidades }: Props) {
               </button>
             ))}
           </div>
-          <span className="text-[10px] text-slate-400 font-bold">{filtered.length} veículos</span>
+          <span className="text-2xs text-slate-400 font-bold">{filtered.length} veículos</span>
         </div>
         <div className="overflow-y-auto max-h-[500px]">
           <table className="w-full text-xs text-left">
-            <thead className="bg-slate-800 text-white text-[10px] uppercase sticky top-0 z-10">
+            <thead className="bg-slate-800 text-white text-2xs uppercase tracking-wide sticky top-0 z-10">
               <tr>
-                <th className="px-3 py-2">Veículo</th>
-                <th className="px-3 py-2 text-right">Viagens</th>
-                <th className="px-3 py-2 text-right">KM Total</th>
-                <th className="px-3 py-2 text-right">Motor Ligado Parado</th>
-                <th className="px-3 py-2 text-right">Tempo em Movimento</th>
+                <th className="px-3 py-2.5">Veículo</th>
+                <th className="px-3 py-2.5 text-right">Viagens</th>
+                <th className="px-3 py-2.5 text-right">KM Total</th>
+                <th className="px-3 py-2.5 text-right">Motor Ligado Parado</th>
+                <th className="px-3 py-2.5 text-right">Tempo em Movimento</th>
               </tr>
             </thead>
             <tbody>
@@ -249,7 +250,7 @@ export default function ViewOciosidadeMotoristaScreen({ ociosidades }: Props) {
                 <tr><td colSpan={5} className="px-3 py-8 text-center text-slate-400">Nenhum resultado</td></tr>
               )}
               {filtered.map(v => (
-                <tr key={v.prefixo} className="border-b border-gray-50 hover:bg-slate-50 transition-colors">
+                <tr key={v.prefixo} className="hover:bg-slate-50 transition-colors border-b border-gray-100">
                   <td className="px-3 py-2 font-bold font-mono text-brand-700">{v.prefixo}</td>
                   <td className="px-3 py-2 text-right">{v.viagens}</td>
                   <td className="px-3 py-2 text-right font-bold">{fmtKm(v.kmTotal)}</td>

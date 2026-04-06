@@ -316,32 +316,34 @@ export default function ConsultLinesScreen({ viagens, setViagens, userRole }: Co
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white p-4 rounded-xl border shadow-sm">
+        <div className="bg-white p-4 rounded-card border border-gray-200 shadow-card">
           <p className="text-sm text-gray-500">Total de Linhas</p>
           <p className="text-3xl font-bold">{dashboardData.totalLinhas}</p>
         </div>
-        <div className="bg-white p-4 rounded-xl border shadow-sm">
+        <div className="bg-white p-4 rounded-card border border-gray-200 shadow-card">
           <p className="text-sm text-gray-500">Total de Serviços</p>
           <p className="text-3xl font-bold">{dashboardData.totalServicos}</p>
         </div>
-        <div className="bg-white p-4 rounded-xl border shadow-sm">
+        <div className="bg-white p-4 rounded-card border border-gray-200 shadow-card">
           <p className="text-sm text-gray-500">Total de Viagens Programadas</p>
           <p className="text-3xl font-bold">{dashboardData.totalViagens}</p>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+      <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-white p-4 rounded-card border border-gray-200 shadow-card">
         <div className="relative w-full md:w-80">
           <input
+            id="search-linhas"
             type="text"
             placeholder="Buscar por serviço, código, nome, cidade..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50"
+            aria-label="Buscar linhas por serviço, código, nome ou cidade"
+            className="w-full pl-10 pr-4 px-3 py-2 text-xs font-medium border border-gray-200 rounded-button bg-slate-50 focus:ring-2 focus:ring-brand-400 focus:outline-none"
           />
           <Search className="absolute left-3 top-2.5 text-gray-400" size={18} />
         </div>
@@ -350,9 +352,11 @@ export default function ConsultLinesScreen({ viagens, setViagens, userRole }: Co
           <div className="flex items-center gap-2">
             <MapPin size={14} className="text-slate-400" />
             <select
+              id="regiao-filter"
               value={regiaoFilter}
               onChange={e => setRegiaoFilter(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              aria-label="Filtrar por região"
+              className="px-3 py-2 text-xs font-medium border border-gray-200 rounded-button bg-slate-50 focus:ring-2 focus:ring-brand-400 focus:outline-none"
             >
               {regioes.map(r => <option key={r} value={r}>{r}</option>)}
             </select>
@@ -361,9 +365,11 @@ export default function ConsultLinesScreen({ viagens, setViagens, userRole }: Co
           <div className="flex items-center gap-2">
             <Building2 size={14} className="text-slate-400" />
             <select
+              id="empresa-filter"
               value={empresaFilter}
               onChange={e => setEmpresaFilter(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              aria-label="Filtrar por empresa"
+              className="px-3 py-2 text-xs font-medium border border-gray-200 rounded-button bg-slate-50 focus:ring-2 focus:ring-brand-400 focus:outline-none"
             >
               {empresas.map(e => <option key={e} value={e}>{e}</option>)}
             </select>
@@ -395,7 +401,7 @@ export default function ConsultLinesScreen({ viagens, setViagens, userRole }: Co
                     {editingLineId === linha.nomeLinha && isAdmin ? (
                       <div className="flex items-center gap-3 flex-1 max-w-2xl" onClick={e => e.stopPropagation()}>
                         <div className="flex flex-col gap-1 w-24">
-                          <label className="text-[8px] font-bold text-slate-400 uppercase">Cód. Linha</label>
+                          <label className="text-2xs font-bold text-slate-400 uppercase">Cód. Linha</label>
                           <input
                             type="text"
                             value={editLineCode}
@@ -404,7 +410,7 @@ export default function ConsultLinesScreen({ viagens, setViagens, userRole }: Co
                           />
                         </div>
                         <div className="flex flex-col gap-1 flex-1">
-                          <label className="text-[8px] font-bold text-slate-400 uppercase">Nome da Linha</label>
+                          <label className="text-2xs font-bold text-slate-400 uppercase">Nome da Linha</label>
                           <input
                             type="text"
                             value={editLineName}
@@ -424,18 +430,18 @@ export default function ConsultLinesScreen({ viagens, setViagens, userRole }: Co
                     ) : (
                       <div className="flex items-center gap-3 min-w-0 flex-1">
                         {linha.numeroLinha && (
-                          <span className="px-2 py-0.5 bg-slate-800 text-white text-[10px] font-bold font-mono rounded shrink-0" title="Código da Linha">
+                          <span className="px-2 py-0.5 bg-slate-800 text-white text-2xs font-bold font-mono rounded shrink-0" title="Código da Linha">
                             {linha.numeroLinha}
                           </span>
                         )}
                         <span className="font-bold text-slate-800 truncate">{linha.nomeLinha}</span>
                         {linha.regiao && (
-                          <span className="px-2 py-0.5 bg-purple-50 text-purple-700 text-[10px] font-bold rounded-full shrink-0">
+                          <span className="px-2 py-0.5 bg-purple-50 text-purple-700 text-2xs font-bold rounded-full shrink-0">
                             {linha.regiao}
                           </span>
                         )}
                         {linha.empresa && (
-                          <span className="px-2 py-0.5 bg-blue-50 text-blue-700 text-[10px] font-bold rounded-full shrink-0 hidden md:inline">
+                          <span className="px-2 py-0.5 bg-blue-50 text-blue-700 text-2xs font-bold rounded-full shrink-0 hidden md:inline">
                             {linha.empresa}
                           </span>
                         )}
@@ -465,7 +471,7 @@ export default function ConsultLinesScreen({ viagens, setViagens, userRole }: Co
                     {!linha.numeroLinha && isAdmin && (
                       <button
                         onClick={(e) => startEditingLine(linha.nomeLinha, linha.nomeLinha, e)}
-                        className="text-[10px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded hover:bg-amber-100 shrink-0 hidden md:inline"
+                        className="text-2xs font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded hover:bg-amber-100 shrink-0 hidden md:inline"
                       >
                         Atribuir Código
                       </button>
@@ -485,30 +491,30 @@ export default function ConsultLinesScreen({ viagens, setViagens, userRole }: Co
                     {/* Line summary info */}
                     <div className="mb-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-3">
                       <div className="bg-white p-3 rounded-lg border border-gray-100">
-                        <p className="text-[10px] font-bold text-slate-400 uppercase">Código</p>
+                        <p className="text-2xs font-bold text-slate-400 uppercase">Código</p>
                         <p className="text-sm font-bold font-mono text-brand-700">{linha.numeroLinha || '-'}</p>
                       </div>
                       <div className="bg-white p-3 rounded-lg border border-gray-100">
-                        <p className="text-[10px] font-bold text-slate-400 uppercase">Empresa</p>
+                        <p className="text-2xs font-bold text-slate-400 uppercase">Empresa</p>
                         <p className="text-sm font-bold text-slate-700">{linha.empresa || '-'}</p>
                       </div>
                       <div className="bg-white p-3 rounded-lg border border-gray-100">
-                        <p className="text-[10px] font-bold text-slate-400 uppercase">Região</p>
+                        <p className="text-2xs font-bold text-slate-400 uppercase">Região</p>
                         <p className="text-sm font-bold text-slate-700">{linha.regiao || '-'}</p>
                       </div>
                       <div className="bg-white p-3 rounded-lg border border-gray-100">
-                        <p className="text-[10px] font-bold text-slate-400 uppercase">Origem</p>
+                        <p className="text-2xs font-bold text-slate-400 uppercase">Origem</p>
                         <p className="text-sm font-bold text-slate-700">{linha.origem || '-'}</p>
                       </div>
                       <div className="bg-white p-3 rounded-lg border border-gray-100">
-                        <p className="text-[10px] font-bold text-slate-400 uppercase">Destino</p>
+                        <p className="text-2xs font-bold text-slate-400 uppercase">Destino</p>
                         <p className="text-sm font-bold text-slate-700">{linha.destino || '-'}</p>
                       </div>
                       <div className="bg-white p-3 rounded-lg border border-gray-100 md:col-span-2">
-                        <p className="text-[10px] font-bold text-slate-400 uppercase">Serviços ({linha.servicos.length})</p>
+                        <p className="text-2xs font-bold text-slate-400 uppercase">Serviços ({linha.servicos.length})</p>
                         <div className="flex flex-wrap gap-1 mt-1 max-h-32 overflow-y-auto">
                           {linha.servicos.map(s => (
-                            <span key={s} className="px-1.5 py-0.5 bg-slate-100 text-slate-600 text-[10px] font-mono font-bold rounded">
+                            <span key={s} className="px-1.5 py-0.5 bg-slate-100 text-slate-600 text-2xs font-mono font-bold rounded">
                               {s}
                             </span>
                           ))}
@@ -549,7 +555,7 @@ export default function ConsultLinesScreen({ viagens, setViagens, userRole }: Co
                       <div className="mb-4 bg-white border-2 border-emerald-100 rounded-xl p-4 shadow-sm animate-in zoom-in-95 duration-200">
                         <div className="grid grid-cols-2 md:grid-cols-6 gap-4 items-end">
                           <div className="space-y-1">
-                            <label className="text-[10px] font-bold text-slate-400 uppercase">Atendimento</label>
+                            <label className="text-2xs font-bold text-slate-400 uppercase">Atendimento</label>
                             <input
                               type="text"
                               className="w-full px-2 py-1.5 border border-slate-200 rounded text-sm font-semibold focus:ring-1 focus:ring-emerald-500"
@@ -559,7 +565,7 @@ export default function ConsultLinesScreen({ viagens, setViagens, userRole }: Co
                             />
                           </div>
                           <div className="space-y-1">
-                            <label className="text-[10px] font-bold text-slate-400 uppercase">Sentido</label>
+                            <label className="text-2xs font-bold text-slate-400 uppercase">Sentido</label>
                             <select
                               className="w-full px-2 py-1.5 border border-slate-200 rounded text-sm font-semibold"
                               value={newTrip.sentido}
@@ -570,7 +576,7 @@ export default function ConsultLinesScreen({ viagens, setViagens, userRole }: Co
                             </select>
                           </div>
                           <div className="space-y-1">
-                            <label className="text-[10px] font-bold text-slate-400 uppercase">Início</label>
+                            <label className="text-2xs font-bold text-slate-400 uppercase">Início</label>
                             <input
                               type="text"
                               className="w-full px-2 py-1.5 border border-slate-200 rounded text-sm font-semibold"
@@ -580,7 +586,7 @@ export default function ConsultLinesScreen({ viagens, setViagens, userRole }: Co
                             />
                           </div>
                           <div className="space-y-1">
-                            <label className="text-[10px] font-bold text-slate-400 uppercase">Fim</label>
+                            <label className="text-2xs font-bold text-slate-400 uppercase">Fim</label>
                             <input
                               type="text"
                               className="w-full px-2 py-1.5 border border-slate-200 rounded text-sm font-semibold"
@@ -590,7 +596,7 @@ export default function ConsultLinesScreen({ viagens, setViagens, userRole }: Co
                             />
                           </div>
                           <div className="space-y-1">
-                            <label className="text-[10px] font-bold text-slate-400 uppercase">Prev. Início (HH:mm)</label>
+                            <label className="text-2xs font-bold text-slate-400 uppercase">Prev. Início (HH:mm)</label>
                             <input
                               type="time"
                               className="w-full px-2 py-1.5 border border-slate-200 rounded text-sm font-semibold"
@@ -599,7 +605,7 @@ export default function ConsultLinesScreen({ viagens, setViagens, userRole }: Co
                             />
                           </div>
                           <div className="space-y-1">
-                            <label className="text-[10px] font-bold text-slate-400 uppercase">Prev. Fim (HH:mm)</label>
+                            <label className="text-2xs font-bold text-slate-400 uppercase">Prev. Fim (HH:mm)</label>
                             <input
                               type="time"
                               className="w-full px-2 py-1.5 border border-slate-200 rounded text-sm font-semibold"
@@ -632,15 +638,15 @@ export default function ConsultLinesScreen({ viagens, setViagens, userRole }: Co
                           return (
                             <div key={dia.id} className="bg-white rounded-xl border border-gray-200 overflow-hidden flex flex-col min-h-[150px]">
                               <div className="bg-slate-100 p-2 text-center border-b border-gray-200">
-                                <span className="text-[10px] font-black uppercase text-slate-500 tracking-tighter">{dia.full}</span>
+                                <span className="text-2xs font-black uppercase text-slate-500 tracking-tighter">{dia.full}</span>
                               </div>
                               <div className="p-2 flex-1 space-y-1">
                                 {tripsOnDay.length > 0 ? (
                                   tripsOnDay.map(v => (
-                                    <div key={v.id} className="text-[10px] p-1.5 rounded border border-slate-100 bg-slate-50 flex flex-col gap-0.5">
+                                    <div key={v.id} className="text-2xs p-1.5 rounded border border-slate-100 bg-slate-50 flex flex-col gap-0.5">
                                       <div className="flex justify-between items-center">
                                         <span className="font-bold text-slate-700">{v.servico || v.atendimento}</span>
-                                        <span className={`px-1 rounded-[2px] font-black text-[8px] ${v.sentido === 'Ida' ? 'bg-blue-50 text-blue-600' : 'bg-orange-50 text-orange-600'}`}>
+                                        <span className={`px-1 rounded-[2px] font-black text-2xs ${v.sentido === 'Ida' ? 'bg-blue-50 text-blue-600' : 'bg-orange-50 text-orange-600'}`}>
                                           {v.sentido === 'Ida' ? 'I' : 'V'}
                                         </span>
                                       </div>
@@ -648,7 +654,7 @@ export default function ConsultLinesScreen({ viagens, setViagens, userRole }: Co
                                     </div>
                                   ))
                                 ) : (
-                                  <div className="h-full flex items-center justify-center italic text-[10px] text-slate-400">
+                                  <div className="h-full flex items-center justify-center italic text-2xs text-slate-400">
                                     Não opera
                                   </div>
                                 )}
@@ -685,12 +691,12 @@ export default function ConsultLinesScreen({ viagens, setViagens, userRole }: Co
                               style={{ borderLeft: (isAdmin && viagem.grupoCor) ? `4px solid ${viagem.grupoCor}` : '1px solid #e5e7eb' }}
                             >
                               <div className="flex justify-center text-gray-400 group-hover:text-blue-500">
-                                {isAdmin && !isEditing ? <GripVertical size={16} /> : <span className="text-[10px] font-bold">{viagem.ordem}</span>}
+                                {isAdmin && !isEditing ? <GripVertical size={16} /> : <span className="text-2xs font-bold">{viagem.ordem}</span>}
                               </div>
                               <div className="font-mono text-xs text-slate-600 font-bold truncate" title={viagem.servico}>{viagem.servico || '-'}</div>
                               <div className="font-medium text-slate-700 truncate text-xs" title={viagem.atendimento}>{viagem.atendimento}</div>
                               <div>
-                                <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${viagem.sentido === 'Ida' ? 'bg-blue-100 text-blue-700' : 'bg-orange-100 text-orange-700'}`}>
+                                <span className={`px-2 py-0.5 rounded text-2xs font-bold ${viagem.sentido === 'Ida' ? 'bg-blue-100 text-blue-700' : 'bg-orange-100 text-orange-700'}`}>
                                   {viagem.sentido}
                                 </span>
                               </div>
@@ -735,7 +741,7 @@ export default function ConsultLinesScreen({ viagens, setViagens, userRole }: Co
                                         e.stopPropagation();
                                         toggleOperatingDay(viagem.id, dia.id);
                                       }}
-                                      className={`w-4 h-4 flex items-center justify-center rounded-[2px] text-[8px] font-bold transition-colors ${
+                                      className={`w-4 h-4 flex items-center justify-center rounded-[2px] text-2xs font-bold transition-colors ${
                                         (viagem.diasOperantes || [0,1,2,3,4,5,6]).includes(dia.id)
                                           ? 'bg-emerald-500 text-white'
                                           : 'bg-slate-200 text-slate-400'
@@ -746,7 +752,7 @@ export default function ConsultLinesScreen({ viagens, setViagens, userRole }: Co
                                     </button>
                                   ))
                                 ) : (
-                                  <span className="text-[10px] text-slate-500">{diasLabel(viagem.diasOperantes || [0,1,2,3,4,5,6])}</span>
+                                  <span className="text-2xs text-slate-500">{diasLabel(viagem.diasOperantes || [0,1,2,3,4,5,6])}</span>
                                 )}
                               </div>
                             </div>
@@ -754,30 +760,30 @@ export default function ConsultLinesScreen({ viagens, setViagens, userRole }: Co
                             {isEditing && (
                               <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-1 grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
                                 <div>
-                                  <label className="text-[10px] font-bold text-slate-600 uppercase block mb-1">Serviço</label>
+                                  <label className="text-2xs font-bold text-slate-600 uppercase block mb-1">Serviço</label>
                                   <input value={editViagemData.servico || ''} onChange={e => setEditViagemData(p => ({ ...p, servico: e.target.value }))} className="w-full p-1.5 border border-gray-200 rounded text-xs" />
                                 </div>
                                 <div>
-                                  <label className="text-[10px] font-bold text-slate-600 uppercase block mb-1">Atendimento</label>
+                                  <label className="text-2xs font-bold text-slate-600 uppercase block mb-1">Atendimento</label>
                                   <input value={editViagemData.atendimento || ''} onChange={e => setEditViagemData(p => ({ ...p, atendimento: e.target.value }))} className="w-full p-1.5 border border-gray-200 rounded text-xs" />
                                 </div>
                                 <div>
-                                  <label className="text-[10px] font-bold text-slate-600 uppercase block mb-1">Sentido</label>
+                                  <label className="text-2xs font-bold text-slate-600 uppercase block mb-1">Sentido</label>
                                   <select value={editViagemData.sentido || 'Ida'} onChange={e => setEditViagemData(p => ({ ...p, sentido: e.target.value }))} className="w-full p-1.5 border border-gray-200 rounded text-xs">
                                     <option value="Ida">Ida</option>
                                     <option value="Volta">Volta</option>
                                   </select>
                                 </div>
                                 <div>
-                                  <label className="text-[10px] font-bold text-slate-600 uppercase block mb-1">Hora Saída</label>
+                                  <label className="text-2xs font-bold text-slate-600 uppercase block mb-1">Hora Saída</label>
                                   <input type="time" value={editViagemData.horarioSaida || ''} onChange={e => setEditViagemData(p => ({ ...p, horarioSaida: e.target.value }))} className="w-full p-1.5 border border-gray-200 rounded text-xs" />
                                 </div>
                                 <div>
-                                  <label className="text-[10px] font-bold text-slate-600 uppercase block mb-1">Ponto Início (Origem)</label>
+                                  <label className="text-2xs font-bold text-slate-600 uppercase block mb-1">Ponto Início (Origem)</label>
                                   <input value={editViagemData.pontoInicio || ''} onChange={e => setEditViagemData(p => ({ ...p, pontoInicio: e.target.value }))} className="w-full p-1.5 border border-gray-200 rounded text-xs" />
                                 </div>
                                 <div>
-                                  <label className="text-[10px] font-bold text-slate-600 uppercase block mb-1">Ponto Fim (Destino)</label>
+                                  <label className="text-2xs font-bold text-slate-600 uppercase block mb-1">Ponto Fim (Destino)</label>
                                   <input value={editViagemData.pontoFim || ''} onChange={e => setEditViagemData(p => ({ ...p, pontoFim: e.target.value }))} className="w-full p-1.5 border border-gray-200 rounded text-xs" />
                                 </div>
                                 <div className="flex items-end gap-2 col-span-2">

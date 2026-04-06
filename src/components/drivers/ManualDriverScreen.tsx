@@ -29,13 +29,13 @@ export default function ManualDriverScreen({ setMotoristas }: ManualDriverScreen
         status: 'ATIVO - EM OPERAÇÃO'
       });
       setShowSuccess(true);
-      setTimeout(() => setShowSuccess(false), 3000);
+      setTimeout(() => setShowSuccess(false), 8000);
     }
   };
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
-      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+    <div className="max-w-2xl mx-auto space-y-5">
+      <div className="bg-white rounded-card border border-gray-200 shadow-card overflow-hidden">
         <div className="bg-blue-900 p-6 text-white">
           <div className="flex items-center gap-3">
             <UserPlus size={24} className="text-red-500" />
@@ -49,55 +49,65 @@ export default function ManualDriverScreen({ setMotoristas }: ManualDriverScreen
         <form onSubmit={handleSubmit} className="p-8 space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <label className="text-xs font-black text-slate-400 uppercase tracking-wider">Matrícula</label>
-              <input 
+              <label htmlFor="driver-matricula" className="text-xs font-black text-slate-400 uppercase tracking-wider">Matrícula</label>
+              <input
+                id="driver-matricula"
                 required
-                type="text" 
+                type="text"
                 value={formData.matricula}
                 onChange={e => setFormData({...formData, matricula: e.target.value})}
                 className="w-full px-4 py-2.5 bg-slate-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-400 outline-none transition-all font-bold text-slate-700"
                 placeholder="Ex: 26646"
+                aria-label="Matrícula do motorista"
               />
             </div>
             <div className="space-y-2">
-              <label className="text-xs font-black text-slate-400 uppercase tracking-wider">Nome Completo</label>
-              <input 
+              <label htmlFor="driver-nome" className="text-xs font-black text-slate-400 uppercase tracking-wider">Nome Completo</label>
+              <input
+                id="driver-nome"
                 required
-                type="text" 
+                type="text"
                 value={formData.nome}
                 onChange={e => setFormData({...formData, nome: e.target.value})}
                 className="w-full px-4 py-2.5 bg-slate-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-400 outline-none transition-all font-bold text-slate-700"
                 placeholder="Ex: João da Silva"
+                aria-label="Nome completo do motorista"
               />
             </div>
             <div className="space-y-2">
-              <label className="text-xs font-black text-slate-400 uppercase tracking-wider">Filial</label>
-              <input 
+              <label htmlFor="driver-filial" className="text-xs font-black text-slate-400 uppercase tracking-wider">Filial</label>
+              <input
+                id="driver-filial"
                 required
-                type="text" 
+                type="text"
                 value={formData.filial}
                 onChange={e => setFormData({...formData, filial: e.target.value})}
                 className="w-full px-4 py-2.5 bg-slate-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-400 outline-none transition-all font-bold text-slate-700"
                 placeholder="Ex: CARUARU"
+                aria-label="Filial do motorista"
               />
             </div>
             <div className="space-y-2">
-              <label className="text-xs font-black text-slate-400 uppercase tracking-wider">Área</label>
-              <input 
+              <label htmlFor="driver-area" className="text-xs font-black text-slate-400 uppercase tracking-wider">Área</label>
+              <input
+                id="driver-area"
                 required
-                type="text" 
+                type="text"
                 value={formData.area}
                 onChange={e => setFormData({...formData, area: e.target.value})}
                 className="w-full px-4 py-2.5 bg-slate-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-400 outline-none transition-all font-bold text-slate-700"
                 placeholder="Ex: Manutenção"
+                aria-label="Área do motorista"
               />
             </div>
             <div className="md:col-span-2 space-y-2">
-              <label className="text-xs font-black text-slate-400 uppercase tracking-wider">Status Atual</label>
-              <select 
+              <label htmlFor="driver-status" className="text-xs font-black text-slate-400 uppercase tracking-wider">Status Atual</label>
+              <select
+                id="driver-status"
                 value={formData.status}
                 onChange={e => setFormData({...formData, status: e.target.value as StatusMotorista})}
                 className="w-full px-4 py-2.5 bg-slate-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-400 outline-none transition-all font-bold text-slate-700"
+                aria-label="Status do motorista"
               >
                 <option value="ATIVO - EM OPERAÇÃO">ATIVO - EM OPERAÇÃO</option>
                 <option value="DESLIGADO">DESLIGADO</option>
@@ -115,16 +125,18 @@ export default function ManualDriverScreen({ setMotoristas }: ManualDriverScreen
             ) : <div />}
             
             <div className="flex gap-3">
-              <button 
+              <button
                 type="button"
                 onClick={() => setFormData({ matricula: '', nome: '', filial: '', area: 'Operação', status: 'ATIVO - EM OPERAÇÃO' })}
-                className="px-6 py-2.5 rounded-xl border border-gray-200 text-gray-500 font-bold hover:bg-gray-50 transition-colors flex items-center gap-2"
+                className="px-6 py-2.5 rounded-button border border-gray-200 text-gray-500 font-bold hover:bg-gray-50 transition-colors flex items-center gap-2 text-xs"
+                aria-label="Limpar formulário"
               >
                 <X size={18} /> Limpar
               </button>
-              <button 
+              <button
                 type="submit"
-                className="px-8 py-2.5 rounded-xl bg-brand-500 text-white font-bold hover:bg-brand-600 shadow-lg shadow-brand-200 transition-all flex items-center gap-2"
+                className="bg-brand-600 hover:bg-brand-700 text-white px-4 py-2 rounded-button text-xs font-bold flex items-center gap-2 transition-colors"
+                aria-label="Salvar motorista"
               >
                 <Save size={18} /> Salvar Motorista
               </button>

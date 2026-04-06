@@ -36,8 +36,8 @@ export default function UserManagementScreen({ users, setUsers }: UserManagement
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      <div className="flex justify-between items-center bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
+    <div className="max-w-4xl mx-auto space-y-5">
+      <div className="flex justify-between items-center bg-white p-6 rounded-card border border-gray-200 shadow-card">
         <div className="flex items-center gap-3">
           <div className="p-3 bg-blue-100 text-blue-600 rounded-xl">
             <Users size={24} />
@@ -60,53 +60,63 @@ export default function UserManagementScreen({ users, setUsers }: UserManagement
         <div className="bg-white p-8 rounded-2xl border-2 border-blue-100 shadow-xl animate-in zoom-in-95 duration-200">
           <form onSubmit={handleAddUser} className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Nome do Funcionário</label>
-              <input 
+              <label htmlFor="user-nome" className="text-2xs font-black text-slate-400 uppercase tracking-widest">Nome do Funcionário</label>
+              <input
+                id="user-nome"
                 required
-                type="text" 
+                type="text"
                 value={newUser.nome}
                 onChange={e => setNewUser({...newUser, nome: e.target.value})}
+                aria-label="Nome do funcionário"
                 className="w-full px-4 py-2.5 bg-slate-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all font-bold"
                 placeholder="Ex: Pedro Alvares"
               />
             </div>
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Login / Username</label>
-              <input 
+              <label htmlFor="user-username" className="text-2xs font-black text-slate-400 uppercase tracking-widest">Login / Username</label>
+              <input
+                id="user-username"
                 required
-                type="text" 
+                type="text"
                 value={newUser.username}
                 onChange={e => setNewUser({...newUser, username: e.target.value})}
+                aria-label="Login ou username"
                 className="w-full px-4 py-2.5 bg-slate-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all font-bold"
                 placeholder="Ex: pedro.alvares"
               />
             </div>
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Título / Cargo</label>
-              <input 
-                type="text" 
+              <label htmlFor="user-titulo" className="text-2xs font-black text-slate-400 uppercase tracking-widest">Título / Cargo</label>
+              <input
+                id="user-titulo"
+                type="text"
                 value={newUser.titulo}
                 onChange={e => setNewUser({...newUser, titulo: e.target.value})}
+                aria-label="Título ou cargo do usuário"
                 className="w-full px-4 py-2.5 bg-slate-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all font-bold"
                 placeholder="Ex: Supervisor de Frota"
               />
             </div>
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Senha de Acesso</label>
-              <input 
+              <label htmlFor="user-password" className="text-2xs font-black text-slate-400 uppercase tracking-widest">Senha de Acesso</label>
+              <input
+                id="user-password"
                 required
-                type="password" 
+                type="password"
                 value={newUser.password}
                 onChange={e => setNewUser({...newUser, password: e.target.value})}
+                aria-label="Senha de acesso"
                 className="w-full px-4 py-2.5 bg-slate-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all font-bold"
                 placeholder="••••••••"
               />
             </div>
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Nível de Acesso</label>
-              <select 
+              <label htmlFor="user-role" className="text-2xs font-black text-slate-400 uppercase tracking-widest">Nível de Acesso</label>
+              <select
+                id="user-role"
                 value={newUser.role}
                 onChange={e => setNewUser({...newUser, role: e.target.value as UserRole})}
+                aria-label="Nível de acesso do usuário"
                 className="w-full px-4 py-2.5 bg-slate-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all font-bold"
               >
                 <option value="viewer">Visualizador (Filtros e Relatórios)</option>
@@ -122,19 +132,19 @@ export default function UserManagementScreen({ users, setUsers }: UserManagement
         </div>
       )}
 
-      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-card border border-gray-200 shadow-card overflow-hidden">
         <table className="w-full text-left">
           <thead>
-            <tr className="bg-slate-50 border-b border-gray-100 text-[10px] font-black text-slate-400 uppercase tracking-widest">
-              <th className="px-6 py-4">Usuário</th>
-              <th className="px-6 py-4">Acesso</th>
-              <th className="px-6 py-4">Status</th>
-              <th className="px-6 py-4 text-right">Ações</th>
+            <tr className="bg-slate-800 text-white text-2xs uppercase tracking-wide">
+              <th className="px-6 py-2.5">Usuário</th>
+              <th className="px-6 py-2.5">Acesso</th>
+              <th className="px-6 py-2.5">Status</th>
+              <th className="px-6 py-2.5 text-right">Ações</th>
             </tr>
           </thead>
           <tbody>
             {users.map(u => (
-              <tr key={u.id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/50 transition-colors">
+              <tr key={u.id} className="hover:bg-slate-50 transition-colors border-b border-gray-100 last:border-0">
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center text-slate-500">
@@ -153,12 +163,13 @@ export default function UserManagementScreen({ users, setUsers }: UserManagement
                   </span>
                 </td>
                 <td className="px-6 py-4">
-                  <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-[10px] font-black rounded uppercase">Ativo</span>
+                  <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-2xs font-black rounded-card uppercase">Ativo</span>
                 </td>
                 <td className="px-6 py-4 text-right">
-                  <button 
+                  <button
                     disabled={u.username === 'admin'}
                     onClick={() => deleteUser(u.id)}
+                    aria-label={`Excluir usuário ${u.nome}`}
                     className="p-2 text-slate-300 hover:text-red-500 transition-colors disabled:opacity-0"
                   >
                     <Trash2 size={18} />

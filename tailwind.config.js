@@ -9,6 +9,9 @@ export default {
       fontFamily: {
         sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
       },
+      fontSize: {
+        '2xs': ['0.6875rem', { lineHeight: '1rem' }],   // 11px — minimum legible
+      },
       colors: {
         brand: {
           50:  '#e8f1fb',
@@ -23,15 +26,66 @@ export default {
           900: '#051e38',
           950: '#031225',
         },
+        // Semantic surface tokens
+        surface: {
+          DEFAULT: '#f8fafc',     // main bg
+          card: '#ffffff',
+          raised: '#f1f5f9',      // slate-100
+          overlay: '#0f172a',     // slate-900
+        },
+        // Semantic status tokens
+        status: {
+          success: '#059669',     // emerald-600
+          warning: '#d97706',     // amber-600
+          danger: '#dc2626',      // red-600
+          info: '#2563eb',        // blue-600
+        },
       },
       borderRadius: {
-        'card': '1rem',
-        'button': '0.75rem',
+        'card': '0.75rem',        // 12px — unified card radius
+        'button': '0.5rem',       // 8px
       },
       boxShadow: {
-        'card': '0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04)',
-        'card-hover': '0 4px 12px rgba(0,0,0,0.08)',
-        'button': '0 1px 3px rgba(14,79,143,0.2)',
+        'card': '0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03)',
+        'card-hover': '0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04)',
+        'card-active': '0 0 0 2px rgba(61,127,210,0.3)',
+        'sidebar': '4px 0 16px rgba(0,0,0,0.12)',
+        'dropdown': '0 8px 24px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06)',
+        'button': '0 1px 3px rgba(14,79,143,0.15)',
+        'inner-top': 'inset 0 8px 6px -6px rgba(0,0,0,0.06)',
+        'inner-bottom': 'inset 0 -8px 6px -6px rgba(0,0,0,0.06)',
+      },
+      animation: {
+        'fade-in': 'fadeIn 0.3s ease-out',
+        'slide-up': 'slideUp 0.35s ease-out',
+        'slide-down': 'slideDown 0.2s ease-out',
+        'pulse-soft': 'pulseSoft 2s ease-in-out infinite',
+        'skeleton': 'skeleton 1.5s ease-in-out infinite',
+      },
+      keyframes: {
+        fadeIn: {
+          from: { opacity: '0' },
+          to: { opacity: '1' },
+        },
+        slideUp: {
+          from: { opacity: '0', transform: 'translateY(8px)' },
+          to: { opacity: '1', transform: 'translateY(0)' },
+        },
+        slideDown: {
+          from: { opacity: '0', maxHeight: '0', transform: 'translateY(-4px)' },
+          to: { opacity: '1', maxHeight: '500px', transform: 'translateY(0)' },
+        },
+        pulseSoft: {
+          '0%, 100%': { opacity: '1' },
+          '50%': { opacity: '0.6' },
+        },
+        skeleton: {
+          '0%': { backgroundPosition: '-200% 0' },
+          '100%': { backgroundPosition: '200% 0' },
+        },
+      },
+      transitionDuration: {
+        DEFAULT: '150ms',
       },
     },
   },

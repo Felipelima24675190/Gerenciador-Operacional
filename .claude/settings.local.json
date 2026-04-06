@@ -26,7 +26,11 @@
       "Bash(find 'C:\\\\Users\\\\luis.lima\\\\Downloads\\\\App Atrasos' -type f -iname *import* -iname *traffic* -o -type f -iname *import* -iname *transito* -o -type f -iname *import* -iname *multa*)",
       "Bash(xxd \"/c/Users/luis.lima/Downloads/App Atrasos/Modelo/Quilometragem/Total Operacional e Ocioso Por veiculo.csv\")",
       "Bash(xxd \"/c/Users/luis.lima/Downloads/App Atrasos/Modelo/Monitriip/09-11-2025.csv\")",
-      "Bash(find 'C:\\\\Users\\\\luis.lima\\\\Downloads\\\\App Atrasos\\\\src' -type f \\\\\\(-name *[Qq]uilometragem* -o -name *[Oo]cioso* \\\\\\))"
+      "Bash(find 'C:\\\\Users\\\\luis.lima\\\\Downloads\\\\App Atrasos\\\\src' -type f \\\\\\(-name *[Qq]uilometragem* -o -name *[Oo]cioso* \\\\\\))",
+      "Bash(for f:*)",
+      "Bash(do echo:*)",
+      "Read(//c/Users/luis.lima/Downloads/App Atrasos/**)",
+      "Bash(done)"
     ]
   }
 }

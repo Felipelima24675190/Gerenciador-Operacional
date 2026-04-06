@@ -42,7 +42,7 @@ export default function ImportOccurrencesScreen({ ocorrencias, setOcorrencias, m
   const processFile = (file: File) => {
     if (!file.name.endsWith('.txt') && !file.name.endsWith('.csv')) {
       setUploadStatus('error');
-      setTimeout(() => setUploadStatus('idle'), 3000);
+      setTimeout(() => setUploadStatus('idle'), 8000);
       return;
     }
 
@@ -166,8 +166,8 @@ export default function ImportOccurrencesScreen({ ocorrencias, setOcorrencias, m
   };
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto">
-      <div className="bg-white p-8 rounded-xl border border-gray-200 shadow-sm text-center">
+    <div className="space-y-5 max-w-4xl mx-auto">
+      <div className="bg-white rounded-card border border-gray-200 shadow-card p-8 text-center">
         <div className="mb-6">
           <h3 className="text-xl font-bold text-slate-800">Importar Ocorrências Diárias</h3>
           <p className="text-sm text-gray-500 mt-2">
@@ -185,12 +185,13 @@ export default function ImportOccurrencesScreen({ ocorrencias, setOcorrencias, m
         />
 
         <div
-          className={`border-2 border-dashed rounded-xl p-10 flex flex-col items-center justify-center transition-colors cursor-pointer
-            ${isDragging ? 'border-brand-red bg-red-50' : 'border-gray-300 bg-gray-50 hover:bg-gray-100'}`}
+          className={`border-2 border-dashed rounded-card p-8 text-center flex flex-col items-center justify-center transition-colors cursor-pointer
+            ${isDragging ? 'border-brand-400' : 'border-gray-300 hover:border-brand-400'}`}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
           onClick={handleClick}
+          aria-label="Área de upload de arquivo"
         >
           {uploadStatus === 'idle' && (
             <>
@@ -278,12 +279,13 @@ export default function ImportOccurrencesScreen({ ocorrencias, setOcorrencias, m
       </div>
 
       {ocorrencias.length > 0 && (
-        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+        <div className="bg-white rounded-card border border-gray-200 shadow-card p-6">
           <div className="flex items-center justify-between mb-4">
             <h4 className="text-lg font-bold text-slate-800">Dados Atuais</h4>
             <button
               onClick={handleLimparTodos}
-              className="flex items-center gap-2 px-4 py-2 bg-white border border-red-500 text-red-600 text-sm font-bold rounded-lg hover:bg-red-50 transition-colors"
+              className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-button text-xs font-bold transition-colors"
+              aria-label="Limpar todas as ocorrências"
             >
               <Trash2 size={16} />
               Limpar Ocorrências
