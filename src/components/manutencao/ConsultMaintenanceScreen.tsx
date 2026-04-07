@@ -191,42 +191,19 @@ export default function ConsultMaintenanceScreen({ manutencoes, historicoManuten
   return (
     <div className="space-y-5">
       {/* KPIs */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-        <div className="bg-white rounded-card border border-gray-200 p-5 shadow-card flex items-center gap-4">
-          <div className="p-3 bg-blue-50 rounded-xl text-blue-600"><Bus size={24} /></div>
-          <div>
-            <p className="text-2xs font-bold text-slate-500 uppercase">Veículos Totais</p>
-            <p className="text-3xl font-black text-slate-800">{kpis.totalVeiculos}</p>
+      <div className="bg-slate-800 p-4 flex gap-3 overflow-x-auto rounded-xl">
+        {[
+          { l: 'Veículos Totais', v: kpis.totalVeiculos },
+          { l: 'Veículos Disponíveis', v: kpis.disponiveis },
+          { l: 'Na Oficina Agora', v: kpis.naOficina },
+          { l: 'Total Histórico', v: kpis.totalHistorico },
+          { l: 'Tempo Médio na Oficina', v: `${Math.floor(kpis.avgTempo / 24)}d ${kpis.avgTempo % 24}h` },
+        ].map((k, i) => (
+          <div key={i} className="bg-slate-700 rounded-lg p-3 text-center min-w-[120px] flex-1">
+            <p className="text-2xs font-bold text-slate-400 uppercase tracking-wide">{k.l}</p>
+            <p className="text-lg font-black text-white mt-0.5">{k.v}</p>
           </div>
-        </div>
-        <div className="bg-white rounded-card border border-gray-200 p-5 shadow-card flex items-center gap-4">
-          <div className="p-3 bg-green-50 rounded-xl text-green-600"><CheckCircle size={24} /></div>
-          <div>
-            <p className="text-2xs font-bold text-slate-500 uppercase">Veículos Disponíveis</p>
-            <p className="text-3xl font-black text-slate-800">{kpis.disponiveis}</p>
-          </div>
-        </div>
-        <div className="bg-white rounded-card border border-gray-200 p-5 shadow-card flex items-center gap-4">
-          <div className="p-3 bg-brand-50 rounded-xl text-brand-600"><Wrench size={24} /></div>
-          <div>
-            <p className="text-2xs font-bold text-slate-500 uppercase">Na Oficina Agora</p>
-            <p className="text-3xl font-black text-slate-800">{kpis.naOficina}</p>
-          </div>
-        </div>
-        <div className="bg-white rounded-card border border-gray-200 p-5 shadow-card flex items-center gap-4">
-          <div className="p-3 bg-amber-50 rounded-xl text-amber-600"><TrendingUp size={24} /></div>
-          <div>
-            <p className="text-2xs font-bold text-slate-500 uppercase">Total Historico</p>
-            <p className="text-3xl font-black text-slate-800">{kpis.totalHistorico}</p>
-          </div>
-        </div>
-        <div className="bg-white rounded-card border border-gray-200 p-5 shadow-card flex items-center gap-4">
-          <div className="p-3 bg-emerald-50 rounded-xl text-emerald-600"><Clock size={24} /></div>
-          <div>
-            <p className="text-2xs font-bold text-slate-500 uppercase">Tempo Médio na Oficina</p>
-            <p className="text-3xl font-black text-slate-800">{Math.floor(kpis.avgTempo / 24)}d {kpis.avgTempo % 24}h</p>
-          </div>
-        </div>
+        ))}
       </div>
 
       {/* Charts */}

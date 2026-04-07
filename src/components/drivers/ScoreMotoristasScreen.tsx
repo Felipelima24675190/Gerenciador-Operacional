@@ -511,31 +511,31 @@ export default function ScoreMotoristasScreen({
       {/* Table */}
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
         <div className="overflow-x-auto overflow-y-auto max-h-[500px]">
-          <table className="w-full text-xs text-left table-fixed">
+          <table className="w-full text-xs text-left">
             <thead className="bg-slate-800 text-white text-2xs uppercase tracking-wide sticky top-0 z-10">
               <tr>
-                <th className="px-3 py-2.5 w-[36px]">#</th>
-                <th className="px-2 py-2.5 cursor-pointer hover:text-brand-300" onClick={() => toggleSort('nome')}>
+                <th className="px-3 py-2.5 whitespace-nowrap">#</th>
+                <th className="px-3 py-2.5 cursor-pointer hover:text-brand-300 whitespace-nowrap" onClick={() => toggleSort('nome')}>
                   Motorista <SortIcon field="nome" />
                 </th>
-                <th className="px-2 py-2.5 w-[72px]">Matrícula</th>
-                <th className="px-2 py-2.5 w-[90px]">Filial</th>
-                <th className="px-2 py-2.5 text-center w-[56px] cursor-pointer hover:text-brand-300" onClick={() => toggleSort('score')}>
+                <th className="px-3 py-2.5 whitespace-nowrap">Matrícula</th>
+                <th className="px-3 py-2.5 whitespace-nowrap">Filial</th>
+                <th className="px-3 py-2.5 text-center whitespace-nowrap cursor-pointer hover:text-brand-300" onClick={() => toggleSort('score')}>
                   Score <SortIcon field="score" />
                 </th>
-                <th className="px-2 py-2.5 text-center w-[72px]">Faixa</th>
-                <th className="px-2 py-2.5 text-center w-[52px] cursor-pointer hover:text-amber-300" onClick={() => toggleSort('faltas')}>
+                <th className="px-3 py-2.5 text-center whitespace-nowrap">Faixa</th>
+                <th className="px-3 py-2.5 text-center whitespace-nowrap cursor-pointer hover:text-amber-300" onClick={() => toggleSort('faltas')}>
                   Faltas <SortIcon field="faltas" />
                 </th>
-                <th className="px-2 py-2.5 text-center w-[60px] cursor-pointer hover:text-amber-300" onClick={() => toggleSort('excessos')}>
+                <th className="px-3 py-2.5 text-center whitespace-nowrap cursor-pointer hover:text-amber-300" onClick={() => toggleSort('excessos')}>
                   Excessos <SortIcon field="excessos" />
                 </th>
-                <th className="px-2 py-2.5 text-center w-[56px] cursor-pointer hover:text-amber-300" onClick={() => toggleSort('atrasos')}>
+                <th className="px-3 py-2.5 text-center whitespace-nowrap cursor-pointer hover:text-amber-300" onClick={() => toggleSort('atrasos')}>
                   Atrasos <SortIcon field="atrasos" />
                 </th>
-                <th className="px-2 py-2.5 text-center w-[56px]">Avarias</th>
-                <th className="px-2 py-2.5 text-center w-[64px]">Acidentes</th>
-                <th className="px-2 py-2.5 text-center w-[68px]">Deduções</th>
+                <th className="px-3 py-2.5 text-center whitespace-nowrap">Avarias</th>
+                <th className="px-3 py-2.5 text-center whitespace-nowrap">Acidentes</th>
+                <th className="px-3 py-2.5 text-center whitespace-nowrap">Deduções</th>
               </tr>
             </thead>
             <tbody>

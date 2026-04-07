@@ -160,23 +160,21 @@ export default function ViewSpeedScreen({ excessos, motoristas }: ViewSpeedScree
       </div>
 
       {/* KPIs + Speedometer */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="md:col-span-3 bg-slate-800 p-4 flex gap-3 overflow-x-auto rounded-xl">
-          {[
-            { l: 'Total de Ocorrências', v: kpis.totalOcorrencias },
-            { l: 'Motoristas Envolvidos', v: kpis.motoristasEnvolvidos },
-            { l: 'Tempo Total em Excesso', v: kpis.tempoTotalStr },
-          ].map((k, i) => (
-            <div key={i} className="bg-slate-700 rounded-lg p-3 text-center min-w-[120px] flex-1">
-              <p className="text-2xs font-bold text-slate-400 uppercase tracking-wide">{k.l}</p>
-              <p className="text-lg font-black text-white mt-0.5">{k.v}</p>
-            </div>
-          ))}
-        </div>
-        {/* Speedometer */}
-        <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm flex flex-col items-center">
-          <p className="text-2xs font-black text-slate-600 uppercase tracking-wide mb-1">Velocidade Média</p>
-          <svg viewBox="0 0 200 120" width="100%" style={{ maxWidth: 180 }}>
+      <div className="bg-slate-800 p-4 flex gap-3 overflow-x-auto rounded-xl items-center">
+        {[
+          { l: 'Total de Ocorrências', v: kpis.totalOcorrencias },
+          { l: 'Motoristas Envolvidos', v: kpis.motoristasEnvolvidos },
+          { l: 'Tempo Total em Excesso', v: kpis.tempoTotalStr },
+        ].map((k, i) => (
+          <div key={i} className="bg-slate-700 rounded-lg p-3 text-center min-w-[120px] flex-1">
+            <p className="text-2xs font-bold text-slate-400 uppercase tracking-wide">{k.l}</p>
+            <p className="text-lg font-black text-white mt-0.5">{k.v}</p>
+          </div>
+        ))}
+        {/* Speedometer inline */}
+        <div className="bg-slate-700 rounded-lg p-3 flex flex-col items-center min-w-[140px]">
+          <p className="text-2xs font-bold text-slate-400 uppercase tracking-wide mb-1">Vel. Média</p>
+          <svg viewBox="0 0 200 120" width="120">
             <path d="M 20 100 A 80 80 0 0 1 100 20" fill="none" stroke="#059669" strokeWidth="16" strokeLinecap="round" />
             <path d="M 100 20 A 80 80 0 0 1 145 35" fill="none" stroke="#f59e0b" strokeWidth="16" strokeLinecap="round" />
             <path d="M 145 35 A 80 80 0 0 1 180 100" fill="none" stroke="#dc2626" strokeWidth="16" strokeLinecap="round" />
@@ -187,13 +185,13 @@ export default function ViewSpeedScreen({ excessos, motoristas }: ViewSpeedScree
               const rad = (angle * Math.PI) / 180;
               const nx = 100 + 55 * Math.cos(rad);
               const ny = 100 - 55 * Math.sin(rad);
-              return (<><line x1="100" y1="100" x2={nx} y2={ny} stroke="#1e293b" strokeWidth="3" strokeLinecap="round" /><circle cx="100" cy="100" r="5" fill="#1e293b" /></>);
+              return (<><line x1="100" y1="100" x2={nx} y2={ny} stroke="#e2e8f0" strokeWidth="3" strokeLinecap="round" /><circle cx="100" cy="100" r="5" fill="#e2e8f0" /></>);
             })()}
             <text x="20" y="115" fontSize="9" fill="#94a3b8">0</text>
             <text x="90" y="16" fontSize="9" fill="#94a3b8">60</text>
             <text x="175" y="115" fontSize="9" fill="#94a3b8">120</text>
           </svg>
-          <p className={`text-xl font-black -mt-1 ${kpis.velMedia < 80 ? 'text-emerald-600' : kpis.velMedia <= 90 ? 'text-amber-600' : 'text-red-600'}`}>
+          <p className={`text-sm font-black ${kpis.velMedia < 80 ? 'text-emerald-400' : kpis.velMedia <= 90 ? 'text-amber-400' : 'text-red-400'}`}>
             {kpis.velMedia.toFixed(1)} km/h
           </p>
         </div>

@@ -1,11 +1,11 @@
 import { useMemo, useState } from 'react';
 import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend,
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
 } from 'recharts';
 import { Calendar, TrendingDown, AlertTriangle, Gauge, FileWarning, StopCircle, RadioTower, Car } from 'lucide-react';
 import { Ocorrencia, ExcessoVelocidade, MultaANTT, MultaTransito, Avaria, ParadaIndevida, Monitriip } from '../../types';
 import MetricCard from '../shared/MetricCard';
-import ChartCard from '../shared/ChartCard';
+
 
 interface DashboardOperacionalProps {
   ocorrencias: Ocorrencia[];
@@ -97,20 +97,20 @@ export default function DashboardOperacionalScreen({
     return +((c - p) / p * 100).toFixed(1);
   }
 
-  const chartData = useMemo(() => [
-    { name: 'Atrasos', current: cur.atrasosInicio, previous: prev.atrasosInicio },
-    { name: 'Excessos Vel.', current: cur.excessos, previous: prev.excessos },
-    { name: 'Multas ANTT', current: cur.multasAntt, previous: prev.multasAntt },
-    { name: 'Multas Trânsito', current: cur.multasTransito, previous: prev.multasTransito },
-    { name: 'Avarias', current: cur.avarias, previous: prev.avarias },
-    { name: 'Paradas Ind.', current: cur.paradas, previous: prev.paradas },
-    { name: 'Monitriip Inv.', current: cur.monInvalidas, previous: prev.monInvalidas },
+  const individualCharts = useMemo(() => [
+    { title: 'Atrasos', data: [{ name: 'Atrasos', current: cur.atrasosInicio, previous: prev.atrasosInicio }] },
+    { title: 'Excessos Vel.', data: [{ name: 'Excessos', current: cur.excessos, previous: prev.excessos }] },
+    { title: 'Multas ANTT', data: [{ name: 'ANTT', current: cur.multasAntt, previous: prev.multasAntt }] },
+    { title: 'Multas Trânsito', data: [{ name: 'Trânsito', current: cur.multasTransito, previous: prev.multasTransito }] },
+    { title: 'Avarias', data: [{ name: 'Avarias', current: cur.avarias, previous: prev.avarias }] },
+    { title: 'Paradas Ind.', data: [{ name: 'Paradas', current: cur.paradas, previous: prev.paradas }] },
+    { title: 'Monitriip Inv.', data: [{ name: 'Monitriip', current: cur.monInvalidas, previous: prev.monInvalidas }] },
   ], [cur, prev]);
 
-  const valorChartData = useMemo(() => [
-    { name: 'ANTT', current: cur.anttValor, previous: prev.anttValor },
-    { name: 'Trânsito', current: cur.transitValor, previous: prev.transitValor },
-    { name: 'Avarias', current: cur.avarValor, previous: prev.avarValor },
+  const individualValorCharts = useMemo(() => [
+    { title: 'Valor ANTT', data: [{ name: 'ANTT', current: cur.anttValor, previous: prev.anttValor }] },
+    { title: 'Valor Trânsito', data: [{ name: 'Trânsito', current: cur.transitValor, previous: prev.transitValor }] },
+    { title: 'Valor Avarias', data: [{ name: 'Avarias', current: cur.avarValor, previous: prev.avarValor }] },
   ], [cur, prev]);
 
   const trendLabel = 'vs período anterior';
@@ -184,33 +184,63 @@ export default function DashboardOperacionalScreen({
           trend={{ value: trendPct(cur.avarValor, prev.avarValor), label: trendLabel, invertColor: true }} />
       </div>
 
-      {/* Comparison Chart — Ocorrências */}
-      <ChartCard title="Comparativo de Ocorrências — Período Atual vs Anterior" height="h-72" isEmpty={chartData.every(d => d.current === 0 && d.previous === 0)}>
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={chartData} layout="vertical" margin={{ left: 10 }}>
-            <XAxis type="number" tick={{ fontSize: 11 }} />
-            <YAxis dataKey="name" type="category" tick={{ fontSize: 11 }} width={110} interval={0} />
-            <Tooltip contentStyle={{ fontSize: 12 }} />
-            <Legend wrapperStyle={{ fontSize: 11 }} />
-            <Bar dataKey="current" name={periods.current.label} fill={CHART_COLORS.current} radius={[0, 3, 3, 0]} />
-            <Bar dataKey="previous" name={periods.previous.label} fill={CHART_COLORS.previous} radius={[0, 3, 3, 0]} />
-          </BarChart>
-        </ResponsiveContainer>
-      </ChartCard>
+      {/* Individual Comparison Charts — Ocorrências */}
+      <div>
+        <h4 className="text-2xs font-black text-slate-600 uppercase tracking-tight mb-3">Comparativo de Ocorrências — Período Atual vs Anterior</h4>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {individualCharts.map((chart) => (
+            <div key={chart.title} className="bg-white rounded-card border border-gray-200 shadow-card p-4">
+              <p className="text-2xs font-bold text-slate-500 uppercase tracking-wide mb-2 text-center">{chart.title}</p>
+              <ResponsiveContainer width="100%" height={100}>
+                <BarChart data={chart.data} layout="vertical" margin={{ left: 0, right: 5 }}>
+                  <XAxis type="number" tick={{ fontSize: 9 }} />
+                  <YAxis dataKey="name" type="category" hide />
+                  <Tooltip contentStyle={{ fontSize: 11 }} />
+                  <Bar dataKey="current" name={periods.current.label} fill={CHART_COLORS.current} radius={[0, 3, 3, 0]} barSize={16} />
+                  <Bar dataKey="previous" name={periods.previous.label} fill={CHART_COLORS.previous} radius={[0, 3, 3, 0]} barSize={16} />
+                </BarChart>
+              </ResponsiveContainer>
+              <div className="flex justify-between text-2xs mt-1 px-1">
+                <span className="text-slate-800 font-bold">{chart.data[0].current}</span>
+                <span className="text-blue-400 font-medium">{chart.data[0].previous}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="flex items-center justify-center gap-6 mt-2">
+          <span className="flex items-center gap-1.5 text-2xs text-slate-500"><span className="w-3 h-2 rounded-sm inline-block" style={{ background: CHART_COLORS.current }} />{periods.current.label}</span>
+          <span className="flex items-center gap-1.5 text-2xs text-slate-500"><span className="w-3 h-2 rounded-sm inline-block" style={{ background: CHART_COLORS.previous }} />{periods.previous.label}</span>
+        </div>
+      </div>
 
-      {/* Comparison Chart — Valores */}
-      <ChartCard title="Comparativo de Valores (R$) — Período Atual vs Anterior" height="h-48" isEmpty={valorChartData.every(d => d.current === 0 && d.previous === 0)}>
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={valorChartData} layout="vertical" margin={{ left: 10 }}>
-            <XAxis type="number" tickFormatter={(v: number) => `R$ ${(v / 1000).toFixed(0)}k`} tick={{ fontSize: 11 }} />
-            <YAxis dataKey="name" type="category" tick={{ fontSize: 11 }} width={110} interval={0} />
-            <Tooltip formatter={(v: number) => [`R$ ${v.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, '']} contentStyle={{ fontSize: 12 }} />
-            <Legend wrapperStyle={{ fontSize: 11 }} />
-            <Bar dataKey="current" name={periods.current.label} fill={CHART_COLORS.current} radius={[0, 3, 3, 0]} />
-            <Bar dataKey="previous" name={periods.previous.label} fill={CHART_COLORS.previous} radius={[0, 3, 3, 0]} />
-          </BarChart>
-        </ResponsiveContainer>
-      </ChartCard>
+      {/* Individual Comparison Charts — Valores */}
+      <div>
+        <h4 className="text-2xs font-black text-slate-600 uppercase tracking-tight mb-3">Comparativo de Valores (R$) — Período Atual vs Anterior</h4>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          {individualValorCharts.map((chart) => (
+            <div key={chart.title} className="bg-white rounded-card border border-gray-200 shadow-card p-4">
+              <p className="text-2xs font-bold text-slate-500 uppercase tracking-wide mb-2 text-center">{chart.title}</p>
+              <ResponsiveContainer width="100%" height={100}>
+                <BarChart data={chart.data} layout="vertical" margin={{ left: 0, right: 5 }}>
+                  <XAxis type="number" tickFormatter={(v: number) => v >= 1000 ? `R$${(v / 1000).toFixed(0)}k` : `R$${v.toFixed(0)}`} tick={{ fontSize: 9 }} />
+                  <YAxis dataKey="name" type="category" hide />
+                  <Tooltip formatter={(v: number) => [`R$ ${v.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, '']} contentStyle={{ fontSize: 11 }} />
+                  <Bar dataKey="current" name={periods.current.label} fill={CHART_COLORS.current} radius={[0, 3, 3, 0]} barSize={16} />
+                  <Bar dataKey="previous" name={periods.previous.label} fill={CHART_COLORS.previous} radius={[0, 3, 3, 0]} barSize={16} />
+                </BarChart>
+              </ResponsiveContainer>
+              <div className="flex justify-between text-2xs mt-1 px-1">
+                <span className="text-slate-800 font-bold">R$ {chart.data[0].current.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                <span className="text-blue-400 font-medium">R$ {chart.data[0].previous.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="flex items-center justify-center gap-6 mt-2">
+          <span className="flex items-center gap-1.5 text-2xs text-slate-500"><span className="w-3 h-2 rounded-sm inline-block" style={{ background: CHART_COLORS.current }} />{periods.current.label}</span>
+          <span className="flex items-center gap-1.5 text-2xs text-slate-500"><span className="w-3 h-2 rounded-sm inline-block" style={{ background: CHART_COLORS.previous }} />{periods.previous.label}</span>
+        </div>
+      </div>
 
       {/* Period detail table */}
       <div className="bg-white rounded-card border border-gray-200 shadow-card p-5 overflow-x-auto">

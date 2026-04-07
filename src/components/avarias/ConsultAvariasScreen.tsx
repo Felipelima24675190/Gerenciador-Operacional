@@ -366,18 +366,28 @@ export default function ConsultAvariasScreen({ avarias, setAvarias, motoristas, 
       </div>
 
       <div className="bg-slate-800 p-4 flex gap-3 overflow-x-auto rounded-xl">
-        {[
-          { l: 'Valor Total Avarias', v: formatCurrency(kpis.valorTotal) },
-          { l: 'Recuperado (Cobrado)', v: `${formatCurrency(kpis.valorRecuperado)} (${kpis.percRecuperado}%)` },
-          { l: 'Não Recuperado', v: `${formatCurrency(kpis.valorNaoRecuperado)} (${kpis.percNaoRecuperado}%)` },
-          { l: 'Filial Crítica', v: kpis.topFilial },
-          { l: 'Total Ocorrências', v: kpis.totalCount },
-        ].map((k, i) => (
-          <div key={i} className="bg-slate-700 rounded-lg p-3 text-center min-w-[120px] flex-1">
-            <p className="text-2xs font-bold text-slate-400 uppercase tracking-wide">{k.l}</p>
-            <p className="text-lg font-black text-white mt-0.5 truncate" title={String(k.v)}>{k.v}</p>
-          </div>
-        ))}
+        <div className="bg-slate-700 rounded-lg p-3 text-center min-w-[130px] flex-1">
+          <p className="text-2xs font-bold text-slate-400 uppercase tracking-wide">Valor Total Avarias</p>
+          <p className="text-lg font-black text-white mt-0.5 whitespace-nowrap">{formatCurrency(kpis.valorTotal)}</p>
+        </div>
+        <div className="bg-slate-700 rounded-lg p-3 text-center min-w-[150px] flex-1">
+          <p className="text-2xs font-bold text-slate-400 uppercase tracking-wide">Recuperado (Cobrado)</p>
+          <p className="text-lg font-black text-white mt-0.5 whitespace-nowrap">{formatCurrency(kpis.valorRecuperado)}</p>
+          <p className="text-xs font-bold text-emerald-400">{kpis.percRecuperado}%</p>
+        </div>
+        <div className="bg-slate-700 rounded-lg p-3 text-center min-w-[150px] flex-1">
+          <p className="text-2xs font-bold text-slate-400 uppercase tracking-wide">Não Recuperado</p>
+          <p className="text-lg font-black text-white mt-0.5 whitespace-nowrap">{formatCurrency(kpis.valorNaoRecuperado)}</p>
+          <p className="text-xs font-bold text-red-400">{kpis.percNaoRecuperado}%</p>
+        </div>
+        <div className="bg-slate-700 rounded-lg p-3 text-center min-w-[120px] flex-1">
+          <p className="text-2xs font-bold text-slate-400 uppercase tracking-wide">Filial Crítica</p>
+          <p className="text-lg font-black text-white mt-0.5 truncate" title={kpis.topFilial}>{kpis.topFilial}</p>
+        </div>
+        <div className="bg-slate-700 rounded-lg p-3 text-center min-w-[120px] flex-1">
+          <p className="text-2xs font-bold text-slate-400 uppercase tracking-wide">Total Ocorrências</p>
+          <p className="text-lg font-black text-white mt-0.5">{kpis.totalCount}</p>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

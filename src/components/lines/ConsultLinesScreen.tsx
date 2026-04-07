@@ -318,19 +318,17 @@ export default function ConsultLinesScreen({ viagens, setViagens, userRole }: Co
   return (
     <div className="space-y-5">
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white p-4 rounded-card border border-gray-200 shadow-card">
-          <p className="text-sm text-gray-500">Total de Linhas</p>
-          <p className="text-3xl font-bold">{dashboardData.totalLinhas}</p>
-        </div>
-        <div className="bg-white p-4 rounded-card border border-gray-200 shadow-card">
-          <p className="text-sm text-gray-500">Total de Serviços</p>
-          <p className="text-3xl font-bold">{dashboardData.totalServicos}</p>
-        </div>
-        <div className="bg-white p-4 rounded-card border border-gray-200 shadow-card">
-          <p className="text-sm text-gray-500">Total de Viagens Programadas</p>
-          <p className="text-3xl font-bold">{dashboardData.totalViagens}</p>
-        </div>
+      <div className="bg-slate-800 p-4 flex gap-3 overflow-x-auto rounded-xl">
+        {[
+          { l: 'Total de Linhas', v: dashboardData.totalLinhas },
+          { l: 'Total de Serviços', v: dashboardData.totalServicos },
+          { l: 'Total de Viagens Programadas', v: dashboardData.totalViagens },
+        ].map((k, i) => (
+          <div key={i} className="bg-slate-700 rounded-lg p-3 text-center min-w-[120px] flex-1">
+            <p className="text-2xs font-bold text-slate-400 uppercase tracking-wide">{k.l}</p>
+            <p className="text-lg font-black text-white mt-0.5">{k.v}</p>
+          </div>
+        ))}
       </div>
 
       {/* Filters */}
