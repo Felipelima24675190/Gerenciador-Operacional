@@ -373,31 +373,18 @@ export default function DashboardScreen({ motoristas, ocorrencias, viagens, setO
         )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard 
-          title="Taxa de Pontualidade" 
-          value={`${metricasGlobais.percPontual}%`} 
-          icon={CheckCircle2} 
-          color="green" 
-        />
-        <StatCard 
-          title="Taxa de Atrasos" 
-          value={`${metricasGlobais.percAtraso}%`} 
-          icon={Clock} 
-          color="red" 
-        />
-        <StatCard 
-          title="Taxa de Adiantamentos" 
-          value={`${metricasGlobais.percAdiantamento}%`} 
-          icon={TrendingUp} 
-          color="orange" 
-        />
-        <StatCard 
-          title="Viagens Analisadas" 
-          value={metricasGlobais.total} 
-          icon={AlertCircle} 
-          color="blue" 
-        />
+      <div className="bg-slate-800 p-4 flex gap-3 overflow-x-auto rounded-xl">
+        {[
+          { l: 'Taxa de Pontualidade', v: `${metricasGlobais.percPontual}%` },
+          { l: 'Taxa de Atrasos', v: `${metricasGlobais.percAtraso}%` },
+          { l: 'Taxa de Adiantamentos', v: `${metricasGlobais.percAdiantamento}%` },
+          { l: 'Viagens Analisadas', v: metricasGlobais.total },
+        ].map((k, i) => (
+          <div key={i} className="bg-slate-700 rounded-lg p-3 text-center min-w-[120px] flex-1">
+            <p className="text-2xs font-bold text-slate-400 uppercase tracking-wide">{k.l}</p>
+            <p className="text-lg font-black text-white mt-0.5">{k.v}</p>
+          </div>
+        ))}
       </div>
 
       {linhaMaisAtrasada && (

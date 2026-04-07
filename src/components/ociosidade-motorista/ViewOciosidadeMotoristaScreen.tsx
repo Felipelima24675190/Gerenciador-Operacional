@@ -163,18 +163,18 @@ export default function ViewOciosidadeMotoristaScreen({ ociosidades }: Props) {
       </div>
 
       {/* KPI bar */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div className="bg-slate-800 p-4 flex gap-3 overflow-x-auto rounded-xl">
         {[
-          { label: 'KM Total',                  value: fmtKm(kpis.kmTotal),            color: 'text-brand-700' },
-          { label: 'Tempo em Movimento',         value: `${kpis.pctMovimento.toFixed(1)}%`, color: 'text-emerald-600' },
-          { label: 'Motor Ligado Parado',        value: `${kpis.pctMotorParado.toFixed(1)}%`, color: 'text-red-600' },
-          { label: 'Eficiência Média (km/l)',    value: kpis.eficienciaMedia.toFixed(2) + ' km/l', color: 'text-purple-600' },
-          { label: 'Combustível Total (L)',       value: kpis.combustivelL.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' L', color: 'text-amber-600' },
-          { label: 'Veículos',                   value: kpis.veiculosUnicos.toString(), color: 'text-slate-700' },
+          { label: 'KM Total',                  value: fmtKm(kpis.kmTotal) },
+          { label: 'Tempo em Movimento',         value: `${kpis.pctMovimento.toFixed(1)}%` },
+          { label: 'Motor Ligado Parado',        value: `${kpis.pctMotorParado.toFixed(1)}%` },
+          { label: 'Eficiência Média (km/l)',    value: kpis.eficienciaMedia.toFixed(2) + ' km/l' },
+          { label: 'Combustível Total (L)',       value: kpis.combustivelL.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' L' },
+          { label: 'Veículos',                   value: kpis.veiculosUnicos.toString() },
         ].map((k, i) => (
-          <div key={i} className="bg-white rounded-card border border-gray-200 p-4 shadow-card">
-            <p className="text-2xs font-bold text-slate-500 uppercase leading-tight">{k.label}</p>
-            <p className={`text-xl font-black mt-1 ${k.color}`}>{k.value}</p>
+          <div key={i} className="bg-slate-700 rounded-lg p-3 text-center min-w-[120px] flex-1">
+            <p className="text-2xs font-bold text-slate-400 uppercase tracking-wide">{k.label}</p>
+            <p className="text-lg font-black text-white mt-0.5">{k.value}</p>
           </div>
         ))}
       </div>

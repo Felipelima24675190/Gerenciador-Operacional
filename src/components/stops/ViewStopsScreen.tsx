@@ -147,10 +147,17 @@ export default function ViewStopsScreen({ paradas }: ViewStopsScreenProps) {
       </div>
 
       {/* KPIs */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <StatCard title="Total de Paradas" value={kpis.total} />
-        <StatCard title="Motorista com Mais Paradas" value={kpis.topMotorista} />
-        <StatCard title="Local com Mais Paradas" value={kpis.topLocal} />
+      <div className="bg-slate-800 p-4 flex gap-3 overflow-x-auto rounded-xl">
+        {[
+          { l: 'Total de Paradas', v: kpis.total },
+          { l: 'Motorista com Mais Paradas', v: kpis.topMotorista },
+          { l: 'Local com Mais Paradas', v: kpis.topLocal },
+        ].map((k, i) => (
+          <div key={i} className="bg-slate-700 rounded-lg p-3 text-center min-w-[120px] flex-1">
+            <p className="text-2xs font-bold text-slate-400 uppercase tracking-wide">{k.l}</p>
+            <p className="text-lg font-black text-white mt-0.5 truncate" title={String(k.v)}>{k.v}</p>
+          </div>
+        ))}
       </div>
 
       {/* Tendência */}

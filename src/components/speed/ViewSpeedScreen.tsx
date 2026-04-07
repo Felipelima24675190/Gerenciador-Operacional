@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { ExcessoVelocidade, UserRole, Motorista } from '../../types';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { subDays, format, parse } from 'date-fns';
-import { Calendar } from 'lucide-react';
+import { Calendar, Search } from 'lucide-react';
 
 interface ViewSpeedScreenProps {
   excessos: ExcessoVelocidade[];
@@ -10,21 +10,18 @@ interface ViewSpeedScreenProps {
   userRole?: UserRole;
 }
 
-const StatCard = ({ title, value, subValue }: { title: string, value: string | number, subValue?: string }) => (
-  <div className="bg-white rounded-card border border-gray-200 shadow-card p-4 flex-1">
-    <p className="text-2xs text-gray-500 font-bold uppercase tracking-wide">{title}</p>
-    <p className="text-3xl font-black">{value}</p>
-    {subValue && <p className="text-2xs text-gray-400">{subValue}</p>}
-  </div>
-);
-
 export default function ViewSpeedScreen({ excessos, motoristas }: ViewSpeedScreenProps) {
   const [dataFim, setDataFim] = useState(new Date());
   const [dataInicio, setDataInicio] = useState(subDays(new Date(), 30));
   const [currentPage, setCurrentPage] = useState(1);
+  const [filialFilter, setFilialFilter] = useState('Todas');
+  const [linhaFilter, setLinhaFilter] = useState('Todas');
   const itemsPerPage = 100;
 
-  const excessosFiltrados = useMemo(() => {
+  const motoristasMap = useMemo(() => new Map(motoristas.map(m => [m.matricula, m])), [motoristas]);
+
+  // Date-filtered first (before filial/linha)
+  const excessosByDate = useMemo(() => {
     return excessos.filter(e => {
       const dataOcorrencia = parse(e.dataOcorrencia, 'dd/MM/yyyy', new Date());
       if (isNaN(dataOcorrencia.getTime())) return false;
@@ -32,19 +29,53 @@ export default function ViewSpeedScreen({ excessos, motoristas }: ViewSpeedScree
     });
   }, [excessos, dataInicio, dataFim]);
 
+  // Available filiais from date-filtered data
+  const filiaisDisponiveis = useMemo(() => {
+    const set = new Set<string>();
+    excessosByDate.forEach(e => {
+      const mot = motoristasMap.get(e.matricula);
+      if (mot?.filial) set.add(mot.filial);
+    });
+    return ['Todas', ...Array.from(set).sort()];
+  }, [excessosByDate, motoristasMap]);
+
+  // After filial filter
+  const excessosByFilial = useMemo(() => {
+    if (filialFilter === 'Todas') return excessosByDate;
+    return excessosByDate.filter(e => {
+      const mot = motoristasMap.get(e.matricula);
+      return mot?.filial === filialFilter;
+    });
+  }, [excessosByDate, filialFilter, motoristasMap]);
+
+  // Available lines from filial-filtered data
+  const linhasDisponiveis = useMemo(() => {
+    const set = new Set<string>();
+    excessosByFilial.forEach(e => { if (e.nomeLinha) set.add(e.nomeLinha); });
+    return ['Todas', ...Array.from(set).sort()];
+  }, [excessosByFilial]);
+
+  // Final filtered
+  const excessosFiltrados = useMemo(() => {
+    if (linhaFilter === 'Todas') return excessosByFilial;
+    return excessosByFilial.filter(e => e.nomeLinha === linhaFilter);
+  }, [excessosByFilial, linhaFilter]);
+
   const kpis = useMemo(() => {
     const motoristasEnvolvidos = new Set(excessosFiltrados.map(e => e.matricula)).size;
     const tempoTotalMin = excessosFiltrados.reduce((acc, e) => acc + e.tempoExcedidoMinutos, 0);
     const tempoTotalStr = `${Math.floor(tempoTotalMin / 60)}h ${tempoTotalMin % 60}min`;
+    const velMedia = excessosFiltrados.length > 0
+      ? excessosFiltrados.reduce((s, e) => s + e.velocidadeMediaKmh, 0) / excessosFiltrados.length
+      : 0;
 
     return {
       totalOcorrencias: excessosFiltrados.length,
       motoristasEnvolvidos,
       tempoTotalStr,
+      velMedia,
     };
   }, [excessosFiltrados]);
-
-  const motoristasMap = useMemo(() => new Map(motoristas.map(m => [m.matricula, { nome: m.nome, area: m.area }])), [motoristas]);
 
   const analiseGrafica = useMemo(() => {
     const ocorrenciasPorDia: Record<string, number> = {};
@@ -96,41 +127,76 @@ export default function ViewSpeedScreen({ excessos, motoristas }: ViewSpeedScree
 
   return (
     <div className="space-y-5">
-      <div className="bg-white rounded-card border border-gray-200 shadow-card p-4 flex items-center gap-4">
-        <div>
-          <label htmlFor="speed-data-inicio" className="text-2xs font-bold text-slate-500 uppercase tracking-wide block mb-1">Data Início</label>
-          <div className="relative">
-            <Calendar size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-            <input
-              id="speed-data-inicio"
-              type="date"
-              value={format(dataInicio, 'yyyy-MM-dd')}
-              onChange={e => setDataInicio(new Date(e.target.value + 'T00:00:00'))}
-              aria-label="Data de início do filtro"
-              className="px-3 py-2 pl-8 text-xs font-medium border border-gray-200 rounded-button bg-slate-50 focus:ring-2 focus:ring-brand-400 focus:outline-none"
-            />
+      {/* Filters */}
+      <div className="bg-white rounded-card border border-gray-200 shadow-card p-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div>
+            <label htmlFor="speed-data-inicio" className="text-2xs font-bold text-slate-500 uppercase tracking-wide block mb-1">Data Início</label>
+            <div className="relative">
+              <Calendar size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+              <input id="speed-data-inicio" type="date" value={format(dataInicio, 'yyyy-MM-dd')} onChange={e => setDataInicio(new Date(e.target.value + 'T00:00:00'))} aria-label="Data de início" className="w-full px-3 py-2 pl-8 text-xs font-medium border border-gray-200 rounded-button bg-slate-50 focus:ring-2 focus:ring-brand-400 focus:outline-none" />
+            </div>
           </div>
-        </div>
-        <div>
-          <label htmlFor="speed-data-fim" className="text-2xs font-bold text-slate-500 uppercase tracking-wide block mb-1">Data Fim</label>
-          <div className="relative">
-            <Calendar size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-            <input
-              id="speed-data-fim"
-              type="date"
-              value={format(dataFim, 'yyyy-MM-dd')}
-              onChange={e => setDataFim(new Date(e.target.value + 'T23:59:59'))}
-              aria-label="Data de fim do filtro"
-              className="px-3 py-2 pl-8 text-xs font-medium border border-gray-200 rounded-button bg-slate-50 focus:ring-2 focus:ring-brand-400 focus:outline-none"
-            />
+          <div>
+            <label htmlFor="speed-data-fim" className="text-2xs font-bold text-slate-500 uppercase tracking-wide block mb-1">Data Fim</label>
+            <div className="relative">
+              <Calendar size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+              <input id="speed-data-fim" type="date" value={format(dataFim, 'yyyy-MM-dd')} onChange={e => setDataFim(new Date(e.target.value + 'T23:59:59'))} aria-label="Data fim" className="w-full px-3 py-2 pl-8 text-xs font-medium border border-gray-200 rounded-button bg-slate-50 focus:ring-2 focus:ring-brand-400 focus:outline-none" />
+            </div>
+          </div>
+          <div>
+            <label htmlFor="speed-filial" className="text-2xs font-bold text-slate-500 uppercase tracking-wide block mb-1">Filial</label>
+            <select id="speed-filial" value={filialFilter} onChange={e => { setFilialFilter(e.target.value); setLinhaFilter('Todas'); }} aria-label="Filtrar por filial" className="w-full px-3 py-2 text-xs font-medium border border-gray-200 rounded-button bg-slate-50 focus:ring-2 focus:ring-brand-400 focus:outline-none">
+              {filiaisDisponiveis.map(f => <option key={f} value={f}>{f}</option>)}
+            </select>
+          </div>
+          <div>
+            <label htmlFor="speed-linha" className="text-2xs font-bold text-slate-500 uppercase tracking-wide block mb-1">Linha</label>
+            <select id="speed-linha" value={linhaFilter} onChange={e => setLinhaFilter(e.target.value)} aria-label="Filtrar por linha" className="w-full px-3 py-2 text-xs font-medium border border-gray-200 rounded-button bg-slate-50 focus:ring-2 focus:ring-brand-400 focus:outline-none">
+              {linhasDisponiveis.map(l => <option key={l} value={l}>{l}</option>)}
+            </select>
           </div>
         </div>
       </div>
 
-      <div className="flex gap-4">
-        <StatCard title="Total de Ocorrências" value={kpis.totalOcorrencias} />
-        <StatCard title="Motoristas Envolvidos" value={kpis.motoristasEnvolvidos} />
-        <StatCard title="Tempo Total em Excesso" value={kpis.tempoTotalStr} />
+      {/* KPIs + Speedometer */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="md:col-span-3 bg-slate-800 p-4 flex gap-3 overflow-x-auto rounded-xl">
+          {[
+            { l: 'Total de Ocorrências', v: kpis.totalOcorrencias },
+            { l: 'Motoristas Envolvidos', v: kpis.motoristasEnvolvidos },
+            { l: 'Tempo Total em Excesso', v: kpis.tempoTotalStr },
+          ].map((k, i) => (
+            <div key={i} className="bg-slate-700 rounded-lg p-3 text-center min-w-[120px] flex-1">
+              <p className="text-2xs font-bold text-slate-400 uppercase tracking-wide">{k.l}</p>
+              <p className="text-lg font-black text-white mt-0.5">{k.v}</p>
+            </div>
+          ))}
+        </div>
+        {/* Speedometer */}
+        <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm flex flex-col items-center">
+          <p className="text-2xs font-black text-slate-600 uppercase tracking-wide mb-1">Velocidade Média</p>
+          <svg viewBox="0 0 200 120" width="100%" style={{ maxWidth: 180 }}>
+            <path d="M 20 100 A 80 80 0 0 1 100 20" fill="none" stroke="#059669" strokeWidth="16" strokeLinecap="round" />
+            <path d="M 100 20 A 80 80 0 0 1 145 35" fill="none" stroke="#f59e0b" strokeWidth="16" strokeLinecap="round" />
+            <path d="M 145 35 A 80 80 0 0 1 180 100" fill="none" stroke="#dc2626" strokeWidth="16" strokeLinecap="round" />
+            {(() => {
+              const maxVel = 120;
+              const val = Math.min(maxVel, Math.max(0, kpis.velMedia));
+              const angle = 180 - (val / maxVel) * 180;
+              const rad = (angle * Math.PI) / 180;
+              const nx = 100 + 55 * Math.cos(rad);
+              const ny = 100 - 55 * Math.sin(rad);
+              return (<><line x1="100" y1="100" x2={nx} y2={ny} stroke="#1e293b" strokeWidth="3" strokeLinecap="round" /><circle cx="100" cy="100" r="5" fill="#1e293b" /></>);
+            })()}
+            <text x="20" y="115" fontSize="9" fill="#94a3b8">0</text>
+            <text x="90" y="16" fontSize="9" fill="#94a3b8">60</text>
+            <text x="175" y="115" fontSize="9" fill="#94a3b8">120</text>
+          </svg>
+          <p className={`text-xl font-black -mt-1 ${kpis.velMedia < 80 ? 'text-emerald-600' : kpis.velMedia <= 90 ? 'text-amber-600' : 'text-red-600'}`}>
+            {kpis.velMedia.toFixed(1)} km/h
+          </p>
+        </div>
       </div>
 
       <div className="grid grid-cols-3 gap-6">

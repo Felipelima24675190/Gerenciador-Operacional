@@ -365,15 +365,19 @@ export default function ConsultAvariasScreen({ avarias, setAvarias, motoristas, 
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-blue-50 p-4 rounded-card border border-blue-200 shadow-card"><p className="text-2xs font-bold text-blue-500 uppercase">Valor Total Avarias</p><p className="text-2xl font-black text-blue-900 mt-1">{formatCurrency(kpis.valorTotal)}</p></div>
-        <div className="bg-emerald-50 p-4 rounded-card border border-emerald-200 shadow-card"><p className="text-2xs font-bold text-emerald-600 uppercase">Recuperado (Cobrado)</p><p className="text-2xl font-black text-emerald-900 mt-1">{formatCurrency(kpis.valorRecuperado)}</p><p className="text-2xs text-emerald-600 font-bold">{kpis.percRecuperado}% recuperado</p></div>
-        <div className="bg-red-50 p-4 rounded-card border border-red-200 shadow-card"><p className="text-2xs font-bold text-red-500 uppercase">Não Recuperado</p><p className="text-2xl font-black text-red-900 mt-1">{formatCurrency(kpis.valorNaoRecuperado)}</p><p className="text-2xs text-red-600 font-bold">{kpis.percNaoRecuperado}% prejuízo</p></div>
-        <div className="bg-slate-800 p-4 rounded-card shadow-card text-white flex flex-col justify-center">
-          <p className="text-2xs font-bold text-slate-400 uppercase">Filial Crítica</p>
-          <p className="text-2xl font-black mt-1">{kpis.topFilial}</p>
-          <p className="text-2xs text-slate-500 mt-1 uppercase">*Apenas Identificados</p>
-        </div>
+      <div className="bg-slate-800 p-4 flex gap-3 overflow-x-auto rounded-xl">
+        {[
+          { l: 'Valor Total Avarias', v: formatCurrency(kpis.valorTotal) },
+          { l: 'Recuperado (Cobrado)', v: `${formatCurrency(kpis.valorRecuperado)} (${kpis.percRecuperado}%)` },
+          { l: 'Não Recuperado', v: `${formatCurrency(kpis.valorNaoRecuperado)} (${kpis.percNaoRecuperado}%)` },
+          { l: 'Filial Crítica', v: kpis.topFilial },
+          { l: 'Total Ocorrências', v: kpis.totalCount },
+        ].map((k, i) => (
+          <div key={i} className="bg-slate-700 rounded-lg p-3 text-center min-w-[120px] flex-1">
+            <p className="text-2xs font-bold text-slate-400 uppercase tracking-wide">{k.l}</p>
+            <p className="text-lg font-black text-white mt-0.5 truncate" title={String(k.v)}>{k.v}</p>
+          </div>
+        ))}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

@@ -4,7 +4,7 @@ import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend,
 } from 'recharts';
-import { Search, Calendar } from 'lucide-react';
+import { Search, Calendar, X } from 'lucide-react';
 
 interface ViewAnttScreenProps {
   multas: MultaANTT[];
@@ -13,7 +13,12 @@ interface ViewAnttScreenProps {
 }
 
 const COLORS = ['#0e4f8f', '#3d7fd2', '#1a6abf', '#6b9ede', '#0b3f72', '#9fbfea', '#082f55', '#c5daf3', '#051e38', '#e8f1fb'];
-const formatCurrency = (value: number) => `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const formatCurrency = (value: number) => {
+  if (Math.abs(value) >= 1_000_000) {
+    return `R$ ${(value / 1_000_000).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}M`;
+  }
+  return `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+};
 
 const normalizeSetor = (s: string): string => {
   if (!s || !s.trim()) return 'SEM SETOR';
@@ -162,6 +167,18 @@ export default function ViewAnttScreen({ multas, anttCodeDescriptions, motorista
     return chartMotorista.find(m => m.matricula === selectedAnttMatricula) || null;
   }, [selectedAnttMatricula, chartMotorista]);
 
+  // Detailed fines for selected motorista
+  const selectedMotoristaMultas = useMemo(() => {
+    if (!selectedAnttMatricula) return [];
+    return filteredMultas
+      .filter(m => m.matriculaMotorista === selectedAnttMatricula)
+      .map(m => {
+        const codeInfo = codeDescriptionMap.get(m.codigoInfracao);
+        const valorExibido = codeInfo?.valor && codeInfo.valor > 0 ? codeInfo.valor : (m.valor || 0);
+        return { ...m, valorExibido, descricaoImportada: m.descricaoInfracao || codeInfo?.descricao || '-' };
+      });
+  }, [selectedAnttMatricula, filteredMultas, codeDescriptionMap]);
+
   const chartDataMensal = useMemo(() => {
     const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
     const currentYear = new Date().getFullYear();
@@ -196,7 +213,7 @@ export default function ViewAnttScreen({ multas, anttCodeDescriptions, motorista
   return (
     <div className="space-y-5">
       {/* KPI Bar */}
-      <div className="bg-white rounded-card border border-gray-200 shadow-card p-4 flex gap-4 overflow-x-auto">
+      <div className="bg-slate-800 p-4 flex gap-3 overflow-x-auto rounded-xl">
         {[
           { l: 'Valor Total', v: kpis.totalValor, c: true },
           { l: 'Valor Progresso', v: kpis.valorProgresso, c: true },
@@ -205,9 +222,9 @@ export default function ViewAnttScreen({ multas, anttCodeDescriptions, motorista
           { l: 'Progresso', v: kpis.totalProgresso },
           { l: 'Cruzeiro', v: kpis.totalCruzeiro },
         ].map((k, i) => (
-          <div key={i} className="bg-slate-50 border border-gray-200 rounded-lg p-4 text-center min-w-[120px] flex-1">
-            <p className="text-2xs font-bold text-slate-500 uppercase tracking-wide">{k.l}</p>
-            <p className="text-xl font-black text-slate-800 mt-1">{k.c ? formatCurrency(k.v) : k.v}</p>
+          <div key={i} className="bg-slate-700 rounded-lg p-3 text-center min-w-[120px] flex-1">
+            <p className="text-2xs font-bold text-slate-400 uppercase tracking-wide">{k.l}</p>
+            <p className="text-lg font-black text-white mt-0.5 whitespace-nowrap">{k.c ? formatCurrency(k.v as number) : k.v}</p>
           </div>
         ))}
       </div>
@@ -306,7 +323,7 @@ export default function ViewAnttScreen({ multas, anttCodeDescriptions, motorista
 
         <div className="bg-white rounded-card border border-gray-200 shadow-card p-4">
           <h4 className="text-2xs font-black text-slate-600 uppercase tracking-wide text-center mb-3">Distribuicao por Setor</h4>
-          <div className="h-56">
+          <div className="h-72">
             {chartSetor.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -315,15 +332,21 @@ export default function ViewAnttScreen({ multas, anttCodeDescriptions, motorista
                     dataKey="value"
                     nameKey="name"
                     cx="50%"
-                    cy="50%"
-                    outerRadius={60}
-                    innerRadius={20}
-                    label={({ name, percent }: any) => {
-                      const label = name.length > 10 ? name.substring(0, 10) + '..' : name;
-                      return `${label} ${(percent * 100).toFixed(1)}%`;
+                    cy="45%"
+                    outerRadius={55}
+                    innerRadius={18}
+                    label={({ name, percent, cx: pcx, cy: pcy, midAngle, outerRadius: or }: any) => {
+                      const RADIAN = Math.PI / 180;
+                      const radius = (or || 55) + 22;
+                      const x = pcx + radius * Math.cos(-midAngle * RADIAN);
+                      const y = pcy + radius * Math.sin(-midAngle * RADIAN);
+                      return (
+                        <text x={x} y={y} textAnchor={x > pcx ? 'start' : 'end'} dominantBaseline="central" fontSize={10} fill="#334155" fontWeight={600}>
+                          {name} {(percent * 100).toFixed(0)}%
+                        </text>
+                      );
                     }}
                     labelLine={true}
-                    fontSize={11}
                   >
                     {chartSetor.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                   </Pie>
@@ -405,29 +428,52 @@ export default function ViewAnttScreen({ multas, anttCodeDescriptions, motorista
 
           {selectedAnttMotorista && (
             <div
-              className="mt-3 bg-gradient-to-r from-slate-50 to-slate-100 border-2 border-blue-300 rounded-xl p-4 shadow-md cursor-pointer"
-              onClick={() => setSelectedAnttMatricula(null)}
-              aria-label="Fechar detalhes do motorista"
+              className="mt-3 bg-gradient-to-r from-slate-50 to-slate-100 border-2 border-blue-300 rounded-xl p-4 shadow-md"
+              aria-label="Detalhes do motorista"
             >
               <div className="flex items-center justify-between mb-3">
                 <div>
                   <p className="text-xs font-black text-slate-800">{selectedAnttMotorista.fullName}</p>
-                  <p className="text-2xs text-slate-500">Matrícula: <strong>{selectedAnttMotorista.matricula}</strong></p>
+                  <p className="text-2xs text-slate-500">
+                    Matrícula: <strong>{selectedAnttMotorista.matricula}</strong>
+                    {motoristaMap.get(selectedAnttMotorista.matricula)?.filial && (
+                      <> · Filial: <strong>{motoristaMap.get(selectedAnttMotorista.matricula)!.filial}</strong></>
+                    )}
+                  </p>
                 </div>
-                <div className="text-right">
-                  <p className="text-xl font-black text-slate-800">{selectedAnttMotorista.count} <span className="text-2xs font-bold text-slate-500">multas</span></p>
-                  <p className="text-2xs font-bold text-slate-500">{formatCurrency(selectedAnttMotorista.valor)}</p>
-                </div>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {Object.entries(selectedAnttMotorista.codigos).sort((a, b) => b[1] - a[1]).map(([cod, qty]) => (
-                  <div key={cod} className="bg-white rounded-lg border border-gray-200 px-3 py-1.5 text-center">
-                    <p className="text-2xs font-bold text-slate-500">Cód. {cod}</p>
-                    <p className="text-xs font-black text-slate-800">{qty}</p>
+                <div className="text-right flex items-center gap-3">
+                  <div>
+                    <p className="text-xl font-black text-slate-800">{selectedAnttMotorista.count} <span className="text-2xs font-bold text-slate-500">multas</span></p>
+                    <p className="text-xs font-bold text-red-600">{formatCurrency(selectedMotoristaMultas.reduce((s, m) => s + m.valorExibido, 0))}</p>
                   </div>
-                ))}
+                  <button onClick={() => setSelectedAnttMatricula(null)} className="text-slate-400 hover:text-slate-600 p-1"><X size={16} /></button>
+                </div>
               </div>
-              <p className="mt-2 text-2xs text-slate-400 text-center">Clique para fechar</p>
+              {/* Detail table of individual fines */}
+              <div className="max-h-48 overflow-y-auto rounded-lg border border-gray-200">
+                <table className="w-full text-2xs text-left">
+                  <thead className="bg-slate-200 sticky top-0">
+                    <tr>
+                      <th className="px-2 py-1.5 font-bold">Data</th>
+                      <th className="px-2 py-1.5 font-bold">Filial</th>
+                      <th className="px-2 py-1.5 font-bold">Código</th>
+                      <th className="px-2 py-1.5 font-bold">Descrição</th>
+                      <th className="px-2 py-1.5 font-bold text-right">Valor</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {selectedMotoristaMultas.map(m => (
+                      <tr key={m.id} className="border-b border-gray-100 hover:bg-white">
+                        <td className="px-2 py-1 font-mono">{m.dataHora}</td>
+                        <td className="px-2 py-1">{m.terminal || '-'}</td>
+                        <td className="px-2 py-1 font-mono">{m.codigoInfracao}</td>
+                        <td className="px-2 py-1 max-w-[200px] truncate" title={m.descricaoImportada}>{m.descricaoImportada}</td>
+                        <td className="px-2 py-1 text-right font-bold text-red-600">{formatCurrency(m.valorExibido)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
         </div>

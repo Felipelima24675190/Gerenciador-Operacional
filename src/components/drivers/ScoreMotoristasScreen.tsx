@@ -242,11 +242,11 @@ export default function ScoreMotoristasScreen({
     return { total, excelente, bom, regular, critico, avgScore };
   }, [scores]);
 
-  // Chart: top 10 piores scores (show matrícula on Y axis)
-  const chartPiores = useMemo(() => {
+  // Chart: top 5 melhores scores
+  const chartMelhores = useMemo(() => {
     return [...scores]
-      .sort((a, b) => a.score - b.score)
-      .slice(0, 10)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 5)
       .map(s => ({
         name: s.matricula,
         score: s.score,
@@ -285,31 +285,20 @@ export default function ScoreMotoristasScreen({
   return (
     <div className="space-y-5">
       {/* KPI summary */}
-      <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
-        <div className="bg-white border border-gray-200 rounded-xl p-4 text-center shadow-sm">
-          <p className="text-2xs font-bold text-slate-500 uppercase">Motoristas Avaliados</p>
-          <p className="text-2xl font-black text-slate-800">{summary.total}</p>
-        </div>
-        <div className="bg-white border border-gray-200 rounded-xl p-4 text-center shadow-sm">
-          <p className="text-2xs font-bold text-slate-500 uppercase">Score Médio</p>
-          <p className={`text-2xl font-black ${getScoreColor(summary.avgScore)}`}>{summary.avgScore.toFixed(1)}</p>
-        </div>
-        <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-center">
-          <p className="text-2xs font-bold text-emerald-600 uppercase">Excelente (≥90)</p>
-          <p className="text-2xl font-black text-emerald-700">{summary.excelente}</p>
-        </div>
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-center">
-          <p className="text-2xs font-bold text-blue-600 uppercase">Bom (70-89)</p>
-          <p className="text-2xl font-black text-blue-700">{summary.bom}</p>
-        </div>
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-center">
-          <p className="text-2xs font-bold text-amber-600 uppercase">Regular (50-69)</p>
-          <p className="text-2xl font-black text-amber-700">{summary.regular}</p>
-        </div>
-        <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-center">
-          <p className="text-2xs font-bold text-red-600 uppercase">Crítico (&lt;50)</p>
-          <p className="text-2xl font-black text-red-700">{summary.critico}</p>
-        </div>
+      <div className="bg-slate-800 p-4 flex gap-3 overflow-x-auto rounded-xl">
+        {[
+          { l: 'Motoristas Avaliados', v: summary.total },
+          { l: 'Score Médio', v: summary.avgScore.toFixed(1) },
+          { l: 'Excelente (≥90)', v: summary.excelente },
+          { l: 'Bom (70-89)', v: summary.bom },
+          { l: 'Regular (50-69)', v: summary.regular },
+          { l: 'Crítico (<50)', v: summary.critico },
+        ].map((k, i) => (
+          <div key={i} className="bg-slate-700 rounded-lg p-3 text-center min-w-[120px] flex-1">
+            <p className="text-2xs font-bold text-slate-400 uppercase tracking-wide">{k.l}</p>
+            <p className="text-lg font-black text-white mt-0.5">{k.v}</p>
+          </div>
+        ))}
       </div>
 
       {/* Scoring info — editable */}
@@ -370,7 +359,8 @@ export default function ScoreMotoristasScreen({
       </div>
 
       {/* Charts */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Distribuição por Faixa */}
         <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
           <h4 className="text-xs font-black text-slate-600 uppercase tracking-tighter mb-3">Distribuição por Faixa</h4>
           <div className="h-48">
@@ -387,11 +377,46 @@ export default function ScoreMotoristasScreen({
           </div>
         </div>
 
+        {/* Gauge — Média de Nota dos Motoristas */}
+        <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm flex flex-col items-center">
+          <h4 className="text-xs font-black text-slate-600 uppercase tracking-tighter mb-2">Média de Nota dos Motoristas</h4>
+          <svg viewBox="0 0 200 130" width="100%" style={{ maxWidth: 260 }}>
+            {/* Background arcs */}
+            <path d="M 20 110 A 80 80 0 0 1 60 36" fill="none" stroke="#dc2626" strokeWidth="18" strokeLinecap="round" />
+            <path d="M 60 36 A 80 80 0 0 1 100 30" fill="none" stroke="#f59e0b" strokeWidth="18" strokeLinecap="round" />
+            <path d="M 100 30 A 80 80 0 0 1 140 36" fill="none" stroke="#f59e0b" strokeWidth="18" strokeLinecap="round" />
+            <path d="M 140 36 A 80 80 0 0 1 180 110" fill="none" stroke="#059669" strokeWidth="18" strokeLinecap="round" />
+            {/* Needle */}
+            {(() => {
+              const val = Math.min(100, Math.max(0, summary.avgScore));
+              const angle = 180 - (val / 100) * 180;
+              const rad = (angle * Math.PI) / 180;
+              const nx = 100 + 60 * Math.cos(rad);
+              const ny = 110 - 60 * Math.sin(rad);
+              return (
+                <>
+                  <line x1="100" y1="110" x2={nx} y2={ny} stroke="#1e293b" strokeWidth="3" strokeLinecap="round" />
+                  <circle cx="100" cy="110" r="6" fill="#1e293b" />
+                </>
+              );
+            })()}
+            {/* Labels */}
+            <text x="18" y="125" fontSize="10" fill="#94a3b8" textAnchor="start">0</text>
+            <text x="100" y="22" fontSize="10" fill="#94a3b8" textAnchor="middle">50</text>
+            <text x="182" y="125" fontSize="10" fill="#94a3b8" textAnchor="end">100</text>
+          </svg>
+          <div className="text-center -mt-2">
+            <p className={`text-3xl font-black ${getScoreColor(summary.avgScore)}`}>{summary.avgScore.toFixed(1)}</p>
+            <p className={`text-xs font-bold ${getScoreColor(summary.avgScore)}`}>{getScoreLabel(summary.avgScore)}</p>
+          </div>
+        </div>
+
+        {/* Top 5 Melhores Scores */}
         <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm relative">
-          <h4 className="text-xs font-black text-slate-600 uppercase tracking-tighter mb-3">Top 10 — Menores Scores</h4>
-          <div className="h-72">
+          <h4 className="text-xs font-black text-slate-600 uppercase tracking-tighter mb-3">Top 5 — Melhores Scores</h4>
+          <div className="h-48">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartPiores} layout="vertical" margin={{ left: 5 }}>
+              <BarChart data={chartMelhores} layout="vertical" margin={{ left: 5 }}>
                 <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 9 }} axisLine={false} />
                 <YAxis
                   dataKey="name"
@@ -400,11 +425,6 @@ export default function ScoreMotoristasScreen({
                   width={80}
                   interval={0}
                   axisLine={false}
-                  onClick={(_data: any, _index: number, e: any) => {
-                    // YAxis tick click — extract matrícula from the tick value
-                    const text = e?.target?.textContent || e?.value || '';
-                    if (text) setSelectedChartMatricula(prev => prev === text ? null : text);
-                  }}
                 />
                 <Tooltip formatter={(v: number) => [`${v} pts`, 'Score']} labelFormatter={(_: string, payload: any[]) => payload?.[0]?.payload?.fullName || ''} />
                 <Bar
@@ -417,13 +437,12 @@ export default function ScoreMotoristasScreen({
                     if (mat) setSelectedChartMatricula(prev => prev === mat ? null : mat);
                   }}
                 >
-                  {chartPiores.map((entry, i) => <Cell key={i} fill={getBarColor(entry.score)} />)}
+                  {chartMelhores.map((entry, i) => <Cell key={i} fill={getBarColor(entry.score)} />)}
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
           </div>
 
-          {/* Score detail popup — appears below chart when a matrícula is clicked */}
           {selectedChartScore && (
             <div
               className="mt-3 bg-gradient-to-r from-slate-50 to-slate-100 border-2 border-brand-300 rounded-xl p-4 shadow-md cursor-pointer"
