@@ -82,7 +82,17 @@ export default function ViewMonitriipScreen({ monitriips, viagens }: Props) {
 
   const resolveLinha = useMemo(() => buildLinhaLookup(viagens), [viagens]);
   // Use linhaAssociada if available, otherwise fallback to servico-based lookup
-  const getLinhaName = (r: Monitriip) => r.linhaAssociada || resolveLinha(r.servico) || r.servico;
+  const getLinhaName = (r: Monitriip) => {
+    if (r.linhaAssociada) return r.linhaAssociada;
+    const resolved = resolveLinha(r.servico);
+    if (resolved) return resolved;
+    const numMatch = r.servico.match(/^\d+/);
+    if (numMatch) {
+      const byNum = resolveLinha(numMatch[0]);
+      if (byNum) return byNum;
+    }
+    return r.servico;
+  };
 
   // Filter
   const filtered = useMemo(() => {
@@ -114,17 +124,13 @@ export default function ViewMonitriipScreen({ monitriips, viagens }: Props) {
     const atrasos = filtered.filter(r => r.atraso30min).length;
     const totalEmbarque = filtered.reduce((s, r) => s + r.embarque, 0);
     const totalNoShow = filtered.reduce((s, r) => s + r.noShow, 0);
+    const totalVendaPassagem = filtered.reduce((s, r) => s + r.vendaPassagem, 0);
     const pctValidas = total > 0 ? ((validas / total) * 100).toFixed(2) : '0.00';
     const pctAtrasos = total > 0 ? ((atrasos / total) * 100).toFixed(1) : '0.0';
+    const pctNoShow = totalVendaPassagem > 0 ? ((totalNoShow / totalVendaPassagem) * 100).toFixed(1) : '0.0';
+    const pctEmbarque = totalVendaPassagem > 0 ? ((totalEmbarque / totalVendaPassagem) * 100).toFixed(1) : '0.0';
 
-    // Vel Tempo Localização stats
-    const velValues = filtered
-      .map(r => parseFloat(r.velTempoLocalizacao || ''))
-      .filter(n => !isNaN(n));
-    const velTempoLocMin = velValues.length > 0 ? Math.min(...velValues) : 0;
-    const velTempoLoc = velValues.length > 0 ? Math.round(velValues.reduce((a, b) => a + b, 0)) : 0;
-
-    return { total, validas, atrasos, totalEmbarque, totalNoShow, pctValidas, pctAtrasos, velTempoLocMin, velTempoLoc };
+    return { total, validas, atrasos, totalEmbarque, totalNoShow, totalVendaPassagem, pctValidas, pctAtrasos, pctNoShow, pctEmbarque };
   }, [filtered]);
 
   // Chart 1: Top 5 viagens by total count (resolved by line name)
@@ -137,10 +143,10 @@ export default function ViewMonitriipScreen({ monitriips, viagens }: Props) {
       .slice(0, 5);
   }, [filtered, getLinhaName]);
 
-  // Chart 2: Top 5 viagens with most atrasos
-  const topServicosAtraso = useMemo(() => {
+  // Chart 2: Top 5 linhas with most No Show
+  const topLinhasNoShow = useMemo(() => {
     const acc: Record<string, number> = {};
-    filtered.filter(r => r.atraso30min).forEach(r => { const nome = getLinhaName(r); acc[nome] = (acc[nome] || 0) + 1; });
+    filtered.forEach(r => { if (r.noShow > 0) { const nome = getLinhaName(r); acc[nome] = (acc[nome] || 0) + r.noShow; } });
     return Object.entries(acc)
       .map(([name, value]) => ({ name: name.length > 35 ? name.slice(0, 34) + '…' : name, value, fullName: name }))
       .sort((a, b) => b.value - a.value)
@@ -250,12 +256,13 @@ export default function ViewMonitriipScreen({ monitriips, viagens }: Props) {
           { l: 'Viagens Válidas', v: kpis.validas.toLocaleString('pt-BR') },
           { l: 'Viagens Inválidas', v: (kpis.total - kpis.validas).toLocaleString('pt-BR') },
           { l: '% de Viagens Válidas', v: `${kpis.pctValidas}%` },
-          { l: 'Vel. Temp. Loc. Mínima', v: kpis.velTempoLocMin.toLocaleString('pt-BR') },
-          { l: 'Vel. Tempo Localização', v: kpis.velTempoLoc.toLocaleString('pt-BR') },
-        ].map((k, i) => (
+          { l: 'No Show', v: kpis.totalNoShow.toLocaleString('pt-BR'), pct: `${kpis.pctNoShow}%` },
+          { l: 'Embarques', v: kpis.totalEmbarque.toLocaleString('pt-BR'), pct: `${kpis.pctEmbarque}%` },
+        ].map((k: any, i: number) => (
           <div key={i} className="bg-slate-700 rounded-lg p-3 text-center min-w-[150px] flex-1">
             <p className="text-2xs font-bold text-slate-400 uppercase">{k.l}</p>
             <p className="text-lg font-black text-white mt-0.5">{k.v}</p>
+            {k.pct && <p className="text-xs font-bold text-brand-300">{k.pct}</p>}
           </div>
         ))}
       </div>
@@ -356,7 +363,7 @@ export default function ViewMonitriipScreen({ monitriips, viagens }: Props) {
       {/* Charts row 1 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <ChartCard title="Viagens por Serviço (Top 5)" data={topServicosCount} valueLabel="Viagens" />
-        <ChartCard title="Serviços com Mais Atrasos (Top 5)" data={topServicosAtraso} valueLabel="Atrasos" />
+        <ChartCard title="Linhas com Mais No Show (Top 5)" data={topLinhasNoShow} valueLabel="No Show" />
       </div>
 
       {/* Charts row 2 */}

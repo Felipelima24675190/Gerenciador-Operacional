@@ -411,3 +411,7 @@ DO $$ BEGIN ALTER TABLE acidentes ADD COLUMN "acaoTomada" TEXT; EXCEPTION WHEN d
 
 -- antt_code_descriptions: campo valor faltando (causa do bug: ANTT codes não sincronizavam)
 DO $$ BEGIN ALTER TABLE antt_code_descriptions ADD COLUMN valor REAL NOT NULL DEFAULT 0; EXCEPTION WHEN duplicate_column THEN NULL; END $$;
+
+-- veiculos: campos LIT/TCO validade
+DO $$ BEGIN ALTER TABLE veiculos ADD COLUMN "litValidade" TEXT; EXCEPTION WHEN duplicate_column THEN NULL; END $$;
+DO $$ BEGIN ALTER TABLE veiculos ADD COLUMN "tcoValidade" TEXT; EXCEPTION WHEN duplicate_column THEN NULL; END $$;

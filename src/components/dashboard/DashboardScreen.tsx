@@ -7,7 +7,7 @@ import { clsx } from 'clsx';
 import { Motorista, Ocorrencia, Viagem, UserRole } from '../../types';
 import StatCard from './StatCard';
 import { AlertCircle, Clock, CheckCircle2, TrendingUp, Edit3, Save, X, Calendar, Search, Settings } from 'lucide-react';
-import { getDay, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
+import { isWithinInterval, startOfDay, endOfDay } from 'date-fns';
 import { TipoStatus } from '../../types';
 
 const CustomYAxisTick = (props: any) => {
@@ -214,28 +214,67 @@ export default function DashboardScreen({ motoristas, ocorrencias, viagens, setO
       else contagem[label].NoHorario++;
     });
 
-    return Object.entries(contagem).map(([name, data]) => ({ name, ...data }));
+    const totalGeral = ocorrenciasFiltradas.length;
+    return Object.entries(contagem).map(([name, data]) => {
+      const subtotal = data.Atraso + data.Adiantamento;
+      return {
+        name,
+        ...data,
+        pctAtraso: totalGeral > 0 ? ((data.Atraso / totalGeral) * 100).toFixed(1) : '0.0',
+        pctAdiantamento: totalGeral > 0 ? ((data.Adiantamento / totalGeral) * 100).toFixed(1) : '0.0',
+        pctTotal: totalGeral > 0 ? ((subtotal / totalGeral) * 100).toFixed(1) : '0.0',
+      };
+    });
   }, [ocorrenciasFiltradas, motoristas, toleranciaAtraso, toleranciaAdiantamento]);
 
   const dadosLinhaDoTempo = useMemo(() => {
-    const diasSemana = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
-    const contagem: Record<string, number> = { Dom: 0, Seg: 0, Ter: 0, Qua: 0, Qui: 0, Sex: 0, Sáb: 0 };
-    
-    ocorrenciasFiltradas.forEach(o => {
+    const end = new Date(dataFim + 'T00:00:00');
+    const days: Date[] = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(end);
+      d.setDate(d.getDate() - i);
+      days.push(d);
+    }
+    const prevDays: Date[] = [];
+    for (let i = 13; i >= 7; i--) {
+      const d = new Date(end);
+      d.setDate(d.getDate() - i);
+      prevDays.push(d);
+    }
+
+    // Filter by filial/linha only (not date) to count across both periods
+    const allFiltered = ocorrencias.filter(o => {
+      const mot = motoristas.find(m => m.matricula === o.matriculaMotorista);
+      const filial = mot ? mot.filial : 'Desconhecida';
+      const matchFilial = filialFilter === 'Todas' || filial === filialFilter;
+      const rl = resolveLinha(o.nomeLinha) || resolveLinha(o.numeroLinha);
+      const matchLinha = linhaFilter === 'Todas' || rl === linhaFilter || o.nomeLinha === linhaFilter || o.numeroLinha === linhaFilter;
+      return matchFilial && matchLinha;
+    });
+
+    const parseOccDate = (o: Ocorrencia) => {
+      const datePart = o.prevInicio.split(' ')[0];
+      const [d, m, y] = datePart.split('/').map(Number);
+      return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    };
+
+    const countByDate: Record<string, number> = {};
+    allFiltered.forEach(o => {
       if (getStatusInicio(o) !== 'No Horário') {
-        const datePart = o.prevInicio.split(' ')[0];
-        const [day, month, year] = datePart.split('/').map(Number);
-        const date = new Date(year, month - 1, day);
-        const diaIndex = getDay(date);
-        const diaNome = diasSemana[diaIndex];
-        if (contagem[diaNome] !== undefined) {
-          contagem[diaNome]++;
-        }
+        const key = parseOccDate(o);
+        countByDate[key] = (countByDate[key] || 0) + 1;
       }
     });
 
-    return Object.entries(contagem).map(([name, Ocorrencias]) => ({ name, Ocorrencias }));
-  }, [ocorrenciasFiltradas, toleranciaAtraso, toleranciaAdiantamento]);
+    const fmtKey = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    const fmtLabel = (d: Date) => `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
+
+    return days.map((day, idx) => ({
+      name: fmtLabel(day),
+      Ocorrencias: countByDate[fmtKey(day)] || 0,
+      Anterior: countByDate[fmtKey(prevDays[idx])] || 0,
+    }));
+  }, [ocorrencias, motoristas, filialFilter, linhaFilter, dataFim, toleranciaAtraso, toleranciaAdiantamento, resolveLinha]);
 
   const rankingMotoristas = useMemo(() => {
     const rank: Record<string, { nome: string, filial: string, total: number }> = {};
@@ -264,8 +303,8 @@ export default function DashboardScreen({ motoristas, ocorrencias, viagens, setO
           <h3 className="font-bold text-slate-800 uppercase text-xs tracking-widest">Filtros do Dashboard</h3>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <div className="space-y-1">
+        <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+          <div className="space-y-1 md:col-span-2">
             <label htmlFor="filter-data-inicio" className="text-2xs font-bold text-slate-500 uppercase tracking-wide">Intervalo de Data</label>
             <div className="flex items-center gap-2">
               <div className="relative w-full">
@@ -294,7 +333,7 @@ export default function DashboardScreen({ motoristas, ocorrencias, viagens, setO
             </div>
           </div>
 
-          <div className="space-y-1">
+          <div className="space-y-1 md:col-span-2">
             <label htmlFor="filter-filial" className="text-2xs font-bold text-slate-500 uppercase tracking-wide">Filial</label>
             <select
               id="filter-filial"
@@ -557,7 +596,7 @@ export default function DashboardScreen({ motoristas, ocorrencias, viagens, setO
           {dadosGraficoFilial.length > 0 && (
             <div className="h-80">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={dadosGraficoFilial} layout="vertical" margin={{ left: 60, right: 20 }}>
+                <BarChart data={dadosGraficoFilial} layout="vertical" margin={{ left: 60, right: 40 }}>
                   <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#e5e7eb" />
                   <XAxis type="number" hide tick={{ fontSize: 11 }} />
                   <YAxis
@@ -569,23 +608,48 @@ export default function DashboardScreen({ motoristas, ocorrencias, viagens, setO
                     interval={0}
                     tick={<CustomYAxisTick />}
                   />
-                  <Tooltip cursor={{ fill: '#f3f4f6' }} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                  <Tooltip
+                    cursor={{ fill: '#f3f4f6' }}
+                    content={({ active, payload, label }: any) => {
+                      if (!active || !payload?.length) return null;
+                      const entry = payload[0]?.payload;
+                      return (
+                        <div className="bg-white p-3 rounded-lg shadow-lg border border-gray-100 text-xs">
+                          <p className="font-bold text-slate-700 mb-1">{label} — {entry?.pctTotal}% do total</p>
+                          {payload.filter((p: any) => p.dataKey !== 'NoHorario').map((p: any) => (
+                            <p key={p.dataKey} style={{ color: p.color }} className="font-medium">
+                              {p.name}: {p.value} ({entry?.[`pct${p.dataKey}`]}%)
+                            </p>
+                          ))}
+                        </div>
+                      );
+                    }}
+                  />
                   <Legend iconType="circle" />
                   <Bar dataKey="Atraso" stackId="a" fill="#ef4444" radius={[0, 4, 4, 0]} barSize={20} />
-                  <Bar dataKey="Adiantamento" stackId="a" fill="#f97316" radius={[0, 4, 4, 0]} barSize={20} />
+                  <Bar dataKey="Adiantamento" stackId="a" fill="#f97316" radius={[0, 4, 4, 0]} barSize={20}
+                    label={({ x, y, width, height, index }: any) => {
+                      const entry = dadosGraficoFilial[index];
+                      return (
+                        <text x={x + width + 4} y={y + height / 2} dy={4} fontSize={10} fill="#64748b" fontWeight={700}>
+                          {entry?.pctTotal ?? ''}%
+                        </text>
+                      );
+                    }}
+                  />
                 </BarChart>
               </ResponsiveContainer>
             </div>
           )}
         </div>
 
-        {/* Gráfico de Linha do Tempo */}
+        {/* Gráfico de Volume — últimos 7 dias vs 7 dias anteriores */}
         <div className="bg-white p-6 rounded-card border border-gray-200 shadow-card">
           <div className="mb-6">
-            {renderDashboardTitle(linhaFilter === 'Todas' ? 'Volume de Ocorrências (Semana)' : 'Tendência Semanal', linhaFilter)}
+            {renderDashboardTitle(linhaFilter === 'Todas' ? 'Volume de Ocorrências (7 dias)' : 'Tendência 7 dias', linhaFilter)}
           </div>
-          {dadosLinhaDoTempo.every(d => d.Ocorrencias === 0) && <p className="text-2xs text-slate-400 text-center py-10">Sem dados no período</p>}
-          {!dadosLinhaDoTempo.every(d => d.Ocorrencias === 0) && (
+          {dadosLinhaDoTempo.every(d => d.Ocorrencias === 0 && d.Anterior === 0) && <p className="text-2xs text-slate-400 text-center py-10">Sem dados no período</p>}
+          {!dadosLinhaDoTempo.every(d => d.Ocorrencias === 0 && d.Anterior === 0) && (
             <div className="h-80">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={dadosLinhaDoTempo}>
@@ -597,9 +661,11 @@ export default function DashboardScreen({ motoristas, ocorrencias, viagens, setO
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
                   <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11 }} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11 }} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11 }} allowDecimals={false} />
                   <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-                  <Area type="monotone" dataKey="Ocorrencias" stroke="#ef4444" strokeWidth={3} fillOpacity={1} fill="url(#colorOcorrencias)" />
+                  <Legend iconType="circle" />
+                  <Area type="monotone" dataKey="Anterior" stroke="#94a3b8" strokeWidth={2} strokeDasharray="5 5" fillOpacity={0} name="7 dias anteriores" />
+                  <Area type="monotone" dataKey="Ocorrencias" stroke="#ef4444" strokeWidth={3} fillOpacity={1} fill="url(#colorOcorrencias)" name="Últimos 7 dias" />
                 </AreaChart>
               </ResponsiveContainer>
             </div>

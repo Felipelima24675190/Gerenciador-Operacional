@@ -161,7 +161,11 @@ export default function ConsultMaintenanceScreen({ manutencoes, historicoManuten
       counts[desc] = (counts[desc] || 0) + 1;
     });
     return Object.entries(counts)
-      .map(([name, value]) => ({ name, value }))
+      .map(([name, value]) => ({
+        name: name.length > 30 ? name.slice(0, 29) + '…' : name,
+        fullName: name,
+        value,
+      }))
       .sort((a, b) => b.value - a.value)
       .slice(0, 10);
   }, [manutencoes]);
@@ -223,13 +227,24 @@ export default function ConsultMaintenanceScreen({ manutencoes, historicoManuten
         </div>
 
         <div className="bg-white rounded-card border border-gray-200 p-4 shadow-card">
-          <h4 className="text-2xs font-black text-slate-600 uppercase text-center mb-3">Distribuicao por Servico</h4>
+          <h4 className="text-2xs font-black text-slate-600 uppercase text-center mb-3">Distribuição por Serviço</h4>
           <div style={{ height: Math.max(200, motivoChart.length * 32) }}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={motivoChart} layout="vertical" margin={{ left: 0, right: 40 }}>
                 <XAxis type="number" hide />
-                <YAxis dataKey="name" type="category" tick={{ fontSize: 9, width: 200 }} width={200} interval={0} axisLine={false} tickLine={false} />
-                <Tooltip />
+                <YAxis dataKey="name" type="category" tick={{ fontSize: 9 }} width={180} interval={0} axisLine={false} tickLine={false} />
+                <Tooltip
+                  content={({ active, payload }: any) => {
+                    if (!active || !payload?.length) return null;
+                    const entry = payload[0]?.payload;
+                    return (
+                      <div className="bg-white p-2 rounded-lg shadow-lg border border-gray-100 text-xs max-w-[300px]">
+                        <p className="font-bold text-slate-700 mb-0.5 break-words">{entry?.fullName}</p>
+                        <p className="text-slate-500">{payload[0].value} ocorrência(s)</p>
+                      </div>
+                    );
+                  }}
+                />
                 <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={16} label={{ position: 'right', fontSize: 9 }}>
                   {motivoChart.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                 </Bar>
