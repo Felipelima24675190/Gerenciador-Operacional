@@ -31,7 +31,9 @@
       "Bash(do echo:*)",
       "Read(//c/Users/luis.lima/Downloads/App Atrasos/**)",
       "Bash(done)",
-      "Bash(xargs grep:*)"
+      "Bash(xargs grep:*)",
+      "Bash(wc -l /c/Users/luis.lima/Downloads/\"App Atrasos/src/components\"/**/*.tsx)",
+      "Bash(awk '{print NF}' \"01.02 a 28.02 OCORRENCIAS.txt\")"
     ]
   }
 }

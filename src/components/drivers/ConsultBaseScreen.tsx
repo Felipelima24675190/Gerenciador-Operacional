@@ -1,6 +1,6 @@
 import { useState, useMemo, type Dispatch, type SetStateAction } from 'react';
 import { Search, Filter, X, Plus, Trash2, ClipboardList, Pencil, Save } from 'lucide-react';
-import { Motorista, StatusMotorista, EventoMotorista, TipoEventoMotorista, UserRole } from '../../types';
+import { Motorista, StatusMotorista, EventoMotorista, TipoEventoMotorista, UserRole, JornadaMotorista, CodigoJornadaDescription } from '../../types';
 import { BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Bar } from 'recharts';
 
 const FILIAL_SIGLAS: Record<string, string> = {
@@ -24,6 +24,8 @@ interface ConsultBaseScreenProps {
   userRole?: UserRole;
   eventosMotorista?: EventoMotorista[];
   setEventosMotorista?: Dispatch<SetStateAction<EventoMotorista[]>>;
+  jornadasMotorista?: JornadaMotorista[];
+  codigosJornada?: CodigoJornadaDescription[];
 }
 
 // ─── Driver History Modal ───────────────────────────────────────────────────
@@ -39,12 +41,51 @@ function DriverHistoryModal({
   eventos,
   setEventos,
   onClose,
+  jornadasMotorista = [],
+  codigosJornada = [],
 }: {
   motorista: Motorista;
   eventos: EventoMotorista[];
   setEventos: Dispatch<SetStateAction<EventoMotorista[]>>;
   onClose: () => void;
+  jornadasMotorista?: JornadaMotorista[];
+  codigosJornada?: CodigoJornadaDescription[];
 }) {
+  const [activeTab, setActiveTab] = useState<'eventos' | 'jornada'>('eventos');
+
+  const codeMap = useMemo(() => new Map(codigosJornada.map(c => [c.codigo, c])), [codigosJornada]);
+
+  const mJornadas = useMemo(
+    () => jornadasMotorista.filter(j => j.matricula === motorista.matricula).sort((a, b) => {
+      const parse = (d: string) => { const [dd, mm, yyyy] = d.split('/').map(Number); return new Date(yyyy, mm - 1, dd).getTime(); };
+      return parse(b.data) - parse(a.data);
+    }),
+    [jornadasMotorista, motorista.matricula]
+  );
+
+  const jornadaResumo = useMemo(() => {
+    let trabalhados = 0;
+    let folgas = 0;
+    let faltas = 0;
+    let atestados = 0;
+    for (const j of mJornadas) {
+      const code = codeMap.get(j.codigoAtividade);
+      const cat = code?.categoria || 'OUTROS';
+      if (cat === 'ATIVIDADE' && !j.semJornada) trabalhados++;
+      else if (cat === 'FOLGA') folgas++;
+      else if (cat === 'FALTA') faltas++;
+      else if (cat === 'ATESTADO') atestados++;
+    }
+    return { trabalhados, folgas, faltas, atestados };
+  }, [mJornadas, codeMap]);
+
+  const CAT_BADGE: Record<string, string> = {
+    ATIVIDADE: 'bg-emerald-100 text-emerald-700',
+    FOLGA: 'bg-amber-100 text-amber-700',
+    ATESTADO: 'bg-blue-100 text-blue-700',
+    FALTA: 'bg-red-100 text-red-700',
+    OUTROS: 'bg-slate-100 text-slate-600',
+  };
   const mEventos = useMemo(
     () => eventos.filter(e => e.matricula === motorista.matricula).sort((a, b) => {
       const parse = (d: string) => { const [dd, mm, yyyy] = d.split('/').map(Number); return new Date(yyyy, mm - 1, dd).getTime(); };
@@ -98,6 +139,60 @@ function DriverHistoryModal({
         </div>
 
         <div className="p-5 space-y-4 overflow-y-auto">
+          {/* Tabs */}
+          {mJornadas.length > 0 && (
+            <div className="flex gap-1 bg-slate-100 rounded-lg p-0.5">
+              <button onClick={() => setActiveTab('eventos')} className={`flex-1 px-3 py-1.5 rounded-md text-xs font-bold transition-colors ${activeTab === 'eventos' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>Eventos Manuais</button>
+              <button onClick={() => setActiveTab('jornada')} className={`flex-1 px-3 py-1.5 rounded-md text-xs font-bold transition-colors ${activeTab === 'jornada' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>Jornada ({mJornadas.length})</button>
+            </div>
+          )}
+
+          {activeTab === 'jornada' && mJornadas.length > 0 ? (
+            <>
+              {/* Jornada Resumo */}
+              <div className="grid grid-cols-4 gap-3">
+                <div className="p-3 rounded-xl text-center bg-emerald-100 text-emerald-700">
+                  <p className="text-2xs font-black uppercase tracking-wider">Trabalhados</p>
+                  <p className="text-2xl font-black">{jornadaResumo.trabalhados}</p>
+                </div>
+                <div className="p-3 rounded-xl text-center bg-amber-100 text-amber-700">
+                  <p className="text-2xs font-black uppercase tracking-wider">Folgas</p>
+                  <p className="text-2xl font-black">{jornadaResumo.folgas}</p>
+                </div>
+                <div className="p-3 rounded-xl text-center bg-blue-100 text-blue-700">
+                  <p className="text-2xs font-black uppercase tracking-wider">Atestados</p>
+                  <p className="text-2xl font-black">{jornadaResumo.atestados}</p>
+                </div>
+                <div className="p-3 rounded-xl text-center bg-red-100 text-red-700">
+                  <p className="text-2xs font-black uppercase tracking-wider">Faltas</p>
+                  <p className="text-2xl font-black">{jornadaResumo.faltas}</p>
+                </div>
+              </div>
+
+              {/* Jornada List */}
+              <div className="space-y-1.5 max-h-72 overflow-y-auto pr-1">
+                {mJornadas.map(j => {
+                  const code = codeMap.get(j.codigoAtividade);
+                  const tipo = code?.descricao || j.codigoAtividade;
+                  const cat = code?.categoria || 'OUTROS';
+                  return (
+                    <div key={j.id} className="flex items-center justify-between bg-white border rounded-lg px-3 py-2">
+                      <div className="flex items-center gap-3">
+                        <span className="font-mono text-xs text-slate-500">{j.data}</span>
+                        <span className={`px-2 py-0.5 rounded text-2xs font-black ${CAT_BADGE[cat] || CAT_BADGE.OUTROS}`}>{tipo}</span>
+                        {!j.semJornada && (
+                          <span className="text-xs text-slate-400">
+                            {j.horaEntrada} - {j.horaSaida}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          ) : (
+            <>
           {/* Resumo */}
           <div className="grid grid-cols-4 gap-3">
             {(['TRABALHADO', 'FOLGA', 'ATESTADO', 'FALTA'] as TipoEventoMotorista[]).map(tipo => (
@@ -153,13 +248,15 @@ function DriverHistoryModal({
               </div>
             ))}
           </div>
+            </>
+          )}
         </div>
       </div>
     </div>
   );
 }
 
-export default function ConsultBaseScreen({ motoristas, setMotoristas, userRole, eventosMotorista = [], setEventosMotorista }: ConsultBaseScreenProps) {
+export default function ConsultBaseScreen({ motoristas, setMotoristas, userRole, eventosMotorista = [], setEventosMotorista, jornadasMotorista = [], codigosJornada = [] }: ConsultBaseScreenProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusMotorista | 'Todos'>('Todos');
   const [filialFilter, setFilialFilter] = useState('Todos');
@@ -411,6 +508,8 @@ export default function ConsultBaseScreen({ motoristas, setMotoristas, userRole,
           eventos={eventosMotorista}
           setEventos={setEventosMotorista}
           onClose={() => setSelectedHistorico(null)}
+          jornadasMotorista={jornadasMotorista}
+          codigosJornada={codigosJornada}
         />
       )}
     </div>

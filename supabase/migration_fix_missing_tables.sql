@@ -18,7 +18,8 @@ DECLARE
     'registros_ociosidade','registros_linhas',
     'ociosidades_motorista','monitriips','eventos_motorista',
     'app_notifications','dicionario_linhas','manutencoes',
-    'historico_manutencao','acidentes'
+    'historico_manutencao','acidentes',
+    'jornadas_motorista','codigos_jornada'
   ];
 BEGIN
   IF NOT (tname = ANY(allowed)) THEN
@@ -344,7 +345,8 @@ DECLARE
     'registros_ociosidade','registros_linhas',
     'ociosidades_motorista','monitriips','eventos_motorista',
     'app_notifications','dicionario_linhas','manutencoes',
-    'historico_manutencao','acidentes'
+    'historico_manutencao','acidentes',
+    'jornadas_motorista','codigos_jornada'
   ];
 BEGIN
   FOREACH t IN ARRAY tables LOOP
@@ -411,6 +413,40 @@ DO $$ BEGIN ALTER TABLE acidentes ADD COLUMN "acaoTomada" TEXT; EXCEPTION WHEN d
 
 -- antt_code_descriptions: campo valor faltando (causa do bug: ANTT codes não sincronizavam)
 DO $$ BEGIN ALTER TABLE antt_code_descriptions ADD COLUMN valor REAL NOT NULL DEFAULT 0; EXCEPTION WHEN duplicate_column THEN NULL; END $$;
+
+-- jornadas_motorista
+DO $$ BEGIN ALTER TABLE jornadas_motorista ADD COLUMN "horaEntrada" TEXT; EXCEPTION WHEN undefined_table THEN
+  CREATE TABLE jornadas_motorista (
+    id TEXT PRIMARY KEY,
+    matricula TEXT NOT NULL,
+    data TEXT NOT NULL,
+    "codigoAtividade" TEXT NOT NULL,
+    "horaEntrada" TEXT,
+    "horaEntradaIntervalo" TEXT,
+    "horaSaidaIntervalo" TEXT,
+    "horaSaida" TEXT,
+    "jornadaCruzaMeiaNoite" BOOLEAN NOT NULL DEFAULT false,
+    "semIntervalo" BOOLEAN NOT NULL DEFAULT false,
+    "semJornada" BOOLEAN NOT NULL DEFAULT false
+  );
+  ALTER TABLE jornadas_motorista ENABLE ROW LEVEL SECURITY;
+  BEGIN CREATE POLICY "allow_all_jornadas_motorista" ON jornadas_motorista FOR ALL USING (true) WITH CHECK (true); EXCEPTION WHEN duplicate_object THEN NULL; END;
+END; END $$;
+
+CREATE INDEX IF NOT EXISTS idx_jornadas_motorista_matricula ON jornadas_motorista (matricula);
+CREATE INDEX IF NOT EXISTS idx_jornadas_motorista_data ON jornadas_motorista (data);
+
+-- codigos_jornada
+DO $$ BEGIN ALTER TABLE codigos_jornada ADD COLUMN descricao TEXT; EXCEPTION WHEN undefined_table THEN
+  CREATE TABLE codigos_jornada (
+    codigo TEXT PRIMARY KEY,
+    descricao TEXT NOT NULL DEFAULT '',
+    categoria TEXT NOT NULL DEFAULT 'OUTROS',
+    "contaComoFalta" BOOLEAN NOT NULL DEFAULT false
+  );
+  ALTER TABLE codigos_jornada ENABLE ROW LEVEL SECURITY;
+  BEGIN CREATE POLICY "allow_all_codigos_jornada" ON codigos_jornada FOR ALL USING (true) WITH CHECK (true); EXCEPTION WHEN duplicate_object THEN NULL; END;
+END; END $$;
 
 -- veiculos: campos LIT/TCO validade
 DO $$ BEGIN ALTER TABLE veiculos ADD COLUMN "litValidade" TEXT; EXCEPTION WHEN duplicate_column THEN NULL; END $$;

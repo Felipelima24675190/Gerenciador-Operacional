@@ -8,7 +8,7 @@ import ImportLinesScreen from './components/lines/ImportLinesScreen';
 import ConsultLinesScreen from './components/lines/ConsultLinesScreen';
 import ImportOccurrencesScreen from './components/dashboard/ImportOccurrencesScreen';
 import ReportsScreen from './components/reports/ReportsScreen';
-import { Motorista, Viagem, Ocorrencia, User, MultaANTT, AnttCodeDescription, ExcessoVelocidade, ParadaIndevida, Veiculo, Avaria, ResumoAvaria, MultaTransito, RegistroOciosidade, RegistroLinha, OciosidadeMotorista, Monitriip, EventoMotorista, LinhaAbreviacao, AppNotification, ManutencaoVeiculo, HistoricoManutencao, Acidente } from './types';
+import { Motorista, Viagem, Ocorrencia, User, MultaANTT, AnttCodeDescription, ExcessoVelocidade, ParadaIndevida, Veiculo, Avaria, ResumoAvaria, MultaTransito, RegistroOciosidade, RegistroLinha, OciosidadeMotorista, Monitriip, EventoMotorista, LinhaAbreviacao, AppNotification, ManutencaoVeiculo, HistoricoManutencao, Acidente, JornadaMotorista, CodigoJornadaDescription } from './types';
 import DashboardOperacionalScreen from './components/dashboard/DashboardOperacionalScreen';
 import LineDictionaryScreen, { DEFAULT_ENTRIES as DEFAULT_DICIONARIO } from './components/lines/LineDictionaryScreen';
 import AnttCodesScreen from './components/antt/AnttCodesScreen';
@@ -41,6 +41,25 @@ import ImportMaintenanceScreen from './components/manutencao/ImportMaintenanceSc
 import ConsultMaintenanceScreen from './components/manutencao/ConsultMaintenanceScreen';
 import AcidentesScreen from './components/avarias/AcidentesScreen';
 import ScoreMotoristasScreen from './components/drivers/ScoreMotoristasScreen';
+import ImportJornadaScreen from './components/jornada/ImportJornadaScreen';
+import CodigosJornadaScreen from './components/jornada/CodigosJornadaScreen';
+import JornadaDashboardScreen from './components/jornada/JornadaDashboardScreen';
+
+const DEFAULT_CODIGOS_JORNADA: CodigoJornadaDescription[] = [
+  { codigo: '001', descricao: 'Jornada', categoria: 'ATIVIDADE', contaComoFalta: false },
+  { codigo: '088', descricao: 'Intervalo', categoria: 'ATIVIDADE', contaComoFalta: false },
+  { codigo: '202', descricao: 'Folga (DSR)', categoria: 'FOLGA', contaComoFalta: false },
+  { codigo: '122', descricao: 'Fora de Escala', categoria: 'OUTROS', contaComoFalta: false },
+  { codigo: '126', descricao: 'Folga Compensada', categoria: 'FOLGA', contaComoFalta: false },
+  { codigo: '019', descricao: 'Falta', categoria: 'FALTA', contaComoFalta: true },
+  { codigo: '033', descricao: 'Atestado', categoria: 'ATESTADO', contaComoFalta: false },
+  { codigo: '066', descricao: 'Férias', categoria: 'OUTROS', contaComoFalta: false },
+  { codigo: '437', descricao: 'Treinamento', categoria: 'ATIVIDADE', contaComoFalta: false },
+  { codigo: '054', descricao: 'Benefício INSS', categoria: 'OUTROS', contaComoFalta: false },
+  { codigo: '071', descricao: 'Licença Paternidade', categoria: 'OUTROS', contaComoFalta: false },
+  { codigo: '041', descricao: 'Atestado de Óbito', categoria: 'ATESTADO', contaComoFalta: false },
+  { codigo: '077', descricao: 'Desligado', categoria: 'OUTROS', contaComoFalta: false },
+];
 
 function App() {
   const [activeTab, setActiveTab] = useState('dashboard-operacional');
@@ -108,6 +127,8 @@ function App() {
   const [manutencoes, setManutencoes]                             = usePersistedState<ManutencaoVeiculo>('manutencoes', 'manutencoesData');
   const [historicoManutencao, setHistoricoManutencao]             = usePersistedState<HistoricoManutencao>('historico_manutencao', 'historicoManutencaoData');
   const [acidentes, setAcidentes]                                 = usePersistedState<Acidente>('acidentes', 'acidentesData');
+  const [jornadasMotorista, setJornadasMotorista]                 = usePersistedState<JornadaMotorista>('jornadas_motorista', 'jornadasMotoristaData');
+  const [codigosJornada, setCodigosJornada]                       = usePersistedState<CodigoJornadaDescription>('codigos_jornada', 'codigosJornadaData', DEFAULT_CODIGOS_JORNADA);
 
   // ─── Notifying wrappers ────────────────────────────────────────────────────
   const setOcorrenciasN = useCallback((a: SetStateAction<Ocorrencia[]>) => { setOcorrencias(a); addNotification('Ocorrencias', 'Dados de pontualidade atualizados'); }, [setOcorrencias, addNotification]);
@@ -120,6 +141,7 @@ function App() {
   const setMonitriipsN = useCallback((a: SetStateAction<Monitriip[]>) => { setMonitriips(a); addNotification('Monitriip', 'Dados Monitriip atualizados'); }, [setMonitriips, addNotification]);
   const setManutencoesN = useCallback((a: SetStateAction<ManutencaoVeiculo[]>) => { setManutencoes(a); addNotification('Manutencao', 'Status de manutencao atualizado'); }, [setManutencoes, addNotification]);
   const setAcidentesN = useCallback((a: SetStateAction<Acidente[]>) => { setAcidentes(a); addNotification('Acidentes', 'Registro de acidentes atualizado'); }, [setAcidentes, addNotification]);
+  const setJornadasMotN = useCallback((a: SetStateAction<JornadaMotorista[]>) => { setJornadasMotorista(a); addNotification('Jornada', 'Jornada de motoristas atualizada'); }, [setJornadasMotorista, addNotification]);
 
   // ─── Render ────────────────────────────────────────────────────────────────
   const renderContent = () => {
@@ -133,7 +155,7 @@ function App() {
       case 'import-drivers':
         return <ImportDriversScreen motoristas={motoristas} setMotoristas={setMotoristasN} userRole={currentUser.role} onNavigate={setActiveTab} />;
       case 'consult-base':
-        return <ConsultBaseScreen motoristas={motoristas} setMotoristas={setMotoristas} userRole={currentUser.role} eventosMotorista={eventosMotorista} setEventosMotorista={setEventosMotorista} />;
+        return <ConsultBaseScreen motoristas={motoristas} setMotoristas={setMotoristas} userRole={currentUser.role} eventosMotorista={eventosMotorista} setEventosMotorista={setEventosMotorista} jornadasMotorista={jornadasMotorista} codigosJornada={codigosJornada} />;
       case 'consult-driver':
         return <ConsultDriverScreen motoristas={motoristas} ocorrencias={ocorrencias} multasTransito={multasTransito} />;
       case 'import-lines':
@@ -163,7 +185,7 @@ function App() {
       case 'consult-speed-driver':
         return <ConsultSpeedDriverScreen motoristas={motoristas} excessos={excessosVelocidade} />;
       case 'reports':
-        return <ReportsScreen motoristas={motoristas} ocorrencias={ocorrencias} excessos={excessosVelocidade} multasAntt={multasAntt} avarias={avarias} paradas={paradasIndevidas} multasTransito={multasTransito} ociosidades={ociosidadesMotorista} />;
+        return <ReportsScreen motoristas={motoristas} ocorrencias={ocorrencias} excessos={excessosVelocidade} multasAntt={multasAntt} avarias={avarias} paradas={paradasIndevidas} multasTransito={multasTransito} ociosidades={ociosidadesMotorista} jornadasMotorista={jornadasMotorista} codigosJornada={codigosJornada} />;
       case 'manual-driver':
         return <ImportDriversScreen motoristas={motoristas} setMotoristas={setMotoristasN} userRole={currentUser.role} onNavigate={setActiveTab} />;
       case 'users':
@@ -201,7 +223,13 @@ function App() {
       case 'acidentes':
         return <AcidentesScreen acidentes={acidentes} setAcidentes={setAcidentesN} avarias={avarias} motoristas={motoristas} userRole={currentUser.role} />;
       case 'score-motoristas':
-        return <ScoreMotoristasScreen motoristas={motoristas} ocorrencias={ocorrencias} excessos={excessosVelocidade} avarias={avarias} acidentes={acidentes} eventosMotorista={eventosMotorista} />;
+        return <ScoreMotoristasScreen motoristas={motoristas} ocorrencias={ocorrencias} excessos={excessosVelocidade} avarias={avarias} acidentes={acidentes} eventosMotorista={eventosMotorista} jornadasMotorista={jornadasMotorista} codigosJornada={codigosJornada} />;
+      case 'import-jornada':
+        return <ImportJornadaScreen jornadas={jornadasMotorista} setJornadas={setJornadasMotN} motoristas={motoristas} codigosJornada={codigosJornada} userRole={currentUser.role} />;
+      case 'codigos-jornada':
+        return <CodigosJornadaScreen codigosJornada={codigosJornada} setCodigosJornada={setCodigosJornada} userRole={currentUser.role} />;
+      case 'dashboard-jornada':
+        return <JornadaDashboardScreen jornadasMotorista={jornadasMotorista} setJornadasMotorista={setJornadasMotorista} codigosJornada={codigosJornada} motoristas={motoristas} />;
       default:
         return (
           <div className="flex items-center justify-center h-full">
@@ -242,6 +270,9 @@ function App() {
     'import-drivers': { title: 'Importar Base', breadcrumb: 'Base Motoristas' },
     'manual-driver': { title: 'Cadastro Manual', breadcrumb: 'Base Motoristas' },
     'consult-base': { title: 'Consultar Base', breadcrumb: 'Base Motoristas' },
+    'import-jornada': { title: 'Importar Jornada', breadcrumb: 'Jornada Motoristas' },
+    'codigos-jornada': { title: 'Códigos de Jornada', breadcrumb: 'Jornada Motoristas' },
+    'dashboard-jornada': { title: 'Dashboard Jornada', breadcrumb: 'Jornada Motoristas' },
     'import-lines': { title: 'Importar Linhas', breadcrumb: 'Base Linhas' },
     'manual-line': { title: 'Cadastro Manual', breadcrumb: 'Base Linhas' },
     'consult-lines': { title: 'Consultar Linhas', breadcrumb: 'Base Linhas' },

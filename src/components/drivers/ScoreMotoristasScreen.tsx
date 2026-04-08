@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Motorista, Ocorrencia, ExcessoVelocidade, Avaria, Acidente, EventoMotorista } from '../../types';
+import { Motorista, Ocorrencia, ExcessoVelocidade, Avaria, Acidente, EventoMotorista, JornadaMotorista, CodigoJornadaDescription } from '../../types';
 import { Search, TrendingDown, TrendingUp, AlertTriangle, Award, ChevronDown, ChevronUp, Edit2, Check, X } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
@@ -12,6 +12,8 @@ interface ScoreMotoristasScreenProps {
   avarias: Avaria[];
   acidentes: Acidente[];
   eventosMotorista: EventoMotorista[];
+  jornadasMotorista?: JornadaMotorista[];
+  codigosJornada?: CodigoJornadaDescription[];
 }
 
 interface MotoristaScore {
@@ -96,6 +98,7 @@ function getBarColor(score: number): string {
 
 export default function ScoreMotoristasScreen({
   motoristas, ocorrencias, excessos, avarias, acidentes, eventosMotorista,
+  jornadasMotorista = [], codigosJornada = [],
 }: ScoreMotoristasScreenProps) {
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState<'score' | 'nome' | 'faltas' | 'excessos' | 'atrasos'>('score');
@@ -142,6 +145,14 @@ export default function ScoreMotoristasScreen({
     eventosMotorista.forEach(ev => {
       if (ev.tipo === 'FALTA' && isInRange(ev.data)) {
         faltasMap.set(ev.matricula, (faltasMap.get(ev.matricula) || 0) + 1);
+      }
+    });
+
+    // Count faltas from jornada (codes with contaComoFalta = true)
+    const faltaCodes = new Set(codigosJornada.filter(c => c.contaComoFalta).map(c => c.codigo));
+    jornadasMotorista.forEach(j => {
+      if (faltaCodes.has(j.codigoAtividade) && isInRange(j.data)) {
+        faltasMap.set(j.matricula, (faltasMap.get(j.matricula) || 0) + 1);
       }
     });
 
@@ -202,7 +213,7 @@ export default function ScoreMotoristasScreen({
       });
 
     return result;
-  }, [motoristas, eventosMotorista, excessos, ocorrencias, avarias, acidentes, dateRange]);
+  }, [motoristas, eventosMotorista, excessos, ocorrencias, avarias, acidentes, dateRange, jornadasMotorista, codigosJornada]);
 
   // Filter & sort
   const filtered = useMemo(() => {

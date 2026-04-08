@@ -121,6 +121,14 @@ const SECTIONS: MenuSection[] = [
     ],
   },
   {
+    id: 'jornada', label: 'Jornada Motoristas', icon: BookOpen,
+    items: [
+      { tab: 'dashboard-jornada', label: 'Dashboard Jornada', icon: BarChart3 },
+      { tab: 'import-jornada', label: 'Importar Jornada', icon: UploadCloud, adminOnly: true },
+      { tab: 'codigos-jornada', label: 'Códigos de Jornada', icon: BookOpen },
+    ],
+  },
+  {
     id: 'linhas', label: 'Base Linhas', icon: Map,
     items: [
       { tab: 'import-lines', label: 'Importar Linhas', icon: Database, adminOnly: true },

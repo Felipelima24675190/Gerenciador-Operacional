@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Calendar, Filter, FileBarChart, Users, Bus, FileDown } from 'lucide-react';
-import { Motorista, Ocorrencia, ExcessoVelocidade, MultaANTT, Avaria, ParadaIndevida, MultaTransito, OciosidadeMotorista } from '../../types';
+import { Motorista, Ocorrencia, ExcessoVelocidade, MultaANTT, Avaria, ParadaIndevida, MultaTransito, OciosidadeMotorista, JornadaMotorista, CodigoJornadaDescription } from '../../types';
 import StatCard from '../dashboard/StatCard';
 import { isWithinInterval, startOfDay, endOfDay } from 'date-fns';
 
@@ -14,9 +14,11 @@ interface ReportsScreenProps {
   paradas?: ParadaIndevida[];
   multasTransito?: MultaTransito[];
   ociosidades?: OciosidadeMotorista[];
+  jornadasMotorista?: JornadaMotorista[];
+  codigosJornada?: CodigoJornadaDescription[];
 }
 
-type Tab = 'pontualidade' | 'velocidade' | 'antt' | 'avarias' | 'paradas' | 'transito' | 'quilometragem';
+type Tab = 'pontualidade' | 'velocidade' | 'antt' | 'avarias' | 'paradas' | 'transito' | 'quilometragem' | 'jornada';
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'pontualidade', label: 'Pontualidade' },
@@ -26,6 +28,7 @@ const TABS: { id: Tab; label: string }[] = [
   { id: 'paradas', label: 'Paradas Indevidas' },
   { id: 'transito', label: 'Multas de Trânsito' },
   { id: 'quilometragem', label: 'Quilometragem' },
+  { id: 'jornada', label: 'Jornada' },
 ];
 
 function parseDate(str: string): Date | null {
@@ -524,7 +527,101 @@ function QuilometragemTab({ registros }: { registros: OciosidadeMotorista[] }) {
 }
 
 // ── Main ──────────────────────────────────────────────────────────────────────
-export default function ReportsScreen({ motoristas, ocorrencias, excessos = [], multasAntt = [], avarias = [], paradas = [], multasTransito = [], ociosidades = [] }: ReportsScreenProps) {
+// ── Jornada ──────────────────────────────────────────────────────────────────
+function JornadaTab({ motoristas, jornadas, codigosJornada }: { motoristas: Motorista[]; jornadas: JornadaMotorista[]; codigosJornada: CodigoJornadaDescription[] }) {
+  const [dataInicio, setDataInicio] = useState('2026-02-01');
+  const [dataFim, setDataFim] = useState('2026-02-28');
+  const [filialFilter, setFilialFilter] = useState('Todas');
+  const [matriculaFilter, setMatriculaFilter] = useState('');
+
+  const filiais = useMemo(() => ['Todas', ...Array.from(new Set(motoristas.map(m => m.filial)))], [motoristas]);
+  const motoristaMap = useMemo(() => new Map(motoristas.map(m => [m.matricula, m])), [motoristas]);
+  const codeMap = useMemo(() => new Map(codigosJornada.map(c => [c.codigo, c])), [codigosJornada]);
+
+  const filteredJornadas = useMemo(() => {
+    const start = startOfDay(new Date(dataInicio + 'T00:00:00'));
+    const end = endOfDay(new Date(dataFim + 'T23:59:59'));
+    return jornadas.filter(j => {
+      const d = parseDate(j.data);
+      if (!d || !isWithinInterval(d, { start, end })) return false;
+      const m = motoristaMap.get(j.matricula);
+      if (filialFilter !== 'Todas' && m?.filial !== filialFilter) return false;
+      if (matriculaFilter.trim() && j.matricula !== matriculaFilter.trim()) return false;
+      return true;
+    });
+  }, [jornadas, dataInicio, dataFim, filialFilter, matriculaFilter, motoristaMap]);
+
+  const metricas = useMemo(() => ({
+    total: filteredJornadas.length,
+    motoristas: new Set(filteredJornadas.map(j => j.matricula)).size,
+    faltas: filteredJornadas.filter(j => {
+      const c = codeMap.get(j.codigoAtividade);
+      return c?.contaComoFalta;
+    }).length,
+  }), [filteredJornadas, codeMap]);
+
+  const handleExport = () => {
+    const header = 'Matricula;Nome;Filial;Data;Codigo;Descricao;Categoria;Hora Entrada;Intervalo In;Intervalo Out;Hora Saida';
+    const rows = filteredJornadas.map(j => {
+      const m = motoristaMap.get(j.matricula);
+      const code = codeMap.get(j.codigoAtividade);
+      return [
+        j.matricula,
+        m?.nome || '-',
+        m?.filial || '-',
+        j.data,
+        j.codigoAtividade,
+        code?.descricao || '-',
+        code?.categoria || '-',
+        j.horaEntrada || '-',
+        j.horaEntradaIntervalo || '-',
+        j.horaSaidaIntervalo || '-',
+        j.horaSaida || '-',
+      ].join(';');
+    });
+    downloadCSV(header + '\n' + rows.join('\n'), `jornada_motoristas_${dataInicio}_${dataFim}.csv`);
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="bg-white rounded-card border border-gray-200 shadow-card p-4">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+          <div>
+            <label className="text-2xs font-bold text-slate-500 uppercase block mb-1">Data Inicio</label>
+            <input type="date" value={dataInicio} onChange={e => setDataInicio(e.target.value)} className="w-full px-3 py-2 text-xs border border-gray-200 rounded-button bg-slate-50" />
+          </div>
+          <div>
+            <label className="text-2xs font-bold text-slate-500 uppercase block mb-1">Data Fim</label>
+            <input type="date" value={dataFim} onChange={e => setDataFim(e.target.value)} className="w-full px-3 py-2 text-xs border border-gray-200 rounded-button bg-slate-50" />
+          </div>
+          <div>
+            <label className="text-2xs font-bold text-slate-500 uppercase block mb-1">Filial</label>
+            <select value={filialFilter} onChange={e => setFilialFilter(e.target.value)} className="w-full px-3 py-2 text-xs border border-gray-200 rounded-button bg-slate-50">
+              {filiais.map(f => <option key={f} value={f}>{f === 'Todas' ? 'Todas as Filiais' : f}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="text-2xs font-bold text-slate-500 uppercase block mb-1">Matricula</label>
+            <input type="text" value={matriculaFilter} onChange={e => setMatriculaFilter(e.target.value)} placeholder="Opcional" className="w-full px-3 py-2 text-xs border border-gray-200 rounded-button bg-slate-50" />
+          </div>
+          <div className="flex items-end">
+            <button onClick={handleExport} disabled={filteredJornadas.length === 0} className="w-full flex items-center justify-center gap-2 px-4 py-2 text-xs font-bold bg-brand-600 text-white rounded-button hover:bg-brand-700 disabled:opacity-50">
+              <FileDown size={14} /> Exportar CSV
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <StatCard title="Total Registros" value={metricas.total} />
+        <StatCard title="Motoristas" value={metricas.motoristas} />
+        <StatCard title="Dias com Falta" value={metricas.faltas} />
+      </div>
+    </div>
+  );
+}
+
+export default function ReportsScreen({ motoristas, ocorrencias, excessos = [], multasAntt = [], avarias = [], paradas = [], multasTransito = [], ociosidades = [], jornadasMotorista = [], codigosJornada = [] }: ReportsScreenProps) {
   const [activeTab, setActiveTab] = useState<Tab>('pontualidade');
 
   return (
@@ -553,6 +650,7 @@ export default function ReportsScreen({ motoristas, ocorrencias, excessos = [], 
       {activeTab === 'paradas' && <ParadasTab paradas={paradas} />}
       {activeTab === 'transito' && <TransitoTab motoristas={motoristas} multas={multasTransito} />}
       {activeTab === 'quilometragem' && <QuilometragemTab registros={ociosidades} />}
+      {activeTab === 'jornada' && <JornadaTab motoristas={motoristas} jornadas={jornadasMotorista} codigosJornada={codigosJornada} />}
     </div>
   );
 }

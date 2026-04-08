@@ -316,6 +316,27 @@ export interface LinhaAbreviacao {
   nomeCompleto: string;
 }
 
+export interface JornadaMotorista {
+  id: string;
+  matricula: string;            // Last 5 digits
+  data: string;                 // DD/MM/YYYY
+  codigoAtividade: string;      // e.g. "001", "088"
+  horaEntrada?: string;         // HH:MM
+  horaEntradaIntervalo?: string;
+  horaSaidaIntervalo?: string;
+  horaSaida?: string;
+  jornadaCruzaMeiaNoite: boolean;
+  semIntervalo: boolean;
+  semJornada: boolean;
+}
+
+export interface CodigoJornadaDescription {
+  codigo: string;
+  descricao: string;
+  categoria: string;            // ATIVIDADE | FOLGA | ATESTADO | FALTA | OUTROS
+  contaComoFalta: boolean;
+}
+
 export interface AppNotification {
   id: string;
   tabela: string;
