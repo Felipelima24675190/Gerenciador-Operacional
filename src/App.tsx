@@ -8,7 +8,7 @@ import ImportLinesScreen from './components/lines/ImportLinesScreen';
 import ConsultLinesScreen from './components/lines/ConsultLinesScreen';
 import ImportOccurrencesScreen from './components/dashboard/ImportOccurrencesScreen';
 import ReportsScreen from './components/reports/ReportsScreen';
-import { Motorista, Viagem, Ocorrencia, User, MultaANTT, AnttCodeDescription, ExcessoVelocidade, ParadaIndevida, Veiculo, Avaria, ResumoAvaria, MultaTransito, RegistroOciosidade, RegistroLinha, OciosidadeMotorista, Monitriip, EventoMotorista, LinhaAbreviacao, AppNotification, ManutencaoVeiculo, HistoricoManutencao, Acidente, JornadaMotorista, CodigoJornadaDescription } from './types';
+import { Motorista, Viagem, Ocorrencia, User, MultaANTT, AnttCodeDescription, ExcessoVelocidade, ParadaIndevida, Veiculo, Avaria, ResumoAvaria, MultaTransito, RegistroOciosidade, RegistroLinha, OciosidadeMotorista, Monitriip, EventoMotorista, LinhaAbreviacao, AppNotification, ManutencaoVeiculo, HistoricoManutencao, Acidente, JornadaMotorista, CodigoJornadaDescription, JornadaFaltante } from './types';
 import DashboardOperacionalScreen from './components/dashboard/DashboardOperacionalScreen';
 import LineDictionaryScreen, { DEFAULT_ENTRIES as DEFAULT_DICIONARIO } from './components/lines/LineDictionaryScreen';
 import AnttCodesScreen from './components/antt/AnttCodesScreen';
@@ -129,6 +129,7 @@ function App() {
   const [acidentes, setAcidentes]                                 = usePersistedState<Acidente>('acidentes', 'acidentesData');
   const [jornadasMotorista, setJornadasMotorista]                 = usePersistedState<JornadaMotorista>('jornadas_motorista', 'jornadasMotoristaData');
   const [codigosJornada, setCodigosJornada]                       = usePersistedState<CodigoJornadaDescription>('codigos_jornada', 'codigosJornadaData', DEFAULT_CODIGOS_JORNADA);
+  const [jornadasFaltantes, setJornadasFaltantes]                 = usePersistedState<JornadaFaltante>('jornadas_faltantes', 'jornadasFaltantesData');
 
   // ─── Notifying wrappers ────────────────────────────────────────────────────
   const setOcorrenciasN = useCallback((a: SetStateAction<Ocorrencia[]>) => { setOcorrencias(a); addNotification('Ocorrencias', 'Dados de pontualidade atualizados'); }, [setOcorrencias, addNotification]);
@@ -229,7 +230,7 @@ function App() {
       case 'codigos-jornada':
         return <CodigosJornadaScreen codigosJornada={codigosJornada} setCodigosJornada={setCodigosJornada} userRole={currentUser.role} />;
       case 'dashboard-jornada':
-        return <JornadaDashboardScreen jornadasMotorista={jornadasMotorista} setJornadasMotorista={setJornadasMotorista} codigosJornada={codigosJornada} motoristas={motoristas} />;
+        return <JornadaDashboardScreen jornadasMotorista={jornadasMotorista} setJornadasMotorista={setJornadasMotorista} codigosJornada={codigosJornada} motoristas={motoristas} jornadasFaltantes={jornadasFaltantes} setJornadasFaltantes={setJornadasFaltantes} />;
       default:
         return (
           <div className="flex items-center justify-center h-full">

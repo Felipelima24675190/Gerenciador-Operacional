@@ -337,6 +337,19 @@ export interface CodigoJornadaDescription {
   contaComoFalta: boolean;
 }
 
+export interface JornadaFaltante {
+  id: string;
+  matricula: string;
+  data: string;                    // DD/MM/YYYY
+  filial: string;
+  area: string;
+  nomeMotorista: string;
+  status: 'Pendente' | 'Justificado' | 'Ignorado';
+  justificativa?: string;
+  dataRegistro: string;            // DD/MM/YYYY
+  registradoPor?: string;
+}
+
 export interface AppNotification {
   id: string;
   tabela: string;

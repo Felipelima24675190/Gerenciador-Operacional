@@ -19,7 +19,7 @@ DECLARE
     'ociosidades_motorista','monitriips','eventos_motorista',
     'app_notifications','dicionario_linhas','manutencoes',
     'historico_manutencao','acidentes',
-    'jornadas_motorista','codigos_jornada'
+    'jornadas_motorista','codigos_jornada','jornadas_faltantes'
   ];
 BEGIN
   IF NOT (tname = ANY(allowed)) THEN
@@ -346,7 +346,7 @@ DECLARE
     'ociosidades_motorista','monitriips','eventos_motorista',
     'app_notifications','dicionario_linhas','manutencoes',
     'historico_manutencao','acidentes',
-    'jornadas_motorista','codigos_jornada'
+    'jornadas_motorista','codigos_jornada','jornadas_faltantes'
   ];
 BEGIN
   FOREACH t IN ARRAY tables LOOP
@@ -447,6 +447,28 @@ DO $$ BEGIN ALTER TABLE codigos_jornada ADD COLUMN descricao TEXT; EXCEPTION WHE
   ALTER TABLE codigos_jornada ENABLE ROW LEVEL SECURITY;
   BEGIN CREATE POLICY "allow_all_codigos_jornada" ON codigos_jornada FOR ALL USING (true) WITH CHECK (true); EXCEPTION WHEN duplicate_object THEN NULL; END;
 END; END $$;
+
+-- jornadas_faltantes: motoristas com dias sem apontamento de jornada
+DO $$ BEGIN ALTER TABLE jornadas_faltantes ADD COLUMN matricula TEXT; EXCEPTION WHEN undefined_table THEN
+  CREATE TABLE jornadas_faltantes (
+    id TEXT PRIMARY KEY,
+    matricula TEXT NOT NULL,
+    data TEXT NOT NULL,
+    "filial" TEXT NOT NULL DEFAULT '',
+    "area" TEXT NOT NULL DEFAULT '',
+    "nomeMotorista" TEXT NOT NULL DEFAULT '',
+    status TEXT NOT NULL DEFAULT 'Pendente' CHECK (status IN ('Pendente','Justificado','Ignorado')),
+    justificativa TEXT,
+    "dataRegistro" TEXT NOT NULL DEFAULT '',
+    "registradoPor" TEXT
+  );
+  ALTER TABLE jornadas_faltantes ENABLE ROW LEVEL SECURITY;
+  BEGIN CREATE POLICY "allow_all_jornadas_faltantes" ON jornadas_faltantes FOR ALL USING (true) WITH CHECK (true); EXCEPTION WHEN duplicate_object THEN NULL; END;
+END; END $$;
+
+CREATE INDEX IF NOT EXISTS idx_jornadas_faltantes_matricula ON jornadas_faltantes (matricula);
+CREATE INDEX IF NOT EXISTS idx_jornadas_faltantes_data ON jornadas_faltantes (data);
+CREATE INDEX IF NOT EXISTS idx_jornadas_faltantes_status ON jornadas_faltantes (status);
 
 -- veiculos: campos LIT/TCO validade
 DO $$ BEGIN ALTER TABLE veiculos ADD COLUMN "litValidade" TEXT; EXCEPTION WHEN duplicate_column THEN NULL; END $$;
