@@ -2,7 +2,7 @@ import { useState, useMemo, useCallback, Dispatch, SetStateAction } from 'react'
 import { JornadaMotorista, CodigoJornadaDescription, Motorista, JornadaFaltante, ComiteDisciplinar } from '../../types';
 import {
   Search, Calendar, Filter, Download, Clock, AlertTriangle, X,
-  Pencil, Save, Plus, Trash2, Bell, ChevronRight,
+  Pencil, Save, Plus, Trash2, Bell, ChevronRight, UserX, Merge, FileText,
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
@@ -213,6 +213,9 @@ function TopChart({ title, data, unit, colors }: {
       </div>
     );
   }
+  // Calculate dynamic width based on longest name
+  const maxNameLen = Math.max(...data.map(d => d.name.length));
+  const yAxisWidth = Math.min(200, Math.max(130, maxNameLen * 7));
   return (
     <div className="bg-white rounded-card border border-gray-200 shadow-card p-4">
       <h4 className="text-xs font-black text-slate-700 uppercase tracking-wider mb-3">{title}</h4>
@@ -220,7 +223,7 @@ function TopChart({ title, data, unit, colors }: {
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} layout="vertical" margin={{ left: 0, right: 30 }}>
             <XAxis type="number" fontSize={10} tickFormatter={v => `${v}${unit}`} />
-            <YAxis type="category" dataKey="name" fontSize={10} width={110} tick={{ fill: '#475569' }} />
+            <YAxis type="category" dataKey="name" fontSize={10} width={yAxisWidth} interval={0} tick={{ fill: '#475569' }} />
             <Tooltip formatter={(v: number) => [`${v}${unit}`, 'Valor']} />
             <Bar dataKey="value" radius={[0, 4, 4, 0]}>
               {data.map((_, i) => <Cell key={i} fill={colors[i % colors.length]} />)}
@@ -417,7 +420,17 @@ function DriverDetailView({
   const catBadge: Record<string, string> = {
     ATIVIDADE: 'bg-emerald-100 text-emerald-700', FOLGA: 'bg-amber-100 text-amber-700',
     ATESTADO: 'bg-blue-100 text-blue-700', FALTA: 'bg-red-100 text-red-700', OUTROS: 'bg-slate-100 text-slate-600',
+    INTERVALO: 'bg-indigo-100 text-indigo-700',
   };
+
+  // Detect duplicate day conflicts (same motorista, same date, multiple entries)
+  const dayConflicts = useMemo(() => {
+    const dayCount = new Map<string, number>();
+    for (const j of sorted) {
+      dayCount.set(j.data, (dayCount.get(j.data) || 0) + 1);
+    }
+    return dayCount;
+  }, [sorted]);
 
   return (
     <div className="space-y-4">
@@ -503,6 +516,8 @@ function DriverDetailView({
                 const code = codeMap.get(j.codigoAtividade);
                 const tipo = code?.descricao || j.codigoAtividade;
                 const cat = code?.categoria || 'OUTROS';
+                const isIntervalo = j.codigoAtividade === '088';
+                const badgeCat = isIntervalo ? 'INTERVALO' : cat;
                 const jornMin = calcJornadaMinutes(j);
                 const intMin = calcIntervaloMinutes(j);
                 const isEditing = editingId === j.id;
@@ -515,6 +530,16 @@ function DriverDetailView({
                     if (rest > 0 && rest < 11 * 60) alerts.push(`Interjornada ${minutesToHM(rest)}`);
                   }
                 }
+                // Alert: interval entry === exit (both not 00:00)
+                if (j.horaEntradaIntervalo && j.horaSaidaIntervalo &&
+                    j.horaEntradaIntervalo !== '00:00' && j.horaSaidaIntervalo !== '00:00' &&
+                    j.horaEntradaIntervalo === j.horaSaidaIntervalo) {
+                  alerts.push(`Intervalo iguais: ${j.horaEntradaIntervalo}`);
+                }
+                // Alert: duplicate day conflict
+                if ((dayConflicts.get(j.data) || 0) > 1) {
+                  alerts.push(`Conflito: ${dayConflicts.get(j.data)} apontamentos nesta data`);
+                }
                 return (
                   <tr key={j.id} className="hover:bg-slate-50 transition-colors border-b border-gray-100">
                     <td className="px-3 py-2 font-mono text-slate-700">{j.data}</td>
@@ -523,11 +548,11 @@ function DriverDetailView({
                         <select value={editData.codigoAtividade || ''} onChange={e => setEditData(p => ({ ...p, codigoAtividade: e.target.value }))} className="border rounded px-1 py-0.5 text-xs bg-white">
                           {codigosJornada.map(c => <option key={c.codigo} value={c.codigo}>{c.descricao}</option>)}
                         </select>
-                      ) : <span className={`px-2 py-0.5 rounded text-2xs font-bold ${catBadge[cat] || catBadge.OUTROS}`}>{tipo}</span>}
+                      ) : <span className={`px-2 py-0.5 rounded text-2xs font-bold ${catBadge[badgeCat] || catBadge.OUTROS}`}>{tipo}</span>}
                     </td>
                     <td className="px-3 py-2 text-slate-600">
                       {isEditing ? <input type="time" value={editData.horaEntrada || ''} onChange={e => setEditData(p => ({ ...p, horaEntrada: e.target.value }))} className="border rounded px-1 py-0.5 text-xs w-20" />
-                        : j.semJornada ? <span className="text-slate-300">{cat !== 'ATIVIDADE' ? '\u2014' : 'Sem apontamento'}</span> : j.horaEntrada || '\u2014'}
+                        : j.semJornada ? <span className="text-slate-300">{'\u2014'}</span> : j.horaEntrada || '\u2014'}
                     </td>
                     <td className="px-3 py-2 text-slate-600">
                       {isEditing ? <input type="time" value={editData.horaEntradaIntervalo || ''} onChange={e => setEditData(p => ({ ...p, horaEntradaIntervalo: e.target.value }))} className="border rounded px-1 py-0.5 text-xs w-20" />
@@ -553,7 +578,6 @@ function DriverDetailView({
                             <><button onClick={() => startEdit(j)} className="p-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded"><Pencil size={14} /></button><button onClick={() => handleDelete(j.id)} className="p-1 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded"><Trash2 size={14} /></button></>
                           )}
                         </div>
-                        {j.semJornada && cat === 'ATIVIDADE' && !isEditing && <button onClick={() => startEdit(j)} className="p-1 text-slate-300 hover:text-blue-500 rounded"><Plus size={14} /></button>}
                       </div>
                     </td>
                   </tr>
@@ -573,6 +597,7 @@ function DriverDetailView({
 function NotificationsView({
   filtered, motoristas, motoristaMap, onSelectMotorista, dataInicio, dataFim,
   jornadasFaltantes, setJornadasFaltantes,
+  foraBaseMatriculas, allJornadas, setJornadas,
 }: {
   filtered: JornadaMotorista[];
   motoristas: Motorista[];
@@ -582,8 +607,13 @@ function NotificationsView({
   dataFim: string;
   jornadasFaltantes: JornadaFaltante[];
   setJornadasFaltantes: Dispatch<SetStateAction<JornadaFaltante[]>>;
+  foraBaseMatriculas: Set<string>;
+  allJornadas: JornadaMotorista[];
+  setJornadas: Dispatch<SetStateAction<JornadaMotorista[]>>;
 }) {
-  const [notifTab, setNotifTab] = useState<'sem_apontamento' | 'conflitos' | 'registrados'>('sem_apontamento');
+  const [notifTab, setNotifTab] = useState<'sem_apontamento' | 'conflitos' | 'fora_base' | 'registrados'>('sem_apontamento');
+  const [mergeTarget, setMergeTarget] = useState<{ foraMatricula: string; targetMatricula: string } | null>(null);
+  const [mergeSearch, setMergeSearch] = useState('');
 
   const handleRegistrarFaltantes = useCallback(() => {
     const today = new Date();
@@ -646,20 +676,59 @@ function NotificationsView({
     return results.sort((a, b) => b.missingDays - a.missingDays);
   }, [filtered, motoristas, motoristaMap, dataInicio, dataFim]);
 
-  // Conflitos: records where horaEntradaIntervalo === horaSaidaIntervalo (both != 00:00 and != undefined)
+  // Conflitos: interval iguais + duplicate day entries (same matricula + same date, 2+ records)
   const conflitos = useMemo(() => {
     const results: { jornada: JornadaMotorista; motorista: Motorista | undefined; tipo: string }[] = [];
+
+    // Detect equal interval times
     for (const j of filtered) {
       if (j.semJornada) continue;
-      // Same entry/exit interval times (not 00:00)
       if (j.horaEntradaIntervalo && j.horaSaidaIntervalo &&
           j.horaEntradaIntervalo !== '00:00' && j.horaSaidaIntervalo !== '00:00' &&
           j.horaEntradaIntervalo === j.horaSaidaIntervalo) {
         results.push({ jornada: j, motorista: motoristaMap.get(j.matricula), tipo: `Intervalo iguais: ${j.horaEntradaIntervalo}` });
       }
     }
+
+    // Detect duplicate day entries (same matricula + same date, 2+ records)
+    const dayMap = new Map<string, JornadaMotorista[]>();
+    for (const j of filtered) {
+      const key = `${j.matricula}_${j.data}`;
+      if (!dayMap.has(key)) dayMap.set(key, []);
+      dayMap.get(key)!.push(j);
+    }
+    const seenDups = new Set<string>();
+    for (const [key, records] of dayMap) {
+      if (records.length > 1 && !seenDups.has(key)) {
+        seenDups.add(key);
+        const j = records[0];
+        results.push({
+          jornada: j,
+          motorista: motoristaMap.get(j.matricula),
+          tipo: `Apontamento duplicado: ${records.length}x em ${j.data}`,
+        });
+      }
+    }
+
     return results;
   }, [filtered, motoristaMap]);
+
+  // Fora da base: drivers with jornadas but no motorista record
+  const foraBaseLista = useMemo(() => {
+    const results: { matricula: string; totalRegistros: number }[] = [];
+    for (const mat of foraBaseMatriculas) {
+      const count = filtered.filter(j => j.matricula === mat).length;
+      if (count > 0) results.push({ matricula: mat, totalRegistros: count });
+    }
+    return results.sort((a, b) => b.totalRegistros - a.totalRegistros);
+  }, [filtered, foraBaseMatriculas]);
+
+  const handleMerge = useCallback((foraMatricula: string, targetMatricula: string) => {
+    if (!targetMatricula || !confirm(`Mesclar todas as jornadas de ${foraMatricula} para ${targetMatricula}? Os registros serao transferidos e a matricula antiga removida.`)) return;
+    setJornadas(prev => prev.map(j => j.matricula === foraMatricula ? { ...j, matricula: targetMatricula } : j));
+    setMergeTarget(null);
+    setMergeSearch('');
+  }, [setJornadas]);
 
   return (
     <div className="space-y-4">
@@ -673,10 +742,13 @@ function NotificationsView({
             <AlertTriangle size={12} /> Sem apontamento
           </button>
           <button onClick={() => setNotifTab('conflitos')} className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold transition-colors ${notifTab === 'conflitos' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
-            <AlertTriangle size={12} /> Conflitos de jornada
+            <AlertTriangle size={12} /> Conflitos ({conflitos.length})
+          </button>
+          <button onClick={() => setNotifTab('fora_base')} className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold transition-colors ${notifTab === 'fora_base' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
+            <UserX size={12} /> Fora da Base ({foraBaseLista.length})
           </button>
           <button onClick={() => setNotifTab('registrados')} className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold transition-colors ${notifTab === 'registrados' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
-            <Clock size={12} /> Faltantes Registrados ({jornadasFaltantes.length})
+            <Clock size={12} /> Faltantes ({jornadasFaltantes.length})
           </button>
         </div>
 
@@ -733,6 +805,62 @@ function NotificationsView({
                 </button>
               ))}
               {conflitos.length === 0 && <p className="text-center text-xs text-slate-400 py-8">Nenhum conflito encontrado</p>}
+            </div>
+          </div>
+        )}
+
+        {notifTab === 'fora_base' && (
+          <div>
+            <p className="text-xs text-slate-500 mb-3">{foraBaseLista.length} matricula(s) com jornada sem cadastro na base de motoristas</p>
+            <div className="space-y-2 max-h-[500px] overflow-y-auto">
+              {foraBaseLista.map(({ matricula: mat, totalRegistros }) => (
+                <div key={mat} className="bg-pink-50 border border-pink-200 rounded-xl p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <UserX size={14} className="text-pink-500" />
+                        <span className="text-sm font-bold font-mono text-slate-800">{mat}</span>
+                        <span className="px-2 py-0.5 bg-pink-200 text-pink-800 rounded-full text-2xs font-bold">{totalRegistros} registro(s)</span>
+                      </div>
+                      <p className="text-2xs text-slate-500 mt-1">Motorista nao encontrado na base cadastrada</p>
+                    </div>
+                    <button onClick={() => { setMergeTarget({ foraMatricula: mat, targetMatricula: '' }); setMergeSearch(''); }}
+                      className="flex items-center gap-1 px-3 py-1.5 text-xs font-bold bg-brand-600 text-white rounded-button hover:bg-brand-700">
+                      <Merge size={12} /> Mesclar com motorista
+                    </button>
+                  </div>
+                  {mergeTarget?.foraMatricula === mat && (
+                    <div className="mt-3 bg-white rounded-lg border border-pink-200 p-3">
+                      <p className="text-2xs font-bold text-slate-600 mb-2">Selecione o motorista da base para transferir os registros:</p>
+                      <div className="flex gap-2 mb-2">
+                        <div className="relative flex-1">
+                          <Search size={12} className="absolute left-2 top-2 text-slate-400" />
+                          <input type="text" value={mergeSearch} onChange={e => setMergeSearch(e.target.value)}
+                            placeholder="Buscar por matricula ou nome..."
+                            className="w-full pl-7 pr-3 py-1.5 text-xs border rounded-lg bg-slate-50" />
+                        </div>
+                      </div>
+                      <div className="max-h-40 overflow-y-auto space-y-1">
+                        {motoristas.filter(m => {
+                          if (!mergeSearch) return false;
+                          const q = mergeSearch.toLowerCase();
+                          return m.matricula.includes(q) || m.nome.toLowerCase().includes(q);
+                        }).slice(0, 20).map(m => (
+                          <button key={m.matricula} onClick={() => handleMerge(mat, m.matricula)}
+                            className="w-full text-left px-3 py-2 text-xs rounded-lg hover:bg-blue-50 border border-transparent hover:border-blue-200 flex items-center justify-between">
+                            <span><span className="font-mono font-bold text-slate-700">{m.matricula}</span> - {m.nome}</span>
+                            <span className="text-2xs text-slate-400">{m.filial}</span>
+                          </button>
+                        ))}
+                      </div>
+                      <div className="flex justify-end mt-2">
+                        <button onClick={() => setMergeTarget(null)} className="px-3 py-1 text-xs text-slate-500 hover:bg-slate-100 rounded">Cancelar</button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+              {foraBaseLista.length === 0 && <p className="text-center text-xs text-slate-400 py-8">Todos os motoristas com jornada estao cadastrados na base</p>}
             </div>
           </div>
         )}
@@ -959,20 +1087,32 @@ export default function JornadaDashboardScreen({ jornadasMotorista, setJornadasM
     return new Set(motoristas.filter(m => m.filial === filialFilter).map(m => m.matricula));
   }, [motoristas, filialFilter]);
 
+  // Matriculas that have jornada records but are NOT in the motoristas base
+  const foraBaseMatriculas = useMemo(() => {
+    const baseSet = new Set(motoristas.map(m => m.matricula));
+    const foraSet = new Set<string>();
+    for (const j of jornadasMotorista) {
+      if (!baseSet.has(j.matricula)) foraSet.add(j.matricula);
+    }
+    return foraSet;
+  }, [jornadasMotorista, motoristas]);
+
   const filtered = useMemo(() => {
     const start = new Date(dataInicio + 'T00:00:00');
     const end = new Date(dataFim + 'T23:59:59');
     return jornadasMotorista.filter(j => {
-      if (!filialMotoristas.has(j.matricula)) return false;
+      // Include drivers in the filial filter OR drivers not in base at all
+      if (!filialMotoristas.has(j.matricula) && !foraBaseMatriculas.has(j.matricula)) return false;
       const d = parseDateBR(j.data);
       if (!d) return false;
       return d >= start && d <= end;
     });
-  }, [jornadasMotorista, dataInicio, dataFim, filialMotoristas]);
+  }, [jornadasMotorista, dataInicio, dataFim, filialMotoristas, foraBaseMatriculas]);
 
   const globalKpis = useMemo(() => {
     let totalWorkMins = 0;
     const totalMotoristas = new Set<string>();
+    const motoristasForaBase = new Set<string>();
     let totalWorkJornadas = 0;
     let folgas = 0; let folgasComp = 0; let faltas = 0; let foraEscala = 0;
     let treinamentos = 0; let atestados = 0;
@@ -983,6 +1123,7 @@ export default function JornadaDashboardScreen({ jornadasMotorista, setJornadasM
 
     for (const j of filtered) {
       totalMotoristas.add(j.matricula);
+      if (foraBaseMatriculas.has(j.matricula)) motoristasForaBase.add(j.matricula);
       const codNum = j.codigoAtividade;
       if (!j.semJornada) {
         const mins = calcJornadaMinutes(j);
@@ -1020,12 +1161,12 @@ export default function JornadaDashboardScreen({ jornadasMotorista, setJornadasM
     const mediaJornada = totalWorkJornadas > 0 ? Math.round(totalWorkMins / totalWorkJornadas) : 0;
 
     return {
-      totalWorkMins, totalMotoristas: totalMotoristas.size, totalWorkJornadas, mediaJornada,
+      totalWorkMins, totalMotoristas: totalMotoristas.size, motoristasForaBase: motoristasForaBase.size, totalWorkJornadas, mediaJornada,
       folgas, folgasComp, faltas, foraEscala, treinamentos, atestados, ferias: feriasMotoristas.size, intervalos,
       excessoDiario, excessoSemanal, excessoMensal, interjornadaViolations,
       totalRegistros: filtered.length,
     };
-  }, [filtered]);
+  }, [filtered, foraBaseMatriculas]);
 
   const tops = useMemo(() => {
     const byMat = new Map<string, { workMins: number; faltas: number; atestados: number; maxJornada: number; minJornada: number }>();
@@ -1069,6 +1210,144 @@ export default function JornadaDashboardScreen({ jornadasMotorista, setJornadasM
     return jornadasMotorista.filter(j => j.matricula === selectedMotorista.matricula);
   }, [jornadasMotorista, selectedMotorista]);
 
+  const codeMap = useMemo(() => new Map(codigosJornada.map(c => [c.codigo, c])), [codigosJornada]);
+
+  // Build report grid data for exports
+  const buildReportGrid = useCallback(() => {
+    const start = new Date(dataInicio + 'T00:00:00');
+    const end = new Date(dataFim + 'T23:59:59');
+    // Generate all dates in range
+    const dates: string[] = [];
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      dates.push(toDateKey(new Date(d)));
+    }
+    // Group jornadas by matricula
+    const byMat = new Map<string, Map<string, JornadaMotorista[]>>();
+    for (const j of filtered) {
+      if (!byMat.has(j.matricula)) byMat.set(j.matricula, new Map());
+      const dayMap = byMat.get(j.matricula)!;
+      if (!dayMap.has(j.data)) dayMap.set(j.data, []);
+      dayMap.get(j.data)!.push(j);
+    }
+    // Sort matriculas
+    const matriculas = Array.from(byMat.keys()).sort();
+
+    const codeToAbbrev = (code: string): string => {
+      switch (code) {
+        case '202': return 'FO';
+        case '126': return 'FC';
+        case '088': return 'INT';
+        case '033': case '041': return 'ATEST';
+        case '019': return 'FAL';
+        case '066': return 'FER';
+        case '122': return 'FE'; // Fora escala
+        case '437': return 'TREIN';
+        case '054': return 'INSS';
+        case '071': return 'LIC';
+        case '077': return 'DESL';
+        default: return '';
+      }
+    };
+
+    const getCellValue = (records: JornadaMotorista[] | undefined): string => {
+      if (!records || records.length === 0) return '';
+      // If multiple records, show the main one (prefer 001 jornada)
+      const main = records.find(r => r.codigoAtividade === '001') || records[0];
+      const abbrev = codeToAbbrev(main.codigoAtividade);
+      if (abbrev) return abbrev;
+      // For jornada (001) or unknown with times, show HH:MM of jornada duration (without interval)
+      if (!main.semJornada) {
+        const mins = calcJornadaMinutes(main);
+        return minutesToHHMM(mins);
+      }
+      return main.codigoAtividade;
+    };
+
+    const getCellColor = (records: JornadaMotorista[] | undefined): string => {
+      if (!records || records.length === 0) return '';
+      const main = records.find(r => r.codigoAtividade === '001') || records[0];
+      const cat = codeMap.get(main.codigoAtividade)?.categoria || '';
+      const code = main.codigoAtividade;
+      if (code === '202') return '#fef3c7'; // amber-100 (FO)
+      if (code === '126') return '#d1fae5'; // emerald-100 (FC)
+      if (code === '088') return '#c7d2fe'; // indigo-100 (INT)
+      if (code === '019') return '#fecaca'; // red-200 (FAL)
+      if (code === '033' || code === '041') return '#bfdbfe'; // blue-200 (ATEST)
+      if (code === '066') return '#fde68a'; // amber-200 (FER)
+      if (cat === 'ATIVIDADE' && !main.semJornada) return '#d1fae5'; // emerald-100
+      return '#f1f5f9'; // slate-100
+    };
+
+    return { dates, matriculas, byMat, getCellValue, getCellColor };
+  }, [filtered, dataInicio, dataFim, codeMap]);
+
+  const handleExportPDF = useCallback(() => {
+    const { dates, matriculas, byMat, getCellValue, getCellColor } = buildReportGrid();
+    const startFmt = dataInicio.split('-').reverse().join('/');
+    const endFmt = dataFim.split('-').reverse().join('/');
+
+    // Build HTML table
+    const dateHeaders = dates.map(d => {
+      const parts = d.split('/');
+      return `<th style="padding:2px 4px;font-size:9px;white-space:nowrap;border:1px solid #ccc;background:#e2e8f0;min-width:40px">${parts[0]}/${parts[1]}</th>`;
+    }).join('');
+
+    const rows = matriculas.map(mat => {
+      const dayMap = byMat.get(mat)!;
+      const cells = dates.map(date => {
+        const records = dayMap.get(date);
+        const val = getCellValue(records);
+        const bg = getCellColor(records);
+        const style = `padding:2px 4px;font-size:9px;text-align:center;border:1px solid #ddd;white-space:nowrap;${bg ? `background:${bg}` : ''}`;
+        return `<td style="${style}">${val}</td>`;
+      }).join('');
+      return `<tr><td style="padding:2px 6px;font-size:10px;font-weight:bold;border:1px solid #ccc;background:#f8fafc;white-space:nowrap">${mat}</td>${cells}</tr>`;
+    }).join('');
+
+    const html = `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>Relatorio de Jornadas</title>
+<style>
+  @page { size: landscape; margin: 8mm; }
+  body { font-family: Arial, sans-serif; margin: 0; padding: 10px; }
+  h2 { font-size: 14px; margin-bottom: 8px; }
+  table { border-collapse: collapse; width: auto; }
+  @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+</style></head><body>
+<h2>Relatorio de Jornadas &mdash; ${startFmt} a ${endFmt}</h2>
+<table>
+<thead><tr><th style="padding:2px 6px;font-size:10px;border:1px solid #ccc;background:#cbd5e1">Matricula</th>${dateHeaders}</tr></thead>
+<tbody>${rows}</tbody>
+</table>
+<p style="font-size:8px;color:#888;margin-top:10px">FO=Folga | FC=Folga Compensada | INT=Intervalo | ATEST=Atestado | FAL=Falta | FER=Ferias | FE=Fora Escala | TREIN=Treinamento | INSS=Beneficio INSS | HH:MM=Jornada (sem intervalo)</p>
+</body></html>`;
+
+    const win = window.open('', '_blank');
+    if (win) {
+      win.document.write(html);
+      win.document.close();
+      setTimeout(() => win.print(), 500);
+    }
+  }, [buildReportGrid, dataInicio, dataFim]);
+
+  const handleExportCSV = useCallback(() => {
+    const { dates, matriculas, byMat, getCellValue } = buildReportGrid();
+    const startFmt = dataInicio.split('-').reverse().join('/');
+    const endFmt = dataFim.split('-').reverse().join('/');
+
+    const dateHeaders = dates.map(d => { const p = d.split('/'); return `${p[0]}/${p[1]}`; });
+    const header = ['Matricula', ...dateHeaders].join(';');
+    const rows = matriculas.map(mat => {
+      const dayMap = byMat.get(mat)!;
+      const cells = dates.map(date => getCellValue(dayMap.get(date)));
+      return [mat, ...cells].join(';');
+    });
+
+    const csv = `\ufeffRelatorio de Jornadas;${startFmt} a ${endFmt}\n\n${header}\n${rows.join('\n')}\n\nFO=Folga;FC=Folga Compensada;INT=Intervalo;ATEST=Atestado;FAL=Falta;FER=Ferias;FE=Fora Escala;TREIN=Treinamento;HH:MM=Jornada (sem intervalo)`;
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a'); link.href = url; link.download = `relatorio_jornadas_${startFmt.replace(/\//g, '-')}_a_${endFmt.replace(/\//g, '-')}.csv`; link.click(); URL.revokeObjectURL(url);
+  }, [buildReportGrid, dataInicio, dataFim]);
+
   const TAB_ITEMS: { id: DashboardTab; label: string }[] = [
     { id: 'dashboard', label: 'Dashboard' },
     { id: 'detalhamento', label: selectedMotorista ? `Detalhamento - ${selectedMotorista.nome.split(' ')[0]}` : 'Detalhamento' },
@@ -1110,6 +1389,14 @@ export default function JornadaDashboardScreen({ jornadasMotorista, setJornadasM
               <button onClick={handleSearchDriver} className="px-4 py-2 text-xs font-bold bg-brand-600 text-white rounded-button hover:bg-brand-700">Detalhar</button>
             </div>
           </div>
+          <div className="flex gap-2 items-end">
+            <button onClick={handleExportPDF} className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold bg-red-600 text-white rounded-button hover:bg-red-700">
+              <FileText size={14} /> PDF
+            </button>
+            <button onClick={handleExportCSV} className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold bg-emerald-600 text-white rounded-button hover:bg-emerald-700">
+              <Download size={14} /> CSV
+            </button>
+          </div>
         </div>
       </div>
 
@@ -1132,7 +1419,7 @@ export default function JornadaDashboardScreen({ jornadasMotorista, setJornadasM
             <KpiCard label="Intervalos" value={globalKpis.intervalos} sub="Apontamentos cod. 088" color="indigo" />
             <KpiCard label="Interjornadas < 11h" value={globalKpis.interjornadaViolations} sub="Descanso insuficiente" color="orange" icon={AlertTriangle} />
             <KpiCard label="Excesso Diario (>11h)" value={globalKpis.excessoDiario} color="red" icon={AlertTriangle} />
-            <KpiCard label="Excesso Semanal (>44h)" value={globalKpis.excessoSemanal} color="red" />
+            <KpiCard label="Fora da Base" value={globalKpis.motoristasForaBase} sub="Motoristas sem cadastro" color="pink" icon={UserX} />
           </div>
 
           <WeekdayBreakdown filtered={filtered} />
@@ -1178,6 +1465,9 @@ export default function JornadaDashboardScreen({ jornadasMotorista, setJornadasM
           dataFim={dataFim}
           jornadasFaltantes={jornadasFaltantes}
           setJornadasFaltantes={setJornadasFaltantes}
+          foraBaseMatriculas={foraBaseMatriculas}
+          allJornadas={jornadasMotorista}
+          setJornadas={setJornadasMotorista}
         />
       )}
 
