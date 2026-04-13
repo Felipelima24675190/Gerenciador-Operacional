@@ -1,5 +1,5 @@
-import { useState, useMemo, Dispatch, SetStateAction, MouseEvent, DragEvent } from 'react';
-import { Search, ChevronDown, ChevronRight, Edit2, Check, X, GripVertical, Calendar as CalendarIcon, List, PlusCircle, Building2, MapPin, Trash2 } from 'lucide-react';
+import { useState, useMemo, useCallback, Dispatch, SetStateAction, MouseEvent, DragEvent } from 'react';
+import { Search, ChevronDown, ChevronRight, Edit2, Check, X, GripVertical, Calendar as CalendarIcon, List, PlusCircle, Building2, MapPin, Trash2, Download } from 'lucide-react';
 import { Viagem, UserRole } from '../../types';
 
 const DIAS_SEMANA = [
@@ -315,6 +315,35 @@ export default function ConsultLinesScreen({ viagens, setViagens, userRole }: Co
     return dias.map(d => DIAS_SEMANA[d]?.label).join(', ');
   };
 
+  const exportCSV = useCallback(() => {
+    const headers = ['Codigo Linha', 'Nome Linha', 'Empresa', 'Regiao', 'Origem', 'Destino', 'Servico', 'Atendimento', 'Sentido', 'Horario Saida', 'Dias Operantes', 'Ordem', 'Grupo Cor'];
+    const rows = viagens.map(v => [
+      v.numeroLinha,
+      v.nomeLinha,
+      v.empresa || '',
+      v.regiao || '',
+      v.origem || v.pontoInicio,
+      v.destino || v.pontoFim,
+      v.servico || '',
+      v.atendimento,
+      v.sentido,
+      v.horarioSaida || formatTimeOnly(v.prevInicio),
+      (v.diasOperantes || [0,1,2,3,4,5,6]).map(d => DIAS_SEMANA[d]?.label).join(','),
+      v.ordem,
+      v.grupoCor || '',
+    ]);
+    const csv = [headers, ...rows].map(r => r.join(';')).join('\n');
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'base_linhas.csv';
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }, [viagens]);
+
   return (
     <div className="space-y-5">
       {/* KPI Cards */}
@@ -376,6 +405,10 @@ export default function ConsultLinesScreen({ viagens, setViagens, userRole }: Co
           <span className="text-sm text-gray-500 font-medium">
             {linhasUnicas.length} linhas
           </span>
+
+          <button onClick={exportCSV} className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-button transition-colors" title="Exportar CSV">
+            <Download size={14} /> Exportar CSV
+          </button>
         </div>
       </div>
 

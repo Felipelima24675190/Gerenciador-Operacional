@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import { Veiculo, MultaANTT, Avaria, MultaTransito, RegistroOciosidade, Motorista } from '../../types';
-import { Search, X, Truck, Info, AlertCircle } from 'lucide-react';
+import { Search, X, Truck, Info, AlertCircle, Download } from 'lucide-react';
 
 function parseDateBR(s?: string): Date | null {
   if (!s) return null;
@@ -377,6 +377,26 @@ export default function ConsultVehiclesScreen({ veiculos, multasAntt, avarias, m
     });
   }, [veiculos, searchTerm, empresaFilter, statusFilter, tipoFilter]);
 
+  const exportCSV = useCallback(() => {
+    const headers = ['Prefixo', 'Placa', 'Empresa', 'Status', 'UF', 'Ano Fabricacao', 'Ano Modelo', 'Marca', 'Modelo', 'Tipo', 'Eixos', 'Poltronas', 'Potencia (cv)', 'Chassi', 'RENAVAM', 'LIT Validade', 'TCO Validade'];
+    const rows = filteredVehicles.map(v => [
+      v.prefixo, v.placa, v.empresa, v.status, v.uf,
+      v.anoFabricacao, v.anoModelo, v.marca, v.modelo, v.tipo,
+      v.eixos, v.poltronas, v.potencia, v.chassi, v.renavam,
+      v.litValidade || '', v.tcoValidade || '',
+    ]);
+    const csv = [headers, ...rows].map(r => r.join(';')).join('\n');
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'base_veiculos.csv';
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }, [filteredVehicles]);
+
   return (
     <div className="space-y-5">
       <div className="bg-slate-800 p-4 flex gap-3 overflow-x-auto rounded-xl">
@@ -418,6 +438,11 @@ export default function ConsultVehiclesScreen({ veiculos, multasAntt, avarias, m
             <select value={tipoFilter} onChange={e => setTipoFilter(e.target.value)} aria-label="Filtrar por tipo" className="w-full px-3 py-2 text-xs font-medium border border-gray-200 rounded-button bg-slate-50 focus:ring-2 focus:ring-brand-400 focus:outline-none">
               {tipos.map(t => <option key={t} value={t}>{t === 'Todos' ? 'Tipo: Todos' : t}</option>)}
             </select>
+          </div>
+          <div>
+            <button onClick={exportCSV} className="w-full flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-button transition-colors" title="Exportar CSV">
+              <Download size={14} /> Exportar CSV
+            </button>
           </div>
         </div>
       </div>

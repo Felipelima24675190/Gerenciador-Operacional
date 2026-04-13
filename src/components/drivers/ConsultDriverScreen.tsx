@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react';
-import { Search, FileDown, User, MapPin, Briefcase, Calendar, X, BarChart2 } from 'lucide-react';
+import { useState, useMemo, useCallback } from 'react';
+import { Search, FileDown, User, MapPin, Briefcase, Calendar, X, BarChart2, Download } from 'lucide-react';
 import { Motorista, Ocorrencia, MultaTransito } from '../../types';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -320,6 +320,77 @@ export default function ConsultDriverScreen({ motoristas, ocorrencias, multasTra
     doc.save(`Relatorio_${motorista.matricula}_${format(new Date(), 'yyyyMMdd')}.pdf`);
   };
 
+  const downloadCSV = useCallback((content: string, filename: string) => {
+    const blob = new Blob(['\ufeff' + content], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }, []);
+
+  const exportMotoristasCSV = useCallback(() => {
+    const headers = ['Matricula', 'Nome', 'Filial', 'Area', 'Status'];
+    const rows = filteredMotoristas.map(m => [m.matricula, m.nome, m.filial, m.area, m.status]);
+    downloadCSV([headers, ...rows].map(r => r.join(';')).join('\n'), 'base_motoristas.csv');
+  }, [filteredMotoristas, downloadCSV]);
+
+  const exportDailyStatusCSV = useCallback(() => {
+    // Generate date range
+    const start = new Date(dataInicio + 'T00:00:00');
+    const end = new Date(dataFim + 'T00:00:00');
+    if (isNaN(start.getTime()) || isNaN(end.getTime()) || start > end) return;
+
+    const statuses = ['ATIVO - EM OPERAÇÃO', 'DESLIGADO', 'INSS', 'INSTRUTOR'];
+    const filiais = Array.from(new Set(motoristas.map(m => m.filial))).sort();
+
+    // Count by status
+    const statusCounts: Record<string, number> = {};
+    statuses.forEach(s => { statusCounts[s] = 0; });
+    motoristas.forEach(m => {
+      if (statusCounts[m.status] !== undefined) statusCounts[m.status]++;
+    });
+
+    // Count by filial x status
+    const filialStatusCounts: Record<string, Record<string, number>> = {};
+    filiais.forEach(f => {
+      filialStatusCounts[f] = {};
+      statuses.forEach(s => { filialStatusCounts[f][s] = 0; });
+    });
+    motoristas.forEach(m => {
+      if (filialStatusCounts[m.filial] && filialStatusCounts[m.filial][m.status] !== undefined) {
+        filialStatusCounts[m.filial][m.status]++;
+      }
+    });
+
+    // Build daily rows (since status is a snapshot, each day shows the same current counts)
+    const days: string[] = [];
+    const d = new Date(start);
+    while (d <= end) {
+      days.push(format(d, 'dd/MM/yyyy'));
+      d.setDate(d.getDate() + 1);
+    }
+
+    let csv = '=== MOTORISTAS POR DIA (Status Atual) ===\n';
+    csv += ['Data', ...statuses, 'Total'].join(';') + '\n';
+    const total = motoristas.length;
+    days.forEach(day => {
+      csv += [day, ...statuses.map(s => statusCounts[s]), total].join(';') + '\n';
+    });
+
+    csv += '\n=== DETALHAMENTO POR FILIAL ===\n';
+    csv += ['Filial', ...statuses, 'Total'].join(';') + '\n';
+    filiais.forEach(f => {
+      const filialTotal = statuses.reduce((s, st) => s + filialStatusCounts[f][st], 0);
+      csv += [f, ...statuses.map(s => filialStatusCounts[f][s]), filialTotal].join(';') + '\n';
+    });
+
+    downloadCSV(csv, `motoristas_por_dia_${dataInicio}_${dataFim}.csv`);
+  }, [motoristas, dataInicio, dataFim, downloadCSV]);
+
   return (
     <div className="space-y-5">
       <div className="bg-white p-6 rounded-card border border-gray-200 shadow-card flex flex-col gap-6">
@@ -389,6 +460,16 @@ export default function ConsultDriverScreen({ motoristas, ocorrencias, multasTra
               {statuses.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
           </div>
+        </div>
+
+        <div className="flex items-center gap-3 pt-4 border-t border-gray-100">
+          <button onClick={exportMotoristasCSV} className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-button transition-colors">
+            <Download size={14} /> Exportar Motoristas (CSV)
+          </button>
+          <button onClick={exportDailyStatusCSV} className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-button transition-colors">
+            <Download size={14} /> Motoristas por Dia (CSV)
+          </button>
+          <span className="text-xs text-slate-400 font-medium">{filteredMotoristas.length} motoristas</span>
         </div>
       </div>
 
