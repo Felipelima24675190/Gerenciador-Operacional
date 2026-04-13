@@ -86,6 +86,8 @@ const VehicleDetailModal = ({
             <div><p className="text-2xs font-bold text-slate-400 uppercase">Marca</p><p className="font-black text-slate-800">{vehicle.marca}</p></div>
             <div><p className="text-2xs font-bold text-slate-400 uppercase">Modelo</p><p className="font-black text-slate-800">{vehicle.modelo}</p></div>
             <div><p className="text-2xs font-bold text-slate-400 uppercase">Tipo</p><span className="font-black text-blue-700 bg-blue-50 px-2 py-0.5 rounded text-xs">{vehicle.tipo}</span></div>
+            <div><p className="text-2xs font-bold text-slate-400 uppercase">Chassi</p><p className="font-mono text-xs text-slate-700">{vehicle.chassi || '-'}</p></div>
+            <div><p className="text-2xs font-bold text-slate-400 uppercase">RENAVAM</p><p className="font-mono text-xs text-slate-700">{vehicle.renavam || '-'}</p></div>
           </div>
 
           <div className="md:col-span-2 space-y-6">
@@ -448,6 +450,7 @@ export default function ConsultVehiclesScreen({ veiculos, multasAntt, avarias, m
                     </div>
                     <span className="font-bold text-slate-800 text-sm">{vehicle.marca} {vehicle.modelo}</span>
                     <span className="text-2xs text-slate-400 font-mono">CH: {vehicle.chassi}</span>
+                    {vehicle.renavam && <span className="text-2xs text-slate-400 font-mono">REN: {vehicle.renavam}</span>}
                   </div>
                 </td>
                 <td className="px-4 py-3 font-bold text-slate-600 text-sm">{vehicle.empresa}</td>

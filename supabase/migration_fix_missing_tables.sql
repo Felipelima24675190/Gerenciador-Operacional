@@ -19,7 +19,7 @@ DECLARE
     'ociosidades_motorista','monitriips','eventos_motorista',
     'app_notifications','dicionario_linhas','manutencoes',
     'historico_manutencao','acidentes',
-    'jornadas_motorista','codigos_jornada','jornadas_faltantes'
+    'jornadas_motorista','codigos_jornada','jornadas_faltantes','comite_disciplinar'
   ];
 BEGIN
   IF NOT (tname = ANY(allowed)) THEN
@@ -346,7 +346,7 @@ DECLARE
     'ociosidades_motorista','monitriips','eventos_motorista',
     'app_notifications','dicionario_linhas','manutencoes',
     'historico_manutencao','acidentes',
-    'jornadas_motorista','codigos_jornada','jornadas_faltantes'
+    'jornadas_motorista','codigos_jornada','jornadas_faltantes','comite_disciplinar'
   ];
 BEGIN
   FOREACH t IN ARRAY tables LOOP
@@ -447,6 +447,22 @@ DO $$ BEGIN ALTER TABLE codigos_jornada ADD COLUMN descricao TEXT; EXCEPTION WHE
   ALTER TABLE codigos_jornada ENABLE ROW LEVEL SECURITY;
   BEGIN CREATE POLICY "allow_all_codigos_jornada" ON codigos_jornada FOR ALL USING (true) WITH CHECK (true); EXCEPTION WHEN duplicate_object THEN NULL; END;
 END; END $$;
+
+-- comite_disciplinar: registros do comite disciplinar de motoristas
+DO $$ BEGIN ALTER TABLE comite_disciplinar ADD COLUMN matricula TEXT; EXCEPTION WHEN undefined_table THEN
+  CREATE TABLE comite_disciplinar (
+    id TEXT PRIMARY KEY,
+    matricula TEXT NOT NULL,
+    data TEXT NOT NULL,
+    motivo TEXT NOT NULL DEFAULT '',
+    punicao TEXT NOT NULL DEFAULT ''
+  );
+  ALTER TABLE comite_disciplinar ENABLE ROW LEVEL SECURITY;
+  BEGIN CREATE POLICY "allow_all_comite_disciplinar" ON comite_disciplinar FOR ALL USING (true) WITH CHECK (true); EXCEPTION WHEN duplicate_object THEN NULL; END;
+END; END $$;
+
+CREATE INDEX IF NOT EXISTS idx_comite_disciplinar_matricula ON comite_disciplinar (matricula);
+CREATE INDEX IF NOT EXISTS idx_comite_disciplinar_data ON comite_disciplinar (data);
 
 -- jornadas_faltantes: motoristas com dias sem apontamento de jornada
 DO $$ BEGIN ALTER TABLE jornadas_faltantes ADD COLUMN matricula TEXT; EXCEPTION WHEN undefined_table THEN

@@ -350,6 +350,14 @@ export interface JornadaFaltante {
   registradoPor?: string;
 }
 
+export interface ComiteDisciplinar {
+  id: string;
+  matricula: string;
+  data: string;                    // DD/MM/YYYY
+  motivo: string;
+  punicao: string;
+}
+
 export interface AppNotification {
   id: string;
   tabela: string;

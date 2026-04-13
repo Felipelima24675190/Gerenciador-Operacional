@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback, Dispatch, SetStateAction } from 'react';
-import { JornadaMotorista, CodigoJornadaDescription, Motorista, JornadaFaltante } from '../../types';
+import { JornadaMotorista, CodigoJornadaDescription, Motorista, JornadaFaltante, ComiteDisciplinar } from '../../types';
 import {
   Search, Calendar, Filter, Download, Clock, AlertTriangle, X,
   Pencil, Save, Plus, Trash2, Bell, ChevronRight,
@@ -92,9 +92,11 @@ interface Props {
   motoristas: Motorista[];
   jornadasFaltantes: JornadaFaltante[];
   setJornadasFaltantes: Dispatch<SetStateAction<JornadaFaltante[]>>;
+  comiteDisciplinar: ComiteDisciplinar[];
+  setComiteDisciplinar: Dispatch<SetStateAction<ComiteDisciplinar[]>>;
 }
 
-type DashboardTab = 'dashboard' | 'detalhamento' | 'notificacoes';
+type DashboardTab = 'dashboard' | 'detalhamento' | 'notificacoes' | 'comite';
 
 // ─── KPI Card ────────────────────────────────────────────────────────────────
 
@@ -798,7 +800,144 @@ function NotificationsView({
 
 // ─── Main Dashboard ──────────────────────────────────────────────────────────
 
-export default function JornadaDashboardScreen({ jornadasMotorista, setJornadasMotorista, codigosJornada, motoristas, jornadasFaltantes, setJornadasFaltantes }: Props) {
+// ─── Comitê Disciplinar View ────────────────────────────────────────────────
+
+function ComiteView({
+  comite, motoristas, motoristaMap, dataInicio, dataFim, filialMotoristas,
+}: {
+  comite: ComiteDisciplinar[];
+  motoristas: Motorista[];
+  motoristaMap: Map<string, Motorista>;
+  dataInicio: string;
+  dataFim: string;
+  filialMotoristas: Set<string>;
+}) {
+  const [searchMat, setSearchMat] = useState('');
+
+  const filtered = useMemo(() => {
+    const start = new Date(dataInicio + 'T00:00:00');
+    const end = new Date(dataFim + 'T23:59:59');
+    return comite.filter(c => {
+      if (!filialMotoristas.has(c.matricula)) return false;
+      const d = parseDateBR(c.data);
+      if (!d) return false;
+      if (d < start || d > end) return false;
+      if (searchMat) {
+        const m = motoristaMap.get(c.matricula);
+        const q = searchMat.toLowerCase();
+        if (!c.matricula.includes(q) && !(m?.nome.toLowerCase().includes(q))) return false;
+      }
+      return true;
+    });
+  }, [comite, dataInicio, dataFim, filialMotoristas, motoristaMap, searchMat]);
+
+  const topMotoristas = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const c of filtered) counts.set(c.matricula, (counts.get(c.matricula) || 0) + 1);
+    return Array.from(counts.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 10)
+      .map(([mat, count]) => {
+        const m = motoristaMap.get(mat);
+        const nome = m ? `${m.nome.split(' ')[0]} ${m.nome.split(' ').slice(-1)[0]}` : mat;
+        return { name: nome, value: count };
+      });
+  }, [filtered, motoristaMap]);
+
+  const topPunicoes = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const c of filtered) counts.set(c.punicao, (counts.get(c.punicao) || 0) + 1);
+    return Array.from(counts.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 10)
+      .map(([pun, count]) => ({ name: pun.length > 30 ? pun.slice(0, 29) + '...' : pun, value: count }));
+  }, [filtered]);
+
+  const topMotivos = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const c of filtered) counts.set(c.motivo, (counts.get(c.motivo) || 0) + 1);
+    return Array.from(counts.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 10)
+      .map(([mot, count]) => ({ name: mot.length > 30 ? mot.slice(0, 29) + '...' : mot, value: count }));
+  }, [filtered]);
+
+  return (
+    <div className="space-y-4">
+      {/* Search */}
+      <div className="bg-white rounded-card border border-gray-200 shadow-card p-4">
+        <div className="flex items-center gap-4">
+          <div className="flex-1">
+            <label className="text-2xs font-bold text-slate-500 uppercase block mb-1">Buscar Motorista</label>
+            <div className="relative">
+              <Search size={14} className="absolute left-2 top-2.5 text-slate-400" />
+              <input type="text" value={searchMat} onChange={e => setSearchMat(e.target.value)}
+                placeholder="Matricula ou nome..." className="w-full pl-7 pr-3 py-2 text-xs border border-gray-200 rounded-button bg-slate-50 focus:ring-2 focus:ring-brand-400 focus:outline-none" />
+            </div>
+          </div>
+          <div className="text-right">
+            <p className="text-2xs text-slate-400 uppercase font-bold">Total no Periodo</p>
+            <p className="text-2xl font-black text-slate-800">{filtered.length}</p>
+            <p className="text-2xs text-slate-500">{new Set(filtered.map(c => c.matricula)).size} motorista(s)</p>
+          </div>
+        </div>
+      </div>
+
+      {/* KPIs */}
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+        <KpiCard label="Total Ocorrencias" value={filtered.length} sub={`${new Set(filtered.map(c => c.matricula)).size} motoristas`} color="red" icon={AlertTriangle} />
+        <KpiCard label="Punicoes Distintas" value={new Set(filtered.map(c => c.punicao)).size} color="orange" />
+        <KpiCard label="Motivos Distintos" value={new Set(filtered.map(c => c.motivo)).size} color="amber" />
+      </div>
+
+      {/* Charts */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <TopChart title="Top 10 - Motoristas no Comite" data={topMotoristas} unit="" colors={COLORS_BOTTOM} />
+        <TopChart title="Top 10 - Punicao mais Aplicada" data={topPunicoes} unit="" colors={COLORS_TOP} />
+        <TopChart title="Top 10 - Motivos mais Frequentes" data={topMotivos} unit="" colors={COLORS_BOTTOM} />
+      </div>
+
+      {/* Table */}
+      <div className="bg-white rounded-card border border-gray-200 shadow-card overflow-hidden">
+        <p className="px-4 pt-3 text-xs font-black text-slate-500 uppercase tracking-wider">Registros do Comite Disciplinar</p>
+        <div className="overflow-x-auto max-h-[500px] overflow-y-auto">
+          <table className="w-full text-xs text-left">
+            <thead className="bg-slate-800 text-white sticky top-0 z-10">
+              <tr className="text-2xs uppercase tracking-wide">
+                <th className="px-3 py-2.5 font-bold">Matricula</th>
+                <th className="px-3 py-2.5 font-bold">Motorista</th>
+                <th className="px-3 py-2.5 font-bold">Filial</th>
+                <th className="px-3 py-2.5 font-bold">Data</th>
+                <th className="px-3 py-2.5 font-bold">Motivo</th>
+                <th className="px-3 py-2.5 font-bold">Punicao</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map(c => {
+                const m = motoristaMap.get(c.matricula);
+                return (
+                  <tr key={c.id} className="hover:bg-slate-50 transition-colors border-b border-gray-100">
+                    <td className="px-3 py-2 font-mono text-slate-700">{c.matricula}</td>
+                    <td className="px-3 py-2 font-medium text-slate-800">{m?.nome || c.matricula}</td>
+                    <td className="px-3 py-2 text-slate-500">{m?.filial || '-'}</td>
+                    <td className="px-3 py-2 font-mono text-slate-600">{c.data}</td>
+                    <td className="px-3 py-2 text-slate-600">{c.motivo}</td>
+                    <td className="px-3 py-2"><span className="px-2 py-0.5 bg-red-100 text-red-700 rounded text-2xs font-bold">{c.punicao}</span></td>
+                  </tr>
+                );
+              })}
+              {filtered.length === 0 && <tr><td colSpan={6} className="text-center py-10 text-slate-400">Nenhum registro no periodo</td></tr>}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Main Dashboard ──────────────────────────────────────────────────────────
+
+export default function JornadaDashboardScreen({ jornadasMotorista, setJornadasMotorista, codigosJornada, motoristas, jornadasFaltantes, setJornadasFaltantes, comiteDisciplinar, setComiteDisciplinar }: Props) {
   const [activeTab, setActiveTab] = useState<DashboardTab>('dashboard');
   const [dataInicio, setDataInicio] = useState(() => {
     const d = new Date(); d.setMonth(d.getMonth() - 1);
@@ -836,7 +975,8 @@ export default function JornadaDashboardScreen({ jornadasMotorista, setJornadasM
     const totalMotoristas = new Set<string>();
     let totalWorkJornadas = 0;
     let folgas = 0; let folgasComp = 0; let faltas = 0; let foraEscala = 0;
-    let treinamentos = 0; let atestados = 0; let ferias = 0;
+    let treinamentos = 0; let atestados = 0;
+    const feriasMotoristas = new Set<string>();
     let excessoDiario = 0; let interjornadaViolations = 0;
     let intervalos = 0;
     const byMotorista = new Map<string, JornadaMotorista[]>();
@@ -857,7 +997,7 @@ export default function JornadaDashboardScreen({ jornadasMotorista, setJornadasM
       else if (codNum === '122') foraEscala++;
       else if (codNum === '437') treinamentos++;
       else if (codNum === '033' || codNum === '041') atestados++;
-      else if (codNum === '066') ferias++;
+      else if (codNum === '066') feriasMotoristas.add(j.matricula);
       if (!byMotorista.has(j.matricula)) byMotorista.set(j.matricula, []);
       byMotorista.get(j.matricula)!.push(j);
     }
@@ -881,7 +1021,7 @@ export default function JornadaDashboardScreen({ jornadasMotorista, setJornadasM
 
     return {
       totalWorkMins, totalMotoristas: totalMotoristas.size, totalWorkJornadas, mediaJornada,
-      folgas, folgasComp, faltas, foraEscala, treinamentos, atestados, ferias, intervalos,
+      folgas, folgasComp, faltas, foraEscala, treinamentos, atestados, ferias: feriasMotoristas.size, intervalos,
       excessoDiario, excessoSemanal, excessoMensal, interjornadaViolations,
       totalRegistros: filtered.length,
     };
@@ -933,6 +1073,7 @@ export default function JornadaDashboardScreen({ jornadasMotorista, setJornadasM
     { id: 'dashboard', label: 'Dashboard' },
     { id: 'detalhamento', label: selectedMotorista ? `Detalhamento - ${selectedMotorista.nome.split(' ')[0]}` : 'Detalhamento' },
     { id: 'notificacoes', label: 'Notificacoes' },
+    { id: 'comite', label: 'Comite Disciplinar' },
   ];
 
   return (
@@ -985,7 +1126,7 @@ export default function JornadaDashboardScreen({ jornadasMotorista, setJornadasM
             <KpiCard label="Faltas" value={globalKpis.faltas} color="red" />
             <KpiCard label="Fora de Escala" value={globalKpis.foraEscala} color="teal" />
             <KpiCard label="Atestados" value={globalKpis.atestados} color="blue" />
-            <KpiCard label="Ferias" value={globalKpis.ferias} color="amber" />
+            <KpiCard label="Ferias" value={globalKpis.ferias} sub="Motoristas de ferias" color="amber" />
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <KpiCard label="Intervalos" value={globalKpis.intervalos} sub="Apontamentos cod. 088" color="indigo" />
@@ -1037,6 +1178,18 @@ export default function JornadaDashboardScreen({ jornadasMotorista, setJornadasM
           dataFim={dataFim}
           jornadasFaltantes={jornadasFaltantes}
           setJornadasFaltantes={setJornadasFaltantes}
+        />
+      )}
+
+      {/* Comite Disciplinar Tab */}
+      {activeTab === 'comite' && (
+        <ComiteView
+          comite={comiteDisciplinar}
+          motoristas={motoristas}
+          motoristaMap={motoristaMap}
+          dataInicio={dataInicio}
+          dataFim={dataFim}
+          filialMotoristas={filialMotoristas}
         />
       )}
     </div>

@@ -126,6 +126,7 @@ const SECTIONS: MenuSection[] = [
       { tab: 'dashboard-jornada', label: 'Dashboard Jornada', icon: BarChart3 },
       { tab: 'import-jornada', label: 'Importar Jornada', icon: UploadCloud, adminOnly: true },
       { tab: 'codigos-jornada', label: 'Códigos de Jornada', icon: BookOpen },
+      { tab: 'import-comite', label: 'Importar Comitê', icon: UploadCloud, adminOnly: true },
     ],
   },
   {

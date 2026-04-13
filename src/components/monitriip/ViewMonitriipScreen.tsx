@@ -122,9 +122,10 @@ export default function ViewMonitriipScreen({ monitriips, viagens }: Props) {
     const total = filtered.length;
     const validas = filtered.filter(r => r.viagemValida).length;
     const atrasos = filtered.filter(r => r.atraso30min).length;
-    const totalEmbarque = filtered.reduce((s, r) => s + r.embarque, 0);
-    const totalNoShow = filtered.reduce((s, r) => s + r.noShow, 0);
-    const totalVendaPassagem = filtered.reduce((s, r) => s + r.vendaPassagem, 0);
+    const validTrips = filtered.filter(r => r.viagemValida);
+    const totalEmbarque = validTrips.reduce((s, r) => s + r.embarque, 0);
+    const totalNoShow = validTrips.reduce((s, r) => s + r.noShow, 0);
+    const totalVendaPassagem = validTrips.reduce((s, r) => s + r.vendaPassagem, 0);
     const pctValidas = total > 0 ? ((validas / total) * 100).toFixed(2) : '0.00';
     const pctAtrasos = total > 0 ? ((atrasos / total) * 100).toFixed(1) : '0.0';
     const pctNoShow = totalVendaPassagem > 0 ? ((totalNoShow / totalVendaPassagem) * 100).toFixed(1) : '0.0';
@@ -146,7 +147,7 @@ export default function ViewMonitriipScreen({ monitriips, viagens }: Props) {
   // Chart 2: Top 5 linhas with most No Show
   const topLinhasNoShow = useMemo(() => {
     const acc: Record<string, number> = {};
-    filtered.forEach(r => { if (r.noShow > 0) { const nome = getLinhaName(r); acc[nome] = (acc[nome] || 0) + r.noShow; } });
+    filtered.filter(r => r.viagemValida).forEach(r => { if (r.noShow > 0) { const nome = getLinhaName(r); acc[nome] = (acc[nome] || 0) + r.noShow; } });
     return Object.entries(acc)
       .map(([name, value]) => ({ name: name.length > 35 ? name.slice(0, 34) + '…' : name, value, fullName: name }))
       .sort((a, b) => b.value - a.value)
