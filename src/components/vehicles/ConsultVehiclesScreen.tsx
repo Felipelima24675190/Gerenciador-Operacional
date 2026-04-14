@@ -1,6 +1,7 @@
 import { useMemo, useState, useCallback } from 'react';
 import { Veiculo, MultaANTT, Avaria, MultaTransito, RegistroOciosidade, Motorista } from '../../types';
-import { Search, X, Truck, Info, AlertCircle, Download } from 'lucide-react';
+import { Search, X, Truck, Info, AlertCircle, Download, Bus, ShieldCheck } from 'lucide-react';
+import { PieChart, Pie, Cell, Tooltip as RTooltip, ResponsiveContainer, Legend } from 'recharts';
 
 function parseDateBR(s?: string): Date | null {
   if (!s) return null;
@@ -240,6 +241,61 @@ const STATUS_BADGE: Record<string, string> = {
   'Indisponível': 'bg-slate-100 text-slate-400 border-slate-200',
 };
 
+const PIE_COLORS: Record<string, string> = {
+  'Ativo': '#10b981',
+  'Inativo': '#ef4444',
+  'A vencer': '#f59e0b',
+  'Indisponível': '#94a3b8',
+};
+
+function LitTcoPieCard({ title, counts }: { title: string; counts: Record<string, number> }) {
+  const total = Object.values(counts).reduce((a, b) => a + b, 0);
+  const data = (['Ativo', 'A vencer', 'Inativo', 'Indisponível'] as const)
+    .map(k => ({ name: k, value: counts[k] || 0 }))
+    .filter(d => d.value > 0);
+
+  return (
+    <div className="bg-white rounded-card border border-gray-200 shadow-card p-4">
+      <h4 className="text-2xs font-black text-slate-600 uppercase tracking-tight mb-2">{title}</h4>
+      <div className="h-[220px]">
+        {total > 0 ? (
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={data}
+                cx="50%"
+                cy="50%"
+                innerRadius={45}
+                outerRadius={75}
+                paddingAngle={2}
+                dataKey="value"
+                label={({ percent }) => `${((percent ?? 0) * 100).toFixed(0)}%`}
+                labelLine={false}
+              >
+                {data.map((entry, i) => (
+                  <Cell key={i} fill={PIE_COLORS[entry.name]} />
+                ))}
+              </Pie>
+              <RTooltip formatter={(v: number, n: string) => [`${v} (${((v / total) * 100).toFixed(1)}%)`, n]} />
+              <Legend verticalAlign="bottom" height={24} iconSize={10} wrapperStyle={{ fontSize: 10, fontWeight: 700 }} />
+            </PieChart>
+          </ResponsiveContainer>
+        ) : (
+          <div className="h-full flex items-center justify-center text-xs text-slate-400">Sem dados</div>
+        )}
+      </div>
+      <div className="grid grid-cols-4 gap-2 mt-2">
+        {(['Ativo', 'A vencer', 'Inativo', 'Indisponível'] as const).map(k => (
+          <div key={k} className="text-center">
+            <p className="text-[9px] font-black uppercase tracking-tight text-slate-500">{k}</p>
+            <p className="text-sm font-black" style={{ color: PIE_COLORS[k] }}>{counts[k] || 0}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function LitTcoTable({ veiculos, litFilter, setLitFilter, tcoFilter, setTcoFilter }: {
   veiculos: Veiculo[];
   litFilter: LitTcoStatus;
@@ -343,6 +399,7 @@ function LitTcoTable({ veiculos, litFilter, setLitFilter, tcoFilter, setTcoFilte
 }
 
 export default function ConsultVehiclesScreen({ veiculos, multasAntt, avarias, multasTransito = [], registrosOciosidade = [], motoristas = [] }: ConsultVehiclesScreenProps) {
+  const [activeTab, setActiveTab] = useState<'veiculos' | 'lit-tco'>('veiculos');
   const [searchTerm, setSearchTerm] = useState('');
   const [empresaFilter, setEmpresaFilter] = useState('Todas');
   const [statusFilter, setStatusFilter] = useState('Todos');
@@ -350,6 +407,16 @@ export default function ConsultVehiclesScreen({ veiculos, multasAntt, avarias, m
   const [selectedVehicle, setSelectedVehicle] = useState<Veiculo | null>(null);
   const [litFilter, setLitFilter] = useState<LitTcoStatus>('Todos');
   const [tcoFilter, setTcoFilter] = useState<LitTcoStatus>('Todos');
+
+  const litTcoCounts = useMemo(() => {
+    const lit: Record<string, number> = { Ativo: 0, Inativo: 0, 'A vencer': 0, 'Indisponível': 0 };
+    const tco: Record<string, number> = { Ativo: 0, Inativo: 0, 'A vencer': 0, 'Indisponível': 0 };
+    veiculos.forEach(v => {
+      lit[getLitTcoStatus(v.litValidade)]++;
+      tco[getLitTcoStatus(v.tcoValidade)]++;
+    });
+    return { lit, tco };
+  }, [veiculos]);
 
   const empresas = useMemo(() => ['Todas', ...Array.from(new Set(veiculos.map(v => v.empresa)))], [veiculos]);
   const statuses = useMemo(() => ['Todos', ...Array.from(new Set(veiculos.map(v => v.status)))], [veiculos]);

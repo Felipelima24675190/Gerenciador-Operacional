@@ -41,7 +41,7 @@ import ImportMaintenanceScreen from './components/manutencao/ImportMaintenanceSc
 import ConsultMaintenanceScreen from './components/manutencao/ConsultMaintenanceScreen';
 import AcidentesScreen from './components/avarias/AcidentesScreen';
 import ScoreMotoristasScreen from './components/drivers/ScoreMotoristasScreen';
-import ImportJornadaScreen from './components/jornada/ImportJornadaScreen';
+import ImportJornadaTabs from './components/jornada/ImportJornadaTabs';
 import CodigosJornadaScreen from './components/jornada/CodigosJornadaScreen';
 import JornadaDashboardScreen from './components/jornada/JornadaDashboardScreen';
 import ImportComiteScreen from './components/jornada/ImportComiteScreen';
@@ -234,7 +234,7 @@ function App() {
       case 'score-motoristas':
         return <ScoreMotoristasScreen motoristas={motoristas} ocorrencias={ocorrencias} excessos={excessosVelocidade} avarias={avarias} acidentes={acidentes} eventosMotorista={eventosMotorista} jornadasMotorista={jornadasMotorista} codigosJornada={codigosJornada} />;
       case 'import-jornada':
-        return <ImportJornadaScreen jornadas={jornadasMotorista} setJornadas={setJornadasMotN} motoristas={motoristas} codigosJornada={codigosJornada} userRole={currentUser.role} />;
+        return <ImportJornadaTabs jornadas={jornadasMotorista} setJornadas={setJornadasMotN} comite={comiteDisciplinar} setComite={setComiteDisciplinarN} motoristas={motoristas} codigosJornada={codigosJornada} userRole={currentUser.role} />;
       case 'codigos-jornada':
         return <CodigosJornadaScreen codigosJornada={codigosJornada} setCodigosJornada={setCodigosJornada} userRole={currentUser.role} />;
       case 'dashboard-jornada':
