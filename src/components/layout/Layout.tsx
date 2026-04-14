@@ -18,8 +18,10 @@ interface LayoutProps {
 export default function Layout({ children, activeTab, onTabChange, title, breadcrumb, user, onLogout, notifications, setNotifications }: LayoutProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
+  const sidebarWidth = sidebarCollapsed ? 68 : 256;
+
   return (
-    <div className="min-h-screen flex bg-surface font-sans">
+    <div className="min-h-screen flex bg-surface font-sans" style={{ ['--sidebar-width' as string]: `${sidebarWidth}px` }}>
       <Sidebar
         activeTab={activeTab}
         onTabChange={onTabChange}
@@ -31,7 +33,7 @@ export default function Layout({ children, activeTab, onTabChange, title, breadc
 
       <main
         className="flex-1 flex flex-col min-h-screen transition-all duration-300"
-        style={{ marginLeft: sidebarCollapsed ? 68 : 256 }}
+        style={{ marginLeft: sidebarWidth }}
       >
         <Header
           title={title}

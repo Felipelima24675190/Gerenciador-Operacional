@@ -202,8 +202,34 @@ function WeekdayBreakdown({ filtered }: { filtered: JornadaMotorista[] }) {
 
 // ─── Top Chart ───────────────────────────────────────────────────────────────
 
-function TopChart({ title, data, unit, colors }: {
-  title: string; data: { name: string; value: number }[]; unit: string; colors: string[];
+interface TopChartDatum { name: string; value: number; matricula?: string; }
+
+function MotoristaTooltip({ active, payload, unit, motoristaMap }: {
+  active?: boolean;
+  payload?: Array<{ payload: TopChartDatum; value: number }>;
+  unit: string;
+  motoristaMap: Map<string, Motorista>;
+}) {
+  if (!active || !payload || payload.length === 0) return null;
+  const datum = payload[0].payload;
+  const m = datum.matricula ? motoristaMap.get(datum.matricula) : undefined;
+  return (
+    <div className="bg-white border border-slate-200 rounded-lg shadow-lg p-3 text-xs min-w-[200px]">
+      <p className="font-bold text-slate-800 border-b border-slate-100 pb-1.5 mb-1.5">{m?.nome || datum.name}</p>
+      {datum.matricula && (
+        <div className="space-y-0.5">
+          <p className="text-slate-600"><span className="font-bold text-slate-500">Matrícula:</span> <span className="font-mono">{datum.matricula}</span></p>
+          {m && <p className="text-slate-600"><span className="font-bold text-slate-500">Filial:</span> {m.filial}</p>}
+          {m && <p className="text-slate-600"><span className="font-bold text-slate-500">Status:</span> {m.status}</p>}
+        </div>
+      )}
+      <p className="text-brand-700 font-bold mt-1.5 pt-1.5 border-t border-slate-100">{payload[0].value}{unit}</p>
+    </div>
+  );
+}
+
+function TopChart({ title, data, unit, colors, motoristaMap }: {
+  title: string; data: TopChartDatum[]; unit: string; colors: string[]; motoristaMap?: Map<string, Motorista>;
 }) {
   if (data.length === 0) {
     return (
@@ -224,7 +250,11 @@ function TopChart({ title, data, unit, colors }: {
           <BarChart data={data} layout="vertical" margin={{ left: 0, right: 30 }}>
             <XAxis type="number" fontSize={10} tickFormatter={v => `${v}${unit}`} />
             <YAxis type="category" dataKey="name" fontSize={10} width={yAxisWidth} interval={0} tick={{ fill: '#475569' }} />
-            <Tooltip formatter={(v: number) => [`${v}${unit}`, 'Valor']} />
+            {motoristaMap ? (
+              <Tooltip content={<MotoristaTooltip unit={unit} motoristaMap={motoristaMap} />} />
+            ) : (
+              <Tooltip formatter={(v: number) => [`${v}${unit}`, 'Valor']} />
+            )}
             <Bar dataKey="value" radius={[0, 4, 4, 0]}>
               {data.map((_, i) => <Cell key={i} fill={colors[i % colors.length]} />)}
             </Bar>
@@ -730,6 +760,14 @@ function NotificationsView({
     setMergeSearch('');
   }, [setJornadas]);
 
+  const handleRemoveForaBase = useCallback((foraMatricula: string) => {
+    const count = allJornadas.filter(j => j.matricula === foraMatricula).length;
+    if (!confirm(`Excluir ${count} registro(s) de jornada da matricula ${foraMatricula}? Esta acao nao pode ser desfeita.`)) return;
+    setJornadas(prev => prev.filter(j => j.matricula !== foraMatricula));
+    setMergeTarget(null);
+    setMergeSearch('');
+  }, [setJornadas, allJornadas]);
+
   return (
     <div className="space-y-4">
       <div className="bg-white rounded-card border border-gray-200 shadow-card p-4">
@@ -824,10 +862,16 @@ function NotificationsView({
                       </div>
                       <p className="text-2xs text-slate-500 mt-1">Motorista nao encontrado na base cadastrada</p>
                     </div>
-                    <button onClick={() => { setMergeTarget({ foraMatricula: mat, targetMatricula: '' }); setMergeSearch(''); }}
-                      className="flex items-center gap-1 px-3 py-1.5 text-xs font-bold bg-brand-600 text-white rounded-button hover:bg-brand-700">
-                      <Merge size={12} /> Mesclar com motorista
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => { setMergeTarget({ foraMatricula: mat, targetMatricula: '' }); setMergeSearch(''); }}
+                        className="flex items-center gap-1 px-3 py-1.5 text-xs font-bold bg-brand-600 text-white rounded-button hover:bg-brand-700">
+                        <Merge size={12} /> Mesclar com motorista
+                      </button>
+                      <button onClick={() => handleRemoveForaBase(mat)}
+                        className="flex items-center gap-1 px-3 py-1.5 text-xs font-bold bg-red-600 text-white rounded-button hover:bg-red-700">
+                        <Trash2 size={12} /> Excluir ocorrencia
+                      </button>
+                    </div>
                   </div>
                   {mergeTarget?.foraMatricula === mat && (
                     <div className="mt-3 bg-white rounded-lg border border-pink-200 p-3">
@@ -1185,11 +1229,11 @@ export default function JornadaDashboardScreen({ jornadasMotorista, setJornadasM
     const getName = (mat: string) => { const m = motoristaMap.get(mat); return m ? `${m.nome.split(' ')[0]} ${m.nome.split(' ').slice(-1)[0]}` : mat; };
     const entries = Array.from(byMat.entries());
     return {
-      topHoras: entries.sort((a, b) => b[1].workMins - a[1].workMins).slice(0, 10).map(([mat, v]) => ({ name: getName(mat), value: Math.round(v.workMins / 60) })),
-      topFaltas: entries.filter(([, v]) => v.faltas > 0).sort((a, b) => b[1].faltas - a[1].faltas).slice(0, 10).map(([mat, v]) => ({ name: getName(mat), value: v.faltas })),
-      topAtestados: entries.filter(([, v]) => v.atestados > 0).sort((a, b) => b[1].atestados - a[1].atestados).slice(0, 10).map(([mat, v]) => ({ name: getName(mat), value: v.atestados })),
-      topMaioresJornadas: entries.filter(([, v]) => v.maxJornada > 0).sort((a, b) => b[1].maxJornada - a[1].maxJornada).slice(0, 10).map(([mat, v]) => ({ name: getName(mat), value: Math.round(v.maxJornada / 60 * 10) / 10 })),
-      topMenoresJornadas: entries.filter(([, v]) => v.minJornada > 0 && v.minJornada < Infinity).sort((a, b) => a[1].minJornada - b[1].minJornada).slice(0, 10).map(([mat, v]) => ({ name: getName(mat), value: Math.round(v.minJornada / 60 * 10) / 10 })),
+      topHoras: entries.sort((a, b) => b[1].workMins - a[1].workMins).slice(0, 10).map(([mat, v]) => ({ name: getName(mat), matricula: mat, value: Math.round(v.workMins / 60) })),
+      topFaltas: entries.filter(([, v]) => v.faltas > 0).sort((a, b) => b[1].faltas - a[1].faltas).slice(0, 10).map(([mat, v]) => ({ name: getName(mat), matricula: mat, value: v.faltas })),
+      topAtestados: entries.filter(([, v]) => v.atestados > 0).sort((a, b) => b[1].atestados - a[1].atestados).slice(0, 10).map(([mat, v]) => ({ name: getName(mat), matricula: mat, value: v.atestados })),
+      topMaioresJornadas: entries.filter(([, v]) => v.maxJornada > 0).sort((a, b) => b[1].maxJornada - a[1].maxJornada).slice(0, 10).map(([mat, v]) => ({ name: getName(mat), matricula: mat, value: Math.round(v.maxJornada / 60 * 10) / 10 })),
+      topMenoresJornadas: entries.filter(([, v]) => v.minJornada > 0 && v.minJornada < Infinity).sort((a, b) => a[1].minJornada - b[1].minJornada).slice(0, 10).map(([mat, v]) => ({ name: getName(mat), matricula: mat, value: Math.round(v.minJornada / 60 * 10) / 10 })),
     };
   }, [filtered, motoristaMap]);
 
@@ -1425,11 +1469,11 @@ export default function JornadaDashboardScreen({ jornadasMotorista, setJornadasM
           <WeekdayBreakdown filtered={filtered} />
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <TopChart title="Top 10 - Mais Horas Trabalhadas" data={tops.topHoras} unit="h" colors={COLORS_TOP} />
-            <TopChart title="Top 10 - Mais Faltas" data={tops.topFaltas} unit="" colors={COLORS_BOTTOM} />
-            <TopChart title="Top 10 - Mais Atestados" data={tops.topAtestados} unit="" colors={COLORS_TOP} />
-            <TopChart title="Top 10 - Maiores Jornadas (dia)" data={tops.topMaioresJornadas} unit="h" colors={COLORS_BOTTOM} />
-            <TopChart title="Top 10 - Menores Jornadas (dia)" data={tops.topMenoresJornadas} unit="h" colors={COLORS_TOP} />
+            <TopChart title="Top 10 - Mais Horas Trabalhadas" data={tops.topHoras} unit="h" colors={COLORS_TOP} motoristaMap={motoristaMap} />
+            <TopChart title="Top 10 - Mais Faltas" data={tops.topFaltas} unit="" colors={COLORS_BOTTOM} motoristaMap={motoristaMap} />
+            <TopChart title="Top 10 - Mais Atestados" data={tops.topAtestados} unit="" colors={COLORS_TOP} motoristaMap={motoristaMap} />
+            <TopChart title="Top 10 - Maiores Jornadas (dia)" data={tops.topMaioresJornadas} unit="h" colors={COLORS_BOTTOM} motoristaMap={motoristaMap} />
+            <TopChart title="Top 10 - Menores Jornadas (dia)" data={tops.topMenoresJornadas} unit="h" colors={COLORS_TOP} motoristaMap={motoristaMap} />
           </div>
         </>
       )}

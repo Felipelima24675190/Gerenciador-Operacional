@@ -61,6 +61,28 @@ const DriverChartsModal = ({ motorista, ocorrencias, multasTransito, onClose }: 
       .slice(0, 8);
   }, [mOccs]);
 
+  // Linhas conhecidas pelo motorista (extraídas das ocorrências)
+  const linhasConhecidas = useMemo(() => {
+    const linhas = new Map<string, { numeroLinha: string; nomeLinha: string; total: number; ultimaData: string; ultimaDataTS: number }>();
+    mOccs.forEach(o => {
+      const dayStr = (o.prevInicio || '').split(' ')[0];
+      let ts = 0;
+      try {
+        const [d, m, y] = dayStr.split('/').map(Number);
+        if (d && m && y) ts = new Date(y, m - 1, d).getTime();
+      } catch {}
+      const key = o.numeroLinha;
+      const existing = linhas.get(key);
+      if (!existing) {
+        linhas.set(key, { numeroLinha: o.numeroLinha, nomeLinha: o.nomeLinha, total: 1, ultimaData: dayStr, ultimaDataTS: ts });
+      } else {
+        existing.total++;
+        if (ts > existing.ultimaDataTS) { existing.ultimaData = dayStr; existing.ultimaDataTS = ts; }
+      }
+    });
+    return Array.from(linhas.values()).sort((a, b) => b.ultimaDataTS - a.ultimaDataTS || b.total - a.total);
+  }, [mOccs]);
+
   const total = mOccs.length;
   const atrasos = mOccs.filter(o => o.statusInicio === 'Atraso' || o.statusFim === 'Atraso').length;
   const percPontual = total > 0 ? ((total - atrasos) / total * 100).toFixed(1) : '0.0';
@@ -167,6 +189,41 @@ const DriverChartsModal = ({ motorista, ocorrencias, multasTransito, onClose }: 
               </ResponsiveContainer>
             </div>
           )}
+
+          {/* Linhas Conhecidas */}
+          <div className="bg-white border border-gray-200 rounded-card p-5 shadow-card">
+            <h4 className="text-xs font-bold text-slate-500 uppercase mb-4">
+              Linhas Conhecidas ({linhasConhecidas.length})
+            </h4>
+            {linhasConhecidas.length > 0 ? (
+              <div className="overflow-x-auto max-h-[400px] overflow-y-auto">
+                <table className="w-full text-xs">
+                  <thead className="bg-slate-800 text-white sticky top-0">
+                    <tr className="text-2xs uppercase tracking-wide">
+                      <th className="px-3 py-2.5 font-bold text-left">Código</th>
+                      <th className="px-3 py-2.5 font-bold text-left">Nome da Linha</th>
+                      <th className="px-3 py-2.5 font-bold text-center">Total Viagens</th>
+                      <th className="px-3 py-2.5 font-bold text-center">Última Realização</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {linhasConhecidas.map(l => (
+                      <tr key={l.numeroLinha} className="hover:bg-slate-50 transition-colors border-b border-gray-100">
+                        <td className="px-3 py-2 font-mono font-bold text-blue-900">{l.numeroLinha}</td>
+                        <td className="px-3 py-2 text-slate-700">{l.nomeLinha}</td>
+                        <td className="px-3 py-2 text-center">
+                          <span className="inline-block px-2 py-0.5 bg-brand-50 text-brand-700 rounded-full text-2xs font-bold">{l.total}</span>
+                        </td>
+                        <td className="px-3 py-2 text-center font-mono text-slate-600">{l.ultimaData || '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p className="text-2xs text-slate-400 text-center py-4">Nenhuma linha registrada no histórico de ocorrências.</p>
+            )}
+          </div>
 
           {/* Histórico de Multas de Trânsito */}
           <div className="bg-white border border-gray-200 rounded-card p-5 shadow-card">

@@ -33,7 +33,7 @@ const AvariaDetailModal = ({ group, motoristasMap, onClose, onSave, acidentes }:
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 z-50 flex justify-center items-center p-4" onClick={onClose}>
+    <div className="fixed inset-y-0 right-0 bg-black/60 z-50 flex justify-center items-center p-4 transition-all duration-300" style={{ left: 'var(--sidebar-width, 0px)' }} onClick={onClose}>
       <div className="bg-white rounded-card shadow-2xl w-full max-w-5xl flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
         <div className="p-6 border-b flex justify-between items-center bg-slate-900 text-white rounded-t-xl">
           <div>
@@ -236,8 +236,10 @@ export default function ConsultAvariasScreen({ avarias, setAvarias, motoristas, 
 
   const topStats = useMemo(() => {
     const countsVeiculos: Record<string, number> = {};
-    let totalFrontal = 0, totalLateral = 0, totalTraseira = 0, totalOutro = 0;
-    let valorFrontal = 0, valorLateral = 0, valorTraseira = 0, valorOutro = 0;
+    const locCount: Record<string, number> = {};
+    const locValor: Record<string, number> = {};
+    let totalSemLocalCount = 0;
+    let totalSemLocalValor = 0;
 
     // Group avarias por veiculo+data (same as groupedAvarias logic)
     const groupMap = new Map<string, Avaria[]>();
@@ -251,38 +253,46 @@ export default function ConsultAvariasScreen({ avarias, setAvarias, motoristas, 
     groupMap.forEach((group, key) => {
       const resumo = resumos.find(r => r.key === key);
       const groupValor = group.reduce((s, a) => s + a.valorAvaria, 0);
-      const front = parseFloat(resumo?.frontal || '0') || 0;
-      const lat = parseFloat(resumo?.lateral || '0') || 0;
-      const tras = parseFloat(resumo?.traseira || '0') || 0;
-      const total = front + lat + tras;
+      // Combined locations (free text) — split by "/" and count each location separately
+      const raw = (resumo?.localizacao || '').trim();
+      const locCountValue = parseInt(resumo?.total || '', 10);
+      const totalCount = isNaN(locCountValue) ? group.length : locCountValue;
 
-      if (total > 0) {
-        totalFrontal += front;
-        totalLateral += lat;
-        totalTraseira += tras;
-        const share = (loc: number) => total > 0 ? (loc / total) * groupValor : 0;
-        valorFrontal += share(front);
-        valorLateral += share(lat);
-        valorTraseira += share(tras);
+      if (raw) {
+        const parts = raw.split('/').map(s => s.trim()).filter(Boolean);
+        if (parts.length > 0) {
+          const perPartCount = totalCount / parts.length;
+          const perPartValor = groupValor / parts.length;
+          parts.forEach(p => {
+            const name = p;
+            locCount[name] = (locCount[name] || 0) + perPartCount;
+            locValor[name] = (locValor[name] || 0) + perPartValor;
+          });
+        } else {
+          totalSemLocalCount += group.length;
+          totalSemLocalValor += groupValor;
+        }
       } else {
-        totalOutro += group.length;
-        valorOutro += groupValor;
+        totalSemLocalCount += group.length;
+        totalSemLocalValor += groupValor;
       }
     });
 
     const byCount = [
-      { name: 'Frontal', count: totalFrontal },
-      { name: 'Lateral', count: totalLateral },
-      { name: 'Traseira', count: totalTraseira },
-      ...(totalOutro > 0 ? [{ name: 'Sem Local', count: totalOutro }] : []),
-    ].filter(d => d.count > 0);
+      ...Object.entries(locCount).map(([name, count]) => ({ name, count: Math.round(count * 100) / 100 })),
+      ...(totalSemLocalCount > 0 ? [{ name: 'Sem Local', count: totalSemLocalCount }] : []),
+    ]
+      .filter(d => d.count > 0)
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
 
     const byValue = [
-      { name: 'Frontal', valor: valorFrontal },
-      { name: 'Lateral', valor: valorLateral },
-      { name: 'Traseira', valor: valorTraseira },
-      ...(valorOutro > 0 ? [{ name: 'Sem Local', valor: valorOutro }] : []),
-    ].filter(d => d.valor > 0);
+      ...Object.entries(locValor).map(([name, valor]) => ({ name, valor })),
+      ...(totalSemLocalValor > 0 ? [{ name: 'Sem Local', valor: totalSemLocalValor }] : []),
+    ]
+      .filter(d => d.valor > 0)
+      .sort((a, b) => b.valor - a.valor)
+      .slice(0, 5);
 
     const topVeiculos = Object.entries(countsVeiculos).map(([name, count]) => ({ name, count })).sort((a,b) => b.count - a.count).slice(0, 5);
 
@@ -322,7 +332,27 @@ export default function ConsultAvariasScreen({ avarias, setAvarias, motoristas, 
   }, [filteredAvarias]);
 
   const getResumo = (key: string): ResumoAvaria => {
-    return resumos.find(r => r.key === key) || { key, tipoAvaria: '', frontal: '', lateral: '', traseira: '' };
+    const existing = resumos.find(r => r.key === key);
+    if (existing) {
+      // Backfill localizacao / total from legacy fields if not set
+      if (!existing.localizacao && !existing.total) {
+        const legacyParts: string[] = [];
+        const front = parseFloat(existing.frontal || '0') || 0;
+        const lat = parseFloat(existing.lateral || '0') || 0;
+        const tras = parseFloat(existing.traseira || '0') || 0;
+        if (front > 0) legacyParts.push('Frontal');
+        if (lat > 0) legacyParts.push('Lateral');
+        if (tras > 0) legacyParts.push('Traseira');
+        const legacyTotal = front + lat + tras;
+        return {
+          ...existing,
+          localizacao: legacyParts.join('/'),
+          total: legacyTotal > 0 ? String(legacyTotal) : '',
+        };
+      }
+      return existing;
+    }
+    return { key, tipoAvaria: '', localizacao: '', total: '' };
   };
 
   const handleStartEditResumo = (key: string) => {
@@ -332,7 +362,12 @@ export default function ConsultAvariasScreen({ avarias, setAvarias, motoristas, 
 
   const handleSaveResumo = () => {
     if (!editingResumoKey || !editResumoForm) return;
-    const updated: ResumoAvaria = { key: editingResumoKey, tipoAvaria: editResumoForm.tipoAvaria || '', frontal: editResumoForm.frontal || '', lateral: editResumoForm.lateral || '', traseira: editResumoForm.traseira || '' };
+    const updated: ResumoAvaria = {
+      key: editingResumoKey,
+      tipoAvaria: editResumoForm.tipoAvaria || '',
+      localizacao: editResumoForm.localizacao || '',
+      total: editResumoForm.total || '',
+    };
     setResumos(prev => {
       const exists = prev.find(r => r.key === editingResumoKey);
       if (exists) return prev.map(r => r.key === editingResumoKey ? updated : r);
@@ -412,10 +447,7 @@ export default function ConsultAvariasScreen({ avarias, setAvarias, motoristas, 
                 <th className="px-3 py-2.5">Veículo</th>
                 <th className="px-3 py-2.5">Motorista</th>
                 <th className="px-3 py-2.5">Tipo de Avaria</th>
-                <th className="px-3 py-2.5 text-center">Frontal</th>
-                <th className="px-3 py-2.5 text-center">Lateral</th>
-                <th className="px-3 py-2.5 text-center">Traseira</th>
-                <th className="px-3 py-2.5 text-center">Total</th>
+                <th className="px-3 py-2.5 text-center">Localização e Total</th>
                 <th className="px-3 py-2.5 text-right">Valor</th>
                 <th className="px-3 py-2.5 text-center">Ações</th>
               </tr>
@@ -428,11 +460,8 @@ export default function ConsultAvariasScreen({ avarias, setAvarias, motoristas, 
                 const totalValor = group.reduce((sum, it) => sum + it.valorAvaria, 0);
                 const isEditing = editingResumoKey === key;
 
-                // Calcular total como soma dos campos de localização (se preenchidos como números)
-                const frontalNum = parseFloat(resumo.frontal) || 0;
-                const lateralNum = parseFloat(resumo.lateral) || 0;
-                const traseiraNum = parseFloat(resumo.traseira) || 0;
-                const totalLocal = frontalNum + lateralNum + traseiraNum;
+                const totalNumeric = parseInt(resumo.total || '', 10);
+                const totalDisplay = isNaN(totalNumeric) ? group.length : totalNumeric;
 
                 return (
                   <tr key={key} className="hover:bg-slate-50 transition-colors border-b border-gray-100">
@@ -453,27 +482,26 @@ export default function ConsultAvariasScreen({ avarias, setAvarias, motoristas, 
                     </td>
                     <td className="px-3 py-2 text-center">
                       {isEditing ? (
-                        <input className="w-16 text-xs text-center border border-blue-300 rounded px-1 py-1 focus:ring-1 focus:ring-blue-500" value={editResumoForm.frontal || ''} onChange={e => setEditResumoForm({...editResumoForm, frontal: e.target.value})} placeholder="0" />
+                        <div className="flex items-center gap-1 justify-center">
+                          <input
+                            className="flex-1 min-w-[120px] text-xs font-bold border border-blue-300 rounded px-2 py-1 focus:ring-1 focus:ring-blue-500"
+                            value={editResumoForm.localizacao || ''}
+                            onChange={e => setEditResumoForm({ ...editResumoForm, localizacao: e.target.value })}
+                            placeholder="Ex: Frontal/Superior"
+                          />
+                          <input
+                            className="w-14 text-xs font-bold text-center border border-blue-300 rounded px-1 py-1 focus:ring-1 focus:ring-blue-500"
+                            value={editResumoForm.total || ''}
+                            onChange={e => setEditResumoForm({ ...editResumoForm, total: e.target.value })}
+                            placeholder="Qtd"
+                          />
+                        </div>
                       ) : (
-                        <span className="text-xs font-bold text-slate-600">{resumo.frontal || '—'}</span>
+                        <div className="flex items-center gap-2 justify-center">
+                          <span className="text-xs font-bold text-slate-700">{resumo.localizacao || <span className="text-slate-300 italic">—</span>}</span>
+                          <span className="text-2xs font-black bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full">{totalDisplay}</span>
+                        </div>
                       )}
-                    </td>
-                    <td className="px-3 py-2 text-center">
-                      {isEditing ? (
-                        <input className="w-16 text-xs text-center border border-blue-300 rounded px-1 py-1 focus:ring-1 focus:ring-blue-500" value={editResumoForm.lateral || ''} onChange={e => setEditResumoForm({...editResumoForm, lateral: e.target.value})} placeholder="0" />
-                      ) : (
-                        <span className="text-xs font-bold text-slate-600">{resumo.lateral || '—'}</span>
-                      )}
-                    </td>
-                    <td className="px-3 py-2 text-center">
-                      {isEditing ? (
-                        <input className="w-16 text-xs text-center border border-blue-300 rounded px-1 py-1 focus:ring-1 focus:ring-blue-500" value={editResumoForm.traseira || ''} onChange={e => setEditResumoForm({...editResumoForm, traseira: e.target.value})} placeholder="0" />
-                      ) : (
-                        <span className="text-xs font-bold text-slate-600">{resumo.traseira || '—'}</span>
-                      )}
-                    </td>
-                    <td className="px-3 py-2 text-center">
-                      <span className="text-xs font-black text-slate-800">{totalLocal > 0 ? totalLocal : group.length}</span>
                     </td>
                     <td className="px-3 py-2 text-right font-black text-red-600 text-xs">{formatCurrency(totalValor)}</td>
                     <td className="px-3 py-2 text-center">

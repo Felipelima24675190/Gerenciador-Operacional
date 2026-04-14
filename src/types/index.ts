@@ -220,9 +220,13 @@ export interface Acidente {
 export interface ResumoAvaria {
   key: string; // "${data}_${veiculo}"
   tipoAvaria: string;
-  frontal: string;
-  lateral: string;
-  traseira: string;
+  // Legacy individual location fields (kept for backwards compatibility)
+  frontal?: string;
+  lateral?: string;
+  traseira?: string;
+  // New combined location field (e.g. "Frontal/Superior") and total count
+  localizacao?: string;
+  total?: string;
 }
 
 export interface RegistroOciosidade {
