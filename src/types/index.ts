@@ -369,3 +369,11 @@ export interface AppNotification {
   data: string;
   lida: Record<string, boolean>; // userId -> true if read
 }
+
+export interface ValidadeAntt {
+  matricula: string;          // chave primária (últimos 5 dígitos)
+  cpf: string;
+  dataAdmissao: string;       // DD/MM/YYYY
+  validadeProgresso?: string; // DD/MM/YYYY (vazio = não cadastrado)
+  validadeCruzeiro?: string;  // DD/MM/YYYY (vazio = não cadastrado)
+}

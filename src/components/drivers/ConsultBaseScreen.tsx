@@ -1,7 +1,7 @@
 import { useState, useMemo, type Dispatch, type SetStateAction } from 'react';
 import { Search, Filter, X, Plus, Trash2, ClipboardList, Pencil, Save } from 'lucide-react';
-import { Motorista, StatusMotorista, EventoMotorista, TipoEventoMotorista, UserRole, JornadaMotorista, CodigoJornadaDescription } from '../../types';
-import { BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Bar } from 'recharts';
+import { Motorista, StatusMotorista, EventoMotorista, TipoEventoMotorista, UserRole, JornadaMotorista, CodigoJornadaDescription, ValidadeAntt } from '../../types';
+import { BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Bar, Cell } from 'recharts';
 
 const FILIAL_SIGLAS: Record<string, string> = {
   'RECIFE': 'REC',
@@ -26,6 +26,7 @@ interface ConsultBaseScreenProps {
   setEventosMotorista?: Dispatch<SetStateAction<EventoMotorista[]>>;
   jornadasMotorista?: JornadaMotorista[];
   codigosJornada?: CodigoJornadaDescription[];
+  validades?: ValidadeAntt[];
 }
 
 // ─── Driver History Modal ───────────────────────────────────────────────────
@@ -256,7 +257,7 @@ function DriverHistoryModal({
   );
 }
 
-export default function ConsultBaseScreen({ motoristas, setMotoristas, userRole, eventosMotorista = [], setEventosMotorista, jornadasMotorista = [], codigosJornada = [] }: ConsultBaseScreenProps) {
+export default function ConsultBaseScreen({ motoristas, setMotoristas, userRole, eventosMotorista = [], setEventosMotorista, jornadasMotorista = [], codigosJornada = [], validades = [] }: ConsultBaseScreenProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusMotorista | 'Todos'>('Todos');
   const [filialFilter, setFilialFilter] = useState('Todos');
@@ -315,6 +316,33 @@ export default function ConsultBaseScreen({ motoristas, setMotoristas, userRole,
     };
   }, [motoristas]);
 
+  // ─── Tempo na Empresa (excluindo DESLIGADO) ──────────────────────────────
+  const tempoEmpresa = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const valMap = new Map(validades.map(v => [v.matricula, v]));
+    const ativos = motoristas.filter(m => m.status !== 'DESLIGADO');
+    const years: number[] = [];
+    ativos.forEach(m => {
+      const v = valMap.get(m.matricula);
+      if (!v?.dataAdmissao) return;
+      const match = v.dataAdmissao.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+      if (!match) return;
+      const [, dd, mm, yyyy] = match;
+      const admDate = new Date(Number(yyyy), Number(mm) - 1, Number(dd));
+      if (isNaN(admDate.getTime())) return;
+      const diffMs = today.getTime() - admDate.getTime();
+      const diffYears = diffMs / (1000 * 60 * 60 * 24 * 365.25);
+      if (diffYears >= 0) years.push(diffYears);
+    });
+    const totalCom = years.length;
+    const media = totalCom > 0 ? years.reduce((a, b) => a + b, 0) / totalCom : 0;
+    const ate5 = years.filter(y => y <= 5).length;
+    const ate10 = years.filter(y => y > 5 && y <= 10).length;
+    const acima10 = years.filter(y => y > 10).length;
+    return { media, totalCom, ate5, ate10, acima10 };
+  }, [motoristas, validades]);
+
   const paginatedMotoristas = useMemo(() => {
     return filteredMotoristas.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
   }, [filteredMotoristas, currentPage]);
@@ -351,6 +379,37 @@ export default function ConsultBaseScreen({ motoristas, setMotoristas, userRole,
                 <YAxis width={30}/>
                 <Tooltip />
                 <Bar dataKey="count" fill="#8884d8" name="Motoristas" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
+
+      {/* ─── Tempo na Empresa ───────────────────────────────────────────── */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="bg-gradient-to-br from-brand-50 to-white p-5 rounded-card border border-brand-200 shadow-card">
+          <p className="text-xs text-brand-700 font-semibold uppercase tracking-wider">Tempo Médio na Empresa</p>
+          <p className="text-4xl font-bold text-brand-800 mt-2">{tempoEmpresa.media.toFixed(1)}</p>
+          <p className="text-xs text-brand-600 mt-1">anos (exceto DESLIGADO)</p>
+          <p className="text-[10px] text-slate-400 mt-2">Base: {tempoEmpresa.totalCom} motoristas com admissão cadastrada</p>
+        </div>
+        <div className="md:col-span-3 bg-white p-5 rounded-card border border-gray-200 shadow-card">
+          <h4 className="text-sm text-slate-700 font-semibold mb-3">Distribuição por Tempo de Empresa</h4>
+          <div className="h-32">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={[
+                { name: 'Até 5 anos', count: tempoEmpresa.ate5, fill: '#10b981' },
+                { name: '5 a 10 anos', count: tempoEmpresa.ate10, fill: '#3b82f6' },
+                { name: 'Acima de 10 anos', count: tempoEmpresa.acima10, fill: '#8b5cf6' },
+              ]}>
+                <XAxis dataKey="name" fontSize={11} />
+                <YAxis width={30} />
+                <Tooltip formatter={(v: number) => [`${v} motorista(s)`, '']} />
+                <Bar dataKey="count" name="Motoristas">
+                  <Cell fill="#10b981" />
+                  <Cell fill="#3b82f6" />
+                  <Cell fill="#8b5cf6" />
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           </div>

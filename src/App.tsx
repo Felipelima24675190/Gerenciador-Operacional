@@ -8,7 +8,7 @@ import ImportLinesScreen from './components/lines/ImportLinesScreen';
 import ConsultLinesScreen from './components/lines/ConsultLinesScreen';
 import ImportOccurrencesScreen from './components/dashboard/ImportOccurrencesScreen';
 import ReportsScreen from './components/reports/ReportsScreen';
-import { Motorista, Viagem, Ocorrencia, User, MultaANTT, AnttCodeDescription, ExcessoVelocidade, ParadaIndevida, Veiculo, Avaria, ResumoAvaria, MultaTransito, RegistroOciosidade, RegistroLinha, OciosidadeMotorista, Monitriip, EventoMotorista, LinhaAbreviacao, AppNotification, ManutencaoVeiculo, HistoricoManutencao, Acidente, JornadaMotorista, CodigoJornadaDescription, JornadaFaltante, ComiteDisciplinar } from './types';
+import { Motorista, Viagem, Ocorrencia, User, MultaANTT, AnttCodeDescription, ExcessoVelocidade, ParadaIndevida, Veiculo, Avaria, ResumoAvaria, MultaTransito, RegistroOciosidade, RegistroLinha, OciosidadeMotorista, Monitriip, EventoMotorista, LinhaAbreviacao, AppNotification, ManutencaoVeiculo, HistoricoManutencao, Acidente, JornadaMotorista, CodigoJornadaDescription, JornadaFaltante, ComiteDisciplinar, ValidadeAntt } from './types';
 import DashboardOperacionalScreen from './components/dashboard/DashboardOperacionalScreen';
 import LineDictionaryScreen, { DEFAULT_ENTRIES as DEFAULT_DICIONARIO } from './components/lines/LineDictionaryScreen';
 import AnttCodesScreen from './components/antt/AnttCodesScreen';
@@ -45,6 +45,7 @@ import ImportJornadaScreen from './components/jornada/ImportJornadaScreen';
 import CodigosJornadaScreen from './components/jornada/CodigosJornadaScreen';
 import JornadaDashboardScreen from './components/jornada/JornadaDashboardScreen';
 import ImportComiteScreen from './components/jornada/ImportComiteScreen';
+import ValidadeAnttScreen from './components/drivers/ValidadeAnttScreen';
 
 const DEFAULT_CODIGOS_JORNADA: CodigoJornadaDescription[] = [
   { codigo: '001', descricao: 'Jornada', categoria: 'ATIVIDADE', contaComoFalta: false },
@@ -132,6 +133,7 @@ function App() {
   const [codigosJornada, setCodigosJornada]                       = usePersistedState<CodigoJornadaDescription>('codigos_jornada', 'codigosJornadaData', DEFAULT_CODIGOS_JORNADA);
   const [jornadasFaltantes, setJornadasFaltantes]                 = usePersistedState<JornadaFaltante>('jornadas_faltantes', 'jornadasFaltantesData');
   const [comiteDisciplinar, setComiteDisciplinar]                 = usePersistedState<ComiteDisciplinar>('comite_disciplinar', 'comiteDisciplinarData');
+  const [validadesAntt, setValidadesAntt]                         = usePersistedState<ValidadeAntt>('validades_antt', 'validadesAnttData');
 
   // ─── Notifying wrappers ────────────────────────────────────────────────────
   const setOcorrenciasN = useCallback((a: SetStateAction<Ocorrencia[]>) => { setOcorrencias(a); addNotification('Ocorrencias', 'Dados de pontualidade atualizados'); }, [setOcorrencias, addNotification]);
@@ -146,6 +148,7 @@ function App() {
   const setAcidentesN = useCallback((a: SetStateAction<Acidente[]>) => { setAcidentes(a); addNotification('Acidentes', 'Registro de acidentes atualizado'); }, [setAcidentes, addNotification]);
   const setJornadasMotN = useCallback((a: SetStateAction<JornadaMotorista[]>) => { setJornadasMotorista(a); addNotification('Jornada', 'Jornada de motoristas atualizada'); }, [setJornadasMotorista, addNotification]);
   const setComiteDisciplinarN = useCallback((a: SetStateAction<ComiteDisciplinar[]>) => { setComiteDisciplinar(a); addNotification('Comite', 'Comitê disciplinar atualizado'); }, [setComiteDisciplinar, addNotification]);
+  const setValidadesAnttN = useCallback((a: SetStateAction<ValidadeAntt[]>) => { setValidadesAntt(a); addNotification('Validade ANTT', 'Validade ANTT atualizada'); }, [setValidadesAntt, addNotification]);
 
   // ─── Render ────────────────────────────────────────────────────────────────
   const renderContent = () => {
@@ -157,9 +160,11 @@ function App() {
       case 'import-occurrences':
         return <ImportOccurrencesScreen ocorrencias={ocorrencias} setOcorrencias={setOcorrenciasN} motoristas={motoristas} viagens={viagens} userRole={currentUser.role} />;
       case 'import-drivers':
-        return <ImportDriversScreen motoristas={motoristas} setMotoristas={setMotoristasN} userRole={currentUser.role} onNavigate={setActiveTab} />;
+        return <ImportDriversScreen motoristas={motoristas} setMotoristas={setMotoristasN} userRole={currentUser.role} onNavigate={setActiveTab} validades={validadesAntt} setValidades={setValidadesAnttN} />;
       case 'consult-base':
-        return <ConsultBaseScreen motoristas={motoristas} setMotoristas={setMotoristas} userRole={currentUser.role} eventosMotorista={eventosMotorista} setEventosMotorista={setEventosMotorista} jornadasMotorista={jornadasMotorista} codigosJornada={codigosJornada} />;
+        return <ConsultBaseScreen motoristas={motoristas} setMotoristas={setMotoristas} userRole={currentUser.role} eventosMotorista={eventosMotorista} setEventosMotorista={setEventosMotorista} jornadasMotorista={jornadasMotorista} codigosJornada={codigosJornada} validades={validadesAntt} />;
+      case 'validade-antt':
+        return <ValidadeAnttScreen validades={validadesAntt} motoristas={motoristas} />;
       case 'consult-driver':
         return <ConsultDriverScreen motoristas={motoristas} ocorrencias={ocorrencias} multasTransito={multasTransito} />;
       case 'import-lines':
@@ -191,7 +196,7 @@ function App() {
       case 'reports':
         return <ReportsScreen motoristas={motoristas} ocorrencias={ocorrencias} excessos={excessosVelocidade} multasAntt={multasAntt} avarias={avarias} paradas={paradasIndevidas} multasTransito={multasTransito} ociosidades={ociosidadesMotorista} jornadasMotorista={jornadasMotorista} codigosJornada={codigosJornada} />;
       case 'manual-driver':
-        return <ImportDriversScreen motoristas={motoristas} setMotoristas={setMotoristasN} userRole={currentUser.role} onNavigate={setActiveTab} />;
+        return <ImportDriversScreen motoristas={motoristas} setMotoristas={setMotoristasN} userRole={currentUser.role} onNavigate={setActiveTab} validades={validadesAntt} setValidades={setValidadesAnttN} />;
       case 'users':
         return <UserManagementScreen users={users} setUsers={setUsers} />;
       case 'import-antt':
@@ -276,6 +281,7 @@ function App() {
     'import-drivers': { title: 'Importar Base', breadcrumb: 'Base Motoristas' },
     'manual-driver': { title: 'Cadastro Manual', breadcrumb: 'Base Motoristas' },
     'consult-base': { title: 'Consultar Base', breadcrumb: 'Base Motoristas' },
+    'validade-antt': { title: 'Validade ANTT', breadcrumb: 'Base Motoristas' },
     'import-jornada': { title: 'Importar Jornada', breadcrumb: 'Jornada Motoristas' },
     'codigos-jornada': { title: 'Códigos de Jornada', breadcrumb: 'Jornada Motoristas' },
     'dashboard-jornada': { title: 'Dashboard Jornada', breadcrumb: 'Jornada Motoristas' },
@@ -296,14 +302,22 @@ function App() {
   // ─── Loading screen (while users load from Supabase for login validation) ──
   if (usersLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-brand-900 via-brand-800 to-brand-600 flex flex-col items-center justify-center gap-4">
-        <Loader2 className="animate-spin text-brand-300" size={48} />
-        <p className="text-slate-300 font-bold text-sm uppercase tracking-widest">Carregando dados...</p>
-        <div className="flex items-center gap-2 mt-2">
-          {isSupabaseConfigured
-            ? <><Cloud size={14} className="text-emerald-400" /><span className="text-[10px] text-emerald-400 font-bold">Supabase conectado</span></>
-            : <><HardDrive size={14} className="text-amber-400" /><span className="text-[10px] text-amber-400 font-bold">Modo local (localStorage)</span></>
-          }
+      <div className="fixed inset-0 z-50 bg-[#4fc3f7] flex items-center justify-center overflow-hidden">
+        <img
+          src="/splash-logo.png"
+          alt="Viação Progresso"
+          className="w-full h-full object-contain drop-shadow-2xl animate-fade-in"
+          onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/progresso-logo.png'; }}
+        />
+        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-3">
+          <Loader2 className="animate-spin text-white" size={36} />
+          <p className="text-white font-bold text-sm uppercase tracking-widest">Carregando dados...</p>
+          <div className="flex items-center gap-2">
+            {isSupabaseConfigured
+              ? <><Cloud size={14} className="text-emerald-200" /><span className="text-[10px] text-emerald-100 font-bold">Supabase conectado</span></>
+              : <><HardDrive size={14} className="text-amber-200" /><span className="text-[10px] text-amber-100 font-bold">Modo local (localStorage)</span></>
+            }
+          </div>
         </div>
       </div>
     );

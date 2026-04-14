@@ -1,9 +1,10 @@
 import { useState, useMemo, useCallback } from 'react';
 import {
-  BarChart3, UploadCloud, Users, FileText, Database,
+  BarChart3, UploadCloud, Users, FileText,
   ChevronDown, ChevronUp, Map, UserCog, LogOut, Gauge, FileWarning,
   AlertTriangle, StopCircle, Bus, CarFront, RadioTower, LayoutDashboard,
   BookOpen, Wrench, ShieldAlert, Award, Search, PanelLeftClose, PanelLeftOpen,
+  ShieldCheck,
   LucideIcon,
 } from 'lucide-react';
 import { twMerge } from 'tailwind-merge';
@@ -43,8 +44,8 @@ const SECTIONS: MenuSection[] = [
   {
     id: 'pontualidade', label: 'Pontualidade', icon: BarChart3, separator: true,
     items: [
-      { tab: 'dashboard', label: 'Dashboard', icon: BarChart3 },
       { tab: 'import-occurrences', label: 'Importar Ocorrências', icon: UploadCloud, adminOnly: true },
+      { tab: 'dashboard', label: 'Consultar Pontualidade', icon: BarChart3 },
       { tab: 'consult-driver', label: 'Consultar Motorista', icon: Users },
     ],
   },
@@ -61,7 +62,7 @@ const SECTIONS: MenuSection[] = [
     items: [
       { tab: 'import-antt', label: 'Importar Multas', icon: UploadCloud, adminOnly: true },
       { tab: 'view-antt', label: 'Consultar Multas', icon: FileWarning },
-      { tab: 'antt-codes', label: 'Consultar Códigos', icon: BookOpen },
+      { tab: 'antt-codes', label: 'Códigos ANTT', icon: BookOpen },
     ],
   },
   {
@@ -81,7 +82,7 @@ const SECTIONS: MenuSection[] = [
   {
     id: 'avaria', label: 'Avarias', icon: AlertTriangle,
     items: [
-      { tab: 'create-avaria', label: 'Cadastrar Avaria', icon: AlertTriangle, adminOnly: true },
+      { tab: 'create-avaria', label: 'Cadastrar Avaria', icon: UploadCloud, adminOnly: true },
       { tab: 'view-avaria', label: 'Consultar Avarias', icon: AlertTriangle },
       { tab: 'acidentes', label: 'Acidentes', icon: ShieldAlert },
     ],
@@ -116,23 +117,23 @@ const SECTIONS: MenuSection[] = [
   {
     id: 'motoristas', label: 'Base Motoristas', icon: Users, separator: true,
     items: [
-      { tab: 'import-drivers', label: 'Importar Base', icon: Database, adminOnly: true },
+      { tab: 'import-drivers', label: 'Importar Base', icon: UploadCloud, adminOnly: true },
       { tab: 'consult-base', label: 'Consultar Base', icon: Users },
+      { tab: 'validade-antt', label: 'Validade ANTT', icon: ShieldCheck },
     ],
   },
   {
     id: 'jornada', label: 'Jornada Motoristas', icon: BookOpen,
     items: [
-      { tab: 'dashboard-jornada', label: 'Dashboard Jornada', icon: BarChart3 },
       { tab: 'import-jornada', label: 'Importar Jornada', icon: UploadCloud, adminOnly: true },
+      { tab: 'dashboard-jornada', label: 'Consultar Jornada', icon: BarChart3 },
       { tab: 'codigos-jornada', label: 'Códigos de Jornada', icon: BookOpen },
-      { tab: 'import-comite', label: 'Importar Comitê', icon: UploadCloud, adminOnly: true },
     ],
   },
   {
     id: 'linhas', label: 'Base Linhas', icon: Map,
     items: [
-      { tab: 'import-lines', label: 'Importar Linhas', icon: Database, adminOnly: true },
+      { tab: 'import-lines', label: 'Importar Linhas', icon: UploadCloud, adminOnly: true },
       { tab: 'consult-lines', label: 'Consultar Linhas', icon: Map },
       { tab: 'line-dictionary', label: 'Dicionário de Linhas', icon: BookOpen },
     ],
@@ -140,7 +141,7 @@ const SECTIONS: MenuSection[] = [
   {
     id: 'veiculos', label: 'Base Veículos', icon: Bus,
     items: [
-      { tab: 'import-vehicles', label: 'Importar Veículos', icon: Database, adminOnly: true },
+      { tab: 'import-vehicles', label: 'Importar Veículos', icon: UploadCloud, adminOnly: true },
       { tab: 'consult-vehicles', label: 'Consultar Veículos', icon: Bus },
     ],
   },
@@ -245,7 +246,7 @@ export default function Sidebar({ activeTab, onTabChange, user, onLogout, collap
         </div>
       )}
 
-      <nav className={clsx('flex-1 overflow-y-auto scroll-shadow', collapsed ? 'px-1.5 py-3' : 'px-3 py-3 space-y-1')}>
+      <nav className={clsx('flex-1 overflow-y-auto sidebar-scroll', collapsed ? 'px-1.5 py-3' : 'px-3 py-3 space-y-1')}>
         {/* Featured items */}
         <div className={clsx(collapsed ? 'space-y-1' : 'space-y-1 mb-3')}>
           {FEATURED_ITEMS.map(item => (

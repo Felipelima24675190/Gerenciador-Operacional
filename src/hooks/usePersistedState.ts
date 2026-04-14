@@ -59,6 +59,8 @@ const PK_MAP: Record<string, string> = {
   motoristas: 'matricula',
   resumos_avaria: 'key',
   antt_code_descriptions: 'codigo',
+  codigos_jornada: 'codigo',
+  validades_antt: 'matricula',
 };
 
 function detectPkColumn(table: string): string {

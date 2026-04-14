@@ -18,7 +18,8 @@ DECLARE
     'ociosidades_motorista','monitriips','eventos_motorista',
     'app_notifications','dicionario_linhas','manutencoes',
     'historico_manutencao','acidentes',
-    'jornadas_motorista','codigos_jornada','jornadas_faltantes','comite_disciplinar'
+    'jornadas_motorista','codigos_jornada','jornadas_faltantes','comite_disciplinar',
+    'validades_antt'
   ];
 BEGIN
   IF NOT (tname = ANY(allowed)) THEN
@@ -58,6 +59,7 @@ CREATE TABLE IF NOT EXISTS jornadas_motorista (id TEXT PRIMARY KEY, matricula TE
 CREATE TABLE IF NOT EXISTS codigos_jornada (codigo TEXT PRIMARY KEY, descricao TEXT NOT NULL DEFAULT '', categoria TEXT NOT NULL DEFAULT 'OUTROS', "contaComoFalta" BOOLEAN NOT NULL DEFAULT false);
 CREATE TABLE IF NOT EXISTS comite_disciplinar (id TEXT PRIMARY KEY, matricula TEXT NOT NULL, data TEXT NOT NULL, motivo TEXT NOT NULL DEFAULT '', punicao TEXT NOT NULL DEFAULT '');
 CREATE TABLE IF NOT EXISTS jornadas_faltantes (id TEXT PRIMARY KEY, matricula TEXT NOT NULL, data TEXT NOT NULL, "filial" TEXT NOT NULL DEFAULT '', "area" TEXT NOT NULL DEFAULT '', "nomeMotorista" TEXT NOT NULL DEFAULT '', status TEXT NOT NULL DEFAULT 'Pendente' CHECK (status IN ('Pendente','Justificado','Ignorado')), justificativa TEXT, "dataRegistro" TEXT NOT NULL DEFAULT '', "registradoPor" TEXT);
+CREATE TABLE IF NOT EXISTS validades_antt (matricula TEXT PRIMARY KEY, cpf TEXT NOT NULL DEFAULT '', "dataAdmissao" TEXT NOT NULL DEFAULT '', "validadeProgresso" TEXT, "validadeCruzeiro" TEXT);
 
 -- 3) Ajustes de Colunas (Para tabelas que já existem mas estão desatualizadas)
 DO $$ 
@@ -103,7 +105,8 @@ DECLARE
     'ociosidades_motorista','monitriips','eventos_motorista',
     'app_notifications','dicionario_linhas','manutencoes',
     'historico_manutencao','acidentes',
-    'jornadas_motorista','codigos_jornada','jornadas_faltantes','comite_disciplinar'
+    'jornadas_motorista','codigos_jornada','jornadas_faltantes','comite_disciplinar',
+    'validades_antt'
   ];
 BEGIN
   FOREACH t IN ARRAY tables LOOP

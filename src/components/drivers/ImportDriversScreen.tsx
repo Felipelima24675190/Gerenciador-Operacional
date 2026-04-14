@@ -1,17 +1,20 @@
 import React, { useState, useRef } from 'react';
 import { UploadCloud, CheckCircle, AlertTriangle } from 'lucide-react';
-import { Motorista } from '../../types';
+import { Motorista, ValidadeAntt } from '../../types';
 import ManualDriverScreen from './ManualDriverScreen';
+import ImportValidadeAnttScreen from './ImportValidadeAnttScreen';
 
 interface ImportDriversScreenProps {
   motoristas: Motorista[];
   setMotoristas: React.Dispatch<React.SetStateAction<Motorista[]>>;
   userRole: string;
   onNavigate: React.Dispatch<React.SetStateAction<string>>;
+  validades: ValidadeAntt[];
+  setValidades: React.Dispatch<React.SetStateAction<ValidadeAntt[]>>;
 }
 
-export default function ImportDriversScreen({ setMotoristas }: ImportDriversScreenProps) {
-  const [activeSubTab, setActiveSubTab] = useState<'import' | 'manual'>('import');
+export default function ImportDriversScreen({ setMotoristas, validades, setValidades }: ImportDriversScreenProps) {
+  const [activeSubTab, setActiveSubTab] = useState<'import' | 'manual' | 'antt'>('import');
   const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [stats, setStats] = useState<{ total: number } | null>(null);
   const [errorMsg, setErrorMsg] = useState('');
@@ -85,10 +88,10 @@ export default function ImportDriversScreen({ setMotoristas }: ImportDriversScre
   };
 
   return (
-    <div className="max-w-2xl mx-auto space-y-5">
+    <div className="max-w-3xl mx-auto space-y-5">
       {/* Sub-tab bar */}
       <div className="flex gap-1 bg-slate-100 p-1 rounded-lg w-fit">
-        {([['import', 'Importar Arquivo'], ['manual', 'Cadastrar Manual']] as const).map(([key, label]) => (
+        {([['import', 'Importar Arquivo'], ['manual', 'Cadastrar Manual'], ['antt', 'Importar Validade ANTT']] as const).map(([key, label]) => (
           <button key={key} onClick={() => setActiveSubTab(key)}
             className={`px-4 py-2 text-xs font-bold rounded-md transition-colors ${activeSubTab === key ? 'bg-white text-brand-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
             {label}
@@ -98,6 +101,8 @@ export default function ImportDriversScreen({ setMotoristas }: ImportDriversScre
 
       {activeSubTab === 'manual' ? (
         <ManualDriverScreen setMotoristas={setMotoristas} />
+      ) : activeSubTab === 'antt' ? (
+        <ImportValidadeAnttScreen validades={validades} setValidades={setValidades} />
       ) : (
       <>
       <div className="bg-white rounded-card border border-gray-200 shadow-card p-8 text-center">
