@@ -314,8 +314,8 @@ function LitTcoTable({ veiculos, litFilter, setLitFilter, tcoFilter, setTcoFilte
   }, [veiculos, litFilter, tcoFilter]);
 
   const counts = useMemo(() => {
-    const lit = { Ativo: 0, Inativo: 0, 'A vencer': 0, 'Indisponível': 0 };
-    const tco = { Ativo: 0, Inativo: 0, 'A vencer': 0, 'Indisponível': 0 };
+    const lit: Record<LitTcoStatus, number> = { 'Todos': 0, 'Ativo': 0, 'Inativo': 0, 'A vencer': 0, 'Indisponível': 0 };
+    const tco: Record<LitTcoStatus, number> = { 'Todos': 0, 'Ativo': 0, 'Inativo': 0, 'A vencer': 0, 'Indisponível': 0 };
     veiculos.forEach(v => {
       const ls = getLitTcoStatus(v.litValidade);
       const ts = getLitTcoStatus(v.tcoValidade);
@@ -466,6 +466,34 @@ export default function ConsultVehiclesScreen({ veiculos, multasAntt, avarias, m
 
   return (
     <div className="space-y-5">
+      {/* Top Tabs */}
+      <div className="bg-white rounded-card border border-gray-200 shadow-card p-1 flex gap-1">
+        <button
+          onClick={() => setActiveTab('veiculos')}
+          className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-bold text-sm transition-all ${activeTab === 'veiculos' ? 'bg-brand-500 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'}`}
+        >
+          <Bus size={16} /> Veículos
+        </button>
+        <button
+          onClick={() => setActiveTab('lit-tco')}
+          className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-bold text-sm transition-all ${activeTab === 'lit-tco' ? 'bg-brand-500 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'}`}
+        >
+          <ShieldCheck size={16} /> LIT / TCO
+        </button>
+      </div>
+
+      {activeTab === 'lit-tco' && (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <LitTcoPieCard title="Status LIT" counts={litTcoCounts.lit} />
+            <LitTcoPieCard title="Status TCO" counts={litTcoCounts.tco} />
+          </div>
+          <LitTcoTable veiculos={veiculos} litFilter={litFilter} setLitFilter={setLitFilter} tcoFilter={tcoFilter} setTcoFilter={setTcoFilter} />
+        </>
+      )}
+
+      {activeTab === 'veiculos' && (
+      <>
       <div className="bg-slate-800 p-4 flex gap-3 overflow-x-auto rounded-xl">
         {[
           { l: 'Total de Veículos', v: dashboardData.total },
@@ -586,8 +614,8 @@ export default function ConsultVehiclesScreen({ veiculos, multasAntt, avarias, m
         )}
       </div>
 
-      {/* LIT / TCO Table */}
-      <LitTcoTable veiculos={veiculos} litFilter={litFilter} setLitFilter={setLitFilter} tcoFilter={tcoFilter} setTcoFilter={setTcoFilter} />
+      </>
+      )}
 
       {selectedVehicle && (
         <VehicleDetailModal

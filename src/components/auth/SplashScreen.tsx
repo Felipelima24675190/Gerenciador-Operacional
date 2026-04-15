@@ -15,13 +15,14 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
 
   return (
     <div
-      className={`fixed inset-0 z-50 flex items-center justify-center bg-[#4fc3f7] cursor-pointer transition-opacity duration-500 ${fading ? 'opacity-0' : 'opacity-100'}`}
+      className={`fixed inset-0 z-50 flex items-center justify-center bg-[#4fc3f7] cursor-pointer overflow-hidden transition-opacity duration-500 ${fading ? 'opacity-0' : 'opacity-100'}`}
       onClick={onFinish}
     >
       <img
         src="/splash-logo.png"
         alt="Viação Progresso"
-        className="w-80 h-80 object-contain animate-fade-in drop-shadow-2xl"
+        className="max-w-[90vw] max-h-[90vh] w-auto h-auto object-contain animate-fade-in drop-shadow-2xl"
+        onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/progresso-logo.png'; }}
       />
     </div>
   );

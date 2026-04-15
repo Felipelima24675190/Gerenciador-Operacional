@@ -40,6 +40,19 @@ export default {
           danger: '#dc2626',      // red-600
           info: '#2563eb',        // blue-600
         },
+        // Neon / dark dashboard theme (per reference images 3 & 4)
+        neon: {
+          bg: '#1e1136',          // main dashboard background (deep satin purple)
+          surface: '#2c194e',     // card/module background (slightly lighter)
+          border: '#3a2466',      // card borders/inner glow
+          muted: '#6b4db8',       // subtle accents
+          fuchsia: '#ff2bd6',     // dominant data color (neon pink)
+          fuchsiaSoft: '#ff7ae3', // lighter fuchsia for hover/fill
+          lavender: '#b6a6ff',    // secondary color
+          lavenderSoft: '#d4caff',// lighter lavender
+          text: '#f5f2ff',        // main text
+          textMuted: '#b8aad6',   // muted text
+        },
       },
       borderRadius: {
         'card': '0.75rem',        // 12px — unified card radius

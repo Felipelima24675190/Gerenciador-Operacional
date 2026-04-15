@@ -299,23 +299,17 @@ function App() {
   const getPageTitle = () => PAGE_META[activeTab]?.title || 'Viação Progresso';
   const getPageBreadcrumb = () => PAGE_META[activeTab]?.breadcrumb;
 
-  // ─── Loading screen (while users load from Supabase for login validation) ──
+  // ─── Pre-login loader (lightweight, no logo — logo is reserved for post-login splash) ──
   if (usersLoading) {
     return (
-      <div className="fixed inset-0 z-50 bg-[#4fc3f7] flex items-center justify-center overflow-hidden">
-        <img
-          src="/splash-logo.png"
-          alt="Viação Progresso"
-          className="w-full h-full object-contain drop-shadow-2xl animate-fade-in"
-          onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/progresso-logo.png'; }}
-        />
-        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-3">
-          <Loader2 className="animate-spin text-white" size={36} />
-          <p className="text-white font-bold text-sm uppercase tracking-widest">Carregando dados...</p>
+      <div className="fixed inset-0 z-50 bg-[#1e1136] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="animate-spin text-fuchsia-400" size={36} />
+          <p className="text-white/70 font-bold text-xs uppercase tracking-widest">Carregando...</p>
           <div className="flex items-center gap-2">
             {isSupabaseConfigured
-              ? <><Cloud size={14} className="text-emerald-200" /><span className="text-[10px] text-emerald-100 font-bold">Supabase conectado</span></>
-              : <><HardDrive size={14} className="text-amber-200" /><span className="text-[10px] text-amber-100 font-bold">Modo local (localStorage)</span></>
+              ? <><Cloud size={12} className="text-emerald-400" /><span className="text-[10px] text-emerald-200 font-bold">Supabase conectado</span></>
+              : <><HardDrive size={12} className="text-amber-400" /><span className="text-[10px] text-amber-200 font-bold">Modo local</span></>
             }
           </div>
         </div>

@@ -28,13 +28,15 @@ const SIZE_CONFIG: Record<CardSize, { padding: string; valueSize: string; labelS
   lg: { padding: 'p-5', valueSize: 'text-3xl font-bold', labelSize: 'text-xs', iconSize: 24, iconPadding: 'p-3' },
 };
 
-const VARIANT_CONFIG: Record<CardVariant, { bg: string; border: string; iconBg: string; iconColor: string; valueCls: string }> = {
-  default: { bg: 'bg-white', border: 'border-gray-200', iconBg: 'bg-brand-50', iconColor: 'text-brand-600', valueCls: 'text-slate-800' },
-  success: { bg: 'bg-emerald-50', border: 'border-emerald-200', iconBg: 'bg-emerald-100', iconColor: 'text-emerald-600', valueCls: 'text-emerald-800' },
-  warning: { bg: 'bg-amber-50', border: 'border-amber-200', iconBg: 'bg-amber-100', iconColor: 'text-amber-600', valueCls: 'text-amber-800' },
-  danger: { bg: 'bg-red-50', border: 'border-red-200', iconBg: 'bg-red-100', iconColor: 'text-red-600', valueCls: 'text-red-800' },
-  info: { bg: 'bg-blue-50', border: 'border-blue-200', iconBg: 'bg-blue-100', iconColor: 'text-blue-600', valueCls: 'text-blue-800' },
-  dark: { bg: 'bg-slate-800', border: 'border-slate-700', iconBg: 'bg-slate-700', iconColor: 'text-slate-300', valueCls: 'text-white' },
+// Light theme: match Jornada de Motoristas KPI cards (soft tinted backgrounds).
+// Each variant uses light color-50 bg, color-200 border, color-700 value, color-500 label/icon.
+const VARIANT_CONFIG: Record<CardVariant, { bg: string; border: string; iconBg: string; iconColor: string; valueCls: string; labelCls: string }> = {
+  default: { bg: 'bg-slate-50',   border: 'border-slate-200',   iconBg: 'bg-white', iconColor: 'text-slate-500',   valueCls: 'text-slate-800',   labelCls: 'text-slate-500' },
+  success: { bg: 'bg-emerald-50', border: 'border-emerald-200', iconBg: 'bg-white', iconColor: 'text-emerald-500', valueCls: 'text-emerald-700', labelCls: 'text-emerald-500' },
+  warning: { bg: 'bg-amber-50',   border: 'border-amber-200',   iconBg: 'bg-white', iconColor: 'text-amber-500',   valueCls: 'text-amber-700',   labelCls: 'text-amber-500' },
+  danger:  { bg: 'bg-red-50',     border: 'border-red-200',     iconBg: 'bg-white', iconColor: 'text-red-500',     valueCls: 'text-red-700',     labelCls: 'text-red-500' },
+  info:    { bg: 'bg-blue-50',    border: 'border-blue-200',    iconBg: 'bg-white', iconColor: 'text-blue-500',    valueCls: 'text-blue-700',    labelCls: 'text-blue-500' },
+  dark:    { bg: 'bg-slate-800',  border: 'border-slate-700',   iconBg: 'bg-slate-700', iconColor: 'text-white',   valueCls: 'text-white',       labelCls: 'text-slate-300' },
 };
 
 function formatValue(value: string | number, unit?: string, unitPosition?: 'prefix' | 'suffix'): React.ReactNode {
@@ -60,8 +62,7 @@ export default function MetricCard({
 }: MetricCardProps) {
   const s = SIZE_CONFIG[size];
   const v = VARIANT_CONFIG[variant];
-  const isDark = variant === 'dark';
-  const labelColor = isDark ? 'text-slate-400' : 'text-slate-500';
+  const labelColor = v.labelCls;
 
   const trendUp = trend && trend.value > 0;
   const trendDown = trend && trend.value < 0;
@@ -81,7 +82,7 @@ export default function MetricCard({
             {formatValue(value, unit, unitPosition)}
           </p>
           {subValue && (
-            <p className={clsx('text-2xs mt-0.5', isDark ? 'text-slate-500' : 'text-slate-400')}>{subValue}</p>
+            <p className="text-2xs mt-0.5 text-slate-500">{subValue}</p>
           )}
           {trend && trend.value !== undefined && (
             <div className="flex items-center gap-2 mt-1.5">
@@ -89,7 +90,7 @@ export default function MetricCard({
                 {trendUp ? '▲' : trendDown ? '▼' : '='} {Math.abs(trend.value).toFixed(1)}%
               </span>
               {trend.label && (
-                <span className={clsx('text-2xs', isDark ? 'text-slate-500' : 'text-slate-400')}>{trend.label}</span>
+                <span className="text-2xs text-slate-500">{trend.label}</span>
               )}
             </div>
           )}

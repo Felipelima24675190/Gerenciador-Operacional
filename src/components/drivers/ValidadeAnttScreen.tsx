@@ -136,13 +136,31 @@ export default function ValidadeAnttScreen({ validades, motoristas }: ValidadeAn
           {pieData.length === 0 ? (
             <div className="h-72 flex items-center justify-center text-sm text-slate-400">Nenhum dado cadastrado</div>
           ) : (
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie data={pieData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={2} label={({ name, percent }) => `${name}: ${((percent ?? 0) * 100).toFixed(1)}%`}>
+            <ResponsiveContainer width="100%" height={340}>
+              <PieChart margin={{ top: 8, right: 8, bottom: 8, left: 8 }}>
+                <Pie
+                  data={pieData}
+                  dataKey="value"
+                  nameKey="name"
+                  cx="50%"
+                  cy="45%"
+                  innerRadius={55}
+                  outerRadius={85}
+                  paddingAngle={2}
+                  labelLine={false}
+                  label={({ percent }) => {
+                    const p = (percent ?? 0) * 100;
+                    return p >= 5 ? `${p.toFixed(1)}%` : '';
+                  }}
+                >
                   {pieData.map((entry, i) => (<Cell key={i} fill={entry.color} />))}
                 </Pie>
-                <Tooltip formatter={(v: number) => [`${v} motorista(s)`, '']} />
-                <Legend />
+                <Tooltip formatter={(v: number, n: string) => [`${v} motorista(s)`, n]} />
+                <Legend
+                  verticalAlign="bottom"
+                  iconSize={10}
+                  wrapperStyle={{ fontSize: 12, fontWeight: 600, paddingTop: 8 }}
+                />
               </PieChart>
             </ResponsiveContainer>
           )}
