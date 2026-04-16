@@ -33,7 +33,8 @@
       "Bash(done)",
       "Bash(xargs grep:*)",
       "Bash(wc -l /c/Users/luis.lima/Downloads/\"App Atrasos/src/components\"/**/*.tsx)",
-      "Bash(awk '{print NF}' \"01.02 a 28.02 OCORRENCIAS.txt\")"
+      "Bash(awk '{print NF}' \"01.02 a 28.02 OCORRENCIAS.txt\")",
+      "Bash(find \"/c/Users/luis.lima/Downloads/App Atrasos/src\" -type f -name \"*.tsx\" -exec grep -l \"Pago\\\\|Pendente\\\\|Vencido\" {} \\\\;)"
     ]
   }
 }

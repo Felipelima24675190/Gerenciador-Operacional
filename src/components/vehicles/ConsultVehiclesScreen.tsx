@@ -255,40 +255,44 @@ function LitTcoPieCard({ title, counts }: { title: string; counts: Record<string
     .filter(d => d.value > 0);
 
   return (
-    <div className="bg-white rounded-card border border-gray-200 shadow-card p-4">
-      <h4 className="text-2xs font-black text-slate-600 uppercase tracking-tight mb-2">{title}</h4>
-      <div className="h-[220px]">
-        {total > 0 ? (
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={data}
-                cx="50%"
-                cy="50%"
-                innerRadius={45}
-                outerRadius={75}
-                paddingAngle={2}
-                dataKey="value"
-                label={({ percent }) => `${((percent ?? 0) * 100).toFixed(0)}%`}
-                labelLine={false}
-              >
-                {data.map((entry, i) => (
-                  <Cell key={i} fill={PIE_COLORS[entry.name]} />
-                ))}
-              </Pie>
-              <RTooltip formatter={(v: number, n: string) => [`${v} (${((v / total) * 100).toFixed(1)}%)`, n]} />
-              <Legend verticalAlign="bottom" height={24} iconSize={10} wrapperStyle={{ fontSize: 10, fontWeight: 700 }} />
-            </PieChart>
-          </ResponsiveContainer>
-        ) : (
-          <div className="h-full flex items-center justify-center text-xs text-slate-400">Sem dados</div>
-        )}
-      </div>
-      <div className="grid grid-cols-4 gap-2 mt-2">
+    <div className="bg-white rounded-card border border-gray-200 shadow-card p-6">
+      <h3 className="text-lg font-bold text-slate-800 mb-4">{title}</h3>
+      {total === 0 ? (
+        <div className="h-72 flex items-center justify-center text-sm text-slate-400">Sem dados</div>
+      ) : (
+        <ResponsiveContainer width="100%" height={340}>
+          <PieChart margin={{ top: 8, right: 8, bottom: 8, left: 8 }}>
+            <Pie
+              data={data}
+              dataKey="value"
+              nameKey="name"
+              cx="50%"
+              cy="45%"
+              innerRadius={55}
+              outerRadius={85}
+              paddingAngle={2}
+              labelLine={false}
+              label={({ percent }) => {
+                const p = (percent ?? 0) * 100;
+                return p >= 5 ? `${p.toFixed(1)}%` : '';
+              }}
+            >
+              {data.map((entry, i) => (<Cell key={i} fill={PIE_COLORS[entry.name]} />))}
+            </Pie>
+            <RTooltip formatter={(v: number, n: string) => [`${v} (${((v / total) * 100).toFixed(1)}%)`, n]} />
+            <Legend
+              verticalAlign="bottom"
+              iconSize={10}
+              wrapperStyle={{ fontSize: 12, fontWeight: 600, paddingTop: 8 }}
+            />
+          </PieChart>
+        </ResponsiveContainer>
+      )}
+      <div className="grid grid-cols-4 gap-2 mt-4">
         {(['Ativo', 'A vencer', 'Inativo', 'Indisponível'] as const).map(k => (
           <div key={k} className="text-center">
-            <p className="text-[9px] font-black uppercase tracking-tight text-slate-500">{k}</p>
-            <p className="text-sm font-black" style={{ color: PIE_COLORS[k] }}>{counts[k] || 0}</p>
+            <p className="text-[10px] font-black uppercase tracking-tight text-slate-500">{k}</p>
+            <p className="text-base font-black" style={{ color: PIE_COLORS[k] }}>{counts[k] || 0}</p>
           </div>
         ))}
       </div>

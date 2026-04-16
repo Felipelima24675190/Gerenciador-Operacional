@@ -39,7 +39,7 @@ CREATE TABLE IF NOT EXISTS veiculos (id TEXT PRIMARY KEY, prefixo TEXT NOT NULL 
 CREATE TABLE IF NOT EXISTS excessos_velocidade (id TEXT PRIMARY KEY, matricula TEXT NOT NULL DEFAULT '', "tempoExcedidoMinutos" REAL NOT NULL DEFAULT 0, "velocidadeMediaKmh" REAL NOT NULL DEFAULT 0, endereco TEXT NOT NULL DEFAULT '', "dataOcorrencia" TEXT NOT NULL DEFAULT '', "inicioFimOcorrencia" TEXT NOT NULL DEFAULT '', "nomeLinha" TEXT NOT NULL DEFAULT '', veiculo TEXT NOT NULL DEFAULT '');
 CREATE TABLE IF NOT EXISTS paradas_indevidas (id TEXT PRIMARY KEY, data TEXT NOT NULL DEFAULT '', linha TEXT NOT NULL DEFAULT '', sentido TEXT NOT NULL DEFAULT '', "horarioLinha" TEXT NOT NULL DEFAULT '', matricula TEXT NOT NULL DEFAULT '', motorista TEXT NOT NULL DEFAULT '', area TEXT NOT NULL DEFAULT '', veiculo TEXT NOT NULL DEFAULT '', local TEXT NOT NULL DEFAULT '', inicio TEXT NOT NULL DEFAULT '', fim TEXT NOT NULL DEFAULT '', "tempoParado" TEXT NOT NULL DEFAULT '');
 CREATE TABLE IF NOT EXISTS avarias (id TEXT PRIMARY KEY, veiculo TEXT NOT NULL DEFAULT '', data TEXT NOT NULL DEFAULT '', "motoristaIdentificado" TEXT NOT NULL DEFAULT '', "matriculaMotorista" TEXT NOT NULL DEFAULT '', "motoristaCulpado" TEXT NOT NULL DEFAULT '', "lancadoNoGlobus" TEXT NOT NULL DEFAULT '', "mesLancamento" TEXT NOT NULL DEFAULT '', gerente TEXT NOT NULL DEFAULT '', "descricaoAvaria" TEXT NOT NULL DEFAULT '', "tipoAvaria" TEXT NOT NULL DEFAULT '', "causaAvaria" TEXT NOT NULL DEFAULT '', "acaoTomada" TEXT NOT NULL DEFAULT '', horario TEXT NOT NULL DEFAULT '', "valorAvaria" REAL NOT NULL DEFAULT 0, "valorCobrado" REAL NOT NULL DEFAULT 0);
-CREATE TABLE IF NOT EXISTS resumos_avaria ("key" TEXT PRIMARY KEY, "tipoAvaria" TEXT NOT NULL DEFAULT '', frontal TEXT NOT NULL DEFAULT '', "lateral" TEXT NOT NULL DEFAULT '', traseira TEXT NOT NULL DEFAULT '');
+CREATE TABLE IF NOT EXISTS resumos_avaria ("key" TEXT PRIMARY KEY, "tipoAvaria" TEXT NOT NULL DEFAULT '', frontal TEXT NOT NULL DEFAULT '', "lateral" TEXT NOT NULL DEFAULT '', traseira TEXT NOT NULL DEFAULT '', localizacao TEXT, total TEXT);
 CREATE TABLE IF NOT EXISTS multas_antt (id TEXT PRIMARY KEY, "autoInfracao" TEXT NOT NULL DEFAULT '', "dataHora" TEXT NOT NULL DEFAULT '', empresa TEXT NOT NULL DEFAULT '', setor TEXT NOT NULL DEFAULT '', terminal TEXT NOT NULL DEFAULT '', "codigoInfracao" TEXT NOT NULL DEFAULT '', "descricaoInfracao" TEXT NOT NULL DEFAULT '', "matriculaMotorista" TEXT, "placaVeiculo" TEXT, "prefixoVeiculo" TEXT, valor REAL NOT NULL DEFAULT 0, status TEXT NOT NULL DEFAULT 'Aguardando');
 CREATE TABLE IF NOT EXISTS antt_code_descriptions (codigo TEXT PRIMARY KEY, descricao TEXT NOT NULL DEFAULT '', valor REAL NOT NULL DEFAULT 0);
 CREATE TABLE IF NOT EXISTS multas_transito (id TEXT PRIMARY KEY, "dataInfracao" TEXT NOT NULL DEFAULT '', veiculo TEXT NOT NULL DEFAULT '', "orgaoAtuador" TEXT NOT NULL DEFAULT '', "descricaoMulta" TEXT NOT NULL DEFAULT '', "numeroAuto" TEXT NOT NULL DEFAULT '', "valorCobrado" REAL NOT NULL DEFAULT 0, "valorRecuperado" REAL NOT NULL DEFAULT 0, "motoristaIdentificado" BOOLEAN NOT NULL DEFAULT FALSE, "matriculaMotorista" TEXT NOT NULL DEFAULT '', "nomeMotorista" TEXT NOT NULL DEFAULT '', gestor TEXT NOT NULL DEFAULT '', filial TEXT NOT NULL DEFAULT '', "enviadoGerente" TEXT NOT NULL DEFAULT '', "gerenteDevolveu" TEXT NOT NULL DEFAULT '', "lancadoGlobus" TEXT NOT NULL DEFAULT '', observacao TEXT NOT NULL DEFAULT '', status TEXT NOT NULL DEFAULT 'Aguardando');
@@ -86,6 +86,10 @@ BEGIN
   -- Veículos
   ALTER TABLE veiculos ADD COLUMN IF NOT EXISTS "litValidade" TEXT;
   ALTER TABLE veiculos ADD COLUMN IF NOT EXISTS "tcoValidade" TEXT;
+
+  -- Resumos Avaria (novos campos combinados para localização e total)
+  ALTER TABLE resumos_avaria ADD COLUMN IF NOT EXISTS localizacao TEXT;
+  ALTER TABLE resumos_avaria ADD COLUMN IF NOT EXISTS total TEXT;
 END $$;
 
 -- 4) Índices
